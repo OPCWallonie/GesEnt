@@ -1,0 +1,224 @@
+/* ::::: http://images.apple.com/support/css/base_new.css ::::: */
+
+html, body, div, ul, ol, li, dl, dt, dd, h1, h2, h3, h4, h5, h6, pre, form, p, blockquote, fieldset, input { margin: 0px; padding: 0px; }
+h1, h2, h3, h4, h5, h6, pre, code, address, caption, cite, code, em, strong, th { font-size: 1em; font-weight: normal; font-style: normal; }
+ul, ol { list-style: none outside none; }
+fieldset, img { border: medium none; }
+.clear { clear: both; }
+img, .search-wrapper .left, .search-wrapper .right, ul.sp-results li.viewall a, ul.sp-results li .replacementimg, #globalfooter #breadcrumbs, #globalfooter #breadcrumbs span, #directorynav .capbottom {  }
+img { border: 0px none; }
+img.left { float: left; margin: 2px 20px 16px 0px; }
+#main { width: 100%; position: relative; }
+#content { padding: 18px 20px; position: relative; color: rgb(51, 51, 51); }
+#container:after, #content:after, .grid2col:after, .grid2cola:after, .grid2colb:after, .grid2colc:after, .grid2cold:after, .grid2cole:after, .grid2colf:after, .grid3col:after, .grid3cola:after, .grid4col:after, .grid5col:after, .grid6col:after { content: "."; display: block; height: 0px; clear: both; visibility: hidden; }
+#container, #content, .grid2col, .grid2cola, .grid2colb, .grid2colc, .grid2cold, .grid2cole, .grid2colf, .grid3col, .grid3cola, .grid4col, .grid5col, .grid6col {  }
+body { font: 12px/18px "Lucida Grande","Lucida Sans Unicode",Helvetica,Arial,Verdana,sans-serif; background-color: rgb(255, 255, 255); color: rgb(51, 51, 51); }
+a { color: rgb(0, 136, 204); }
+a:link, a:visited, a:active { text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong, b { font-weight: bold; }
+h1, h2, h3, h4 { font-weight: bold; }
+h2, h3, h4 { line-height: 18px; }
+h1, h2 { margin-bottom: 18px; }
+h1 { font-size: 24px; line-height: 36px; }
+h2 { font-size: 16px; }
+h3 { font-size: 1em; }
+h4 { font-size: 10px; }
+p { margin-bottom: 18px; }
+ul { margin-bottom: 18px; list-style: none outside none; }
+ol { margin-bottom: 18px; list-style: decimal outside none; margin-left: 2.2em; }
+ul.square, ul.circle { margin-left: 2em; }
+ul.square { list-style: square outside none; }
+#main .sidebar { font-size: 10px; line-height: 18px; color: rgb(51, 51, 51); }
+.piped { display: block; }
+.piped:after { content: "."; display: block; height: 0px; clear: both; visibility: hidden; }
+.piped li { float: left; display: inline; }
+.piped a { border-left: 1px solid rgb(121, 124, 128); padding: 0px 0px 0px 0.75em; margin-left: 0.75em; }
+.piped a.first { border-left: 0px none ! important; padding-left: 0px; margin-left: 0px ! important; }
+#globalfooter .gf-buy { float: left; width: 60%; margin: 18px 0px 9px; }
+#globalfooter .gf-links { float: right; margin: 18px 0px 9px; }
+#globalfooter .gf-links a { padding: 0px 10px; white-space: nowrap; }
+#globalfooter { width: 980px; color: rgb(136, 136, 136); font-size: 10px; margin: 18px auto; padding-bottom: 36px; text-align: left ! important; }
+#globalfooter a { color: rgb(0, 136, 204); }
+#globalfooter p { margin-bottom: 1em; }
+#globalfooter p.gf-buy { float: left; width: auto; margin: 18px 0px 9px 3px; }
+#globalfooter ul.piped a { padding: 0px 0px 0px 1.5em; margin-left: 1.5em; border-left: 1px solid rgb(208, 208, 208); }
+#globalfooter .gf-links { float: right; margin: 18px 3px 9px 0px; }
+#globalfooter .gf-sosumi { clear: both; width: 100%; border-top: 1px solid rgb(221, 221, 221); padding-top: 9px; }
+#globalfooter .gf-sosumi a { padding: 0px 10px; }
+#globalfooter .gf-sosumi p { float: left; margin-left: 3px; }
+#globalfooter #breadcrumbs { font-size: 11px; color: rgb(68, 68, 68); background: url('breadcrumb_bg.png') no-repeat scroll 0% 0% transparent; height: 36px; line-height: 34px; font-weight: bold; text-shadow: 0px 1px 0px rgb(255, 255, 255); }
+#globalfooter #breadcrumbs a { color: rgb(68, 68, 68); text-decoration: none; float: left; padding: 0px 10px; margin-left: -10px; }
+#globalfooter #breadcrumbs a:hover { color: rgb(51, 51, 51); text-decoration: none ! important; }
+#globalfooter #breadcrumbs a.home { margin: 0px; width: 15px; height: 0px; padding-top: 36px; overflow: hidden; }
+#globalfooter #breadcrumbs span { float: left; width: 9px; margin: 1px 10px 0px 0px; height: 0px; padding-top: 34px; overflow: hidden; background: url('breadcrumb_sep.png') no-repeat scroll 0% 0% transparent; }
+@media screen and (max-device-width: 480px) {
+	html {  }
+}
+/* ::::: http://images.apple.com/support/css/support.css ::::: */
+
+#main h1 { font-weight: normal; }
+#main h2 { font-size: 110%; margin-bottom: 0px; }
+#main ul { margin-bottom: 0px; }
+#main ul.square { margin-left: 1.5em; }
+#main ul.square li { line-height: 1.3em; padding: 4px 0px; }
+a { text-decoration: none; }
+a:hover { text-decoration: underline; }
+#globalfooter { margin-top: 14px; }
+#sidebar { width: 228px; float: left; }
+.alert { border: 1px solid rgb(221, 221, 221); padding: 8px; margin-bottom: 10px; background: none no-repeat scroll 5px top transparent; }
+.pad10 { padding: 10px; }
+.padtop5 { padding-top: 5px; }
+.padtop15 { padding-top: 15px; }
+/* ::::: http://km.support.apple.com/kb/resources/css/ikb.css ::::: */
+
+html, body { background-color: rgb(245, 246, 247); }
+#main { width: 980px; margin: 0px auto; background-image: url('divider.gif'); background-position: 736px 0px; background-repeat: repeat-y; }
+@media not all {
+}
+@media not all {
+}
+.content { width: 980px; border-radius: 4px 4px 4px 4px; box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.35); }
+.content { background: none repeat scroll 0% 0% rgb(255, 255, 255); }
+#content { float: left; width: 680px; padding: 0px 28px 28px; border-right: 1px solid rgb(217, 217, 217); }
+#promo .alert { border: medium none; }
+#articlecontent .attr { padding-bottom: 15px; }
+#article li { padding-bottom: 10px; }
+#sidebar { float: right ! important; width: 210px ! important; padding: 10px 15px 10px 16px; border-top-right-radius: 5px; }
+#sidebar h2 { font-weight: normal; font-size: 16px ! important; }
+#meta { margin-bottom: 25px; font-size: 11px; color: rgb(138, 138, 138); }
+#meta h3 { display: inline; font-size: 11px; }
+#languages { margin-bottom: 25px; }
+#languages h2 { margin-bottom: 5px; }
+#outer_related_articles { margin-bottom: 25px; }
+#promo { border-top: 1px solid rgb(222, 222, 222); padding: 15px; background-color: rgb(255, 255, 255); }
+#promo #offer_bottom { float: left; width: 48%; margin-right: 2%; }
+#promo #offer_bottom_right { float: left; width: 48%; margin-left: 2%; }
+#promo #offer_bottom_single { float: none; width: 80%; margin-left: 10%; margin-right: 10%; }
+#articleutils { margin-bottom: 15px; }
+#articleutils .tool { position: relative; float: left; margin-right: 15px; }
+#article h1 { line-height: 1.2em; margin: 0px -35px 10px -20px; padding: 25px 20px 10px; }
+#article h2 { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+#article.TROUBLESHOOTING-ARTICLES h1, #article.HOWTO-ARTICLES h1, #article.DOWNLOADS h1, #article.SPECIFICATIONS h1, #article.HELP h1, #article.VIDEO h1, #article.DOCUMENT h1, #article.PRODUCT-HELP h1, #article.GLOSSARY h1 { padding-left: 73px; padding-top: 10px; background-position: 20px 8px; background-repeat: no-repeat; margin-top: 10px; vertical-align: middle; line-height: 28px; }
+#article.TROUBLESHOOTING-ARTICLES h1 { background-image: url('dt_bg_howto.png'); }
+#abstract { padding: 10px 30px; margin: 0px -28px 30px; border-bottom: 1px solid rgb(217, 217, 217); font-size: 11px; color: rgb(68, 68, 68); }
+#abstract h2 { font-size: 11px; }
+#abstract .truncate { max-height: 112px; overflow: hidden; }
+#affected-container { float: left; width: 48%; }
+#indicator-container { padding-bottom: 15px; }
+.indicator { height: 28px; color: rgb(138, 138, 138); font-size: 11px; font-weight: bold; margin-bottom: 8px; padding: 5px 0px 0px 45px; background: none no-repeat scroll 7px 0px transparent; }
+.indicator.archived { color: rgb(218, 71, 63); background-image: url('i_archived.png'); }
+#rating { margin: 20px 0px; }
+.star-rating, .star-rating a:hover, .star-rating a:active, .star-rating a:focus, .star-rating .current-rating { background: url('star.png') repeat-x scroll left -999px transparent; }
+.star-rating { position: relative; width: 125px; height: 25px; overflow: hidden; list-style: none outside none; margin: 0px; padding: 0px; background-position: left top; }
+.star-rating li { display: inline; padding: 0px ! important; }
+.star-rating a, .star-rating .current-rating { position: absolute; top: 0px; left: 0px; text-indent: -999em; height: 25px; line-height: 25px; outline: medium none; overflow: hidden; border: medium none; }
+.star-rating a:hover, .star-rating a:active, .star-rating a:focus { background-position: left bottom; }
+.star-rating a.one { width: 20%; z-index: 6; }
+.star-rating a.two { width: 40%; z-index: 5; }
+.star-rating a.three { width: 60%; z-index: 4; }
+.star-rating a.four { width: 80%; z-index: 3; }
+.star-rating a.five { width: 100%; z-index: 2; }
+.inline { display: inline-block; vertical-align: middle; }
+#rating-send, #rating-done { display: none; margin: 22px 0px; font-size: 11px; padding: 3px 0px 3px 16px; color: rgb(102, 102, 102); }
+#rating-send { background: url('aqua2spinner12.gif') no-repeat scroll left center transparent; }
+#rating-done { background: url('i_greencheck.gif') no-repeat scroll left center transparent; }
+#article h4 { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+#articlecontent p { overflow: auto; }
+#article #articlecontent li { padding-bottom: 6px; }
+#article #articlecontent li:last-child { padding-bottom: 0px; }
+/* ::::: http://km.support.apple.com/kb/resources/css/announcement.css ::::: */
+
+/* ::::: http://images.apple.com/support/assets/css/global/nav/fr/navigation.css ::::: */
+
+/* ::::: http://images.apple.com/support/assets/css/global/nav/styles/navigation.css ::::: */
+
+#globalheader { position: relative; display: block; width: 980px; height: 36px; margin: 18px auto; text-align: left; z-index: 9998; background: url('globalheader.png') repeat-x scroll 0% 0% transparent; border-radius: 4px 4px 4px 4px; box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3); font: 12px/18px "Lucida Grande","Lucida Sans Unicode",Helvetica,Arial,Verdana,sans-serif; }
+@media only screen and (max-device-width: 768px) {
+	#globalheader { z-index: 1; }
+}
+#globalheader #globalnav { position: relative; display: block; margin: 0px; padding: 0px; z-index: 3; }
+#globalheader #globalnav:after { content: "."; display: block; height: 0px; clear: both; visibility: hidden; }
+#globalheader #globalnav li { display: inline; }
+#globalheader #globalnav li a { float: left; width: 102px; height: 36px; overflow: hidden; text-indent: -9999px; background: url('globalnav.png') no-repeat scroll 0% 0% transparent; cursor: pointer; }
+v\:roundrect, v\:fill {  }
+#globalheader #globalnav li a { background-position: 100% 0px; outline: medium none; }
+#globalheader #globalnav li a.before { background-position: 100% -36px; }
+#globalheader #globalnav li a:hover, #globalheader #globalnav li a:focus { background-position: 100% -72px; }
+#globalheader #globalnav li a:active { background-position: 100% -108px; }
+#globalheader #globalnav li#gn-apple a { background-position: 0px 0px; }
+#globalheader #globalnav li#gn-apple a:hover, #globalheader #globalnav li#gn-apple a:focus { background-position: 0px -72px; }
+#globalheader #globalnav li#gn-apple a:active { background-position: 0px -108px; }
+#globalheader.store li#gn-store a, #globalheader.mac li#gn-mac a, #globalheader.ipod li#gn-ipod a, #globalheader.iphone li#gn-iphone a, #globalheader.ipad li#gn-ipad a, #globalheader.itunes li#gn-itunes a, #globalheader.support li#gn-support a { background-position: right -144px ! important; }
+#globalheader #globalnav li a span { display: block; width: 100%; height: 30px; margin: 3px auto; background: url('globalnav_text.png') no-repeat scroll 50% 0px transparent; }
+#globalheader.svg #globalnav li a span { background-image: url('globalnav_text.svg'); }
+#globalheader #globalnav li#gn-apple a span { background-position: 50% 0px; }
+#globalheader #globalnav li#gn-store a span { background-position: 50% -30px; }
+#globalheader #globalnav li#gn-mac a span { background-position: 50% -60px; }
+#globalheader #globalnav li#gn-ipod a span { background-position: 50% -90px; }
+#globalheader #globalnav li#gn-iphone a span { background-position: 50% -120px; }
+#globalheader #globalnav li#gn-ipad a span { background-position: 50% -150px; }
+#globalheader #globalnav li#gn-itunes a span { background-position: 50% -180px; }
+#globalheader #globalnav li#gn-support a span { background-position: 50% -210px; }
+#globalsearch { position: absolute; top: 0px; right: 0px; width: 140px; padding: 8px 12px; z-index: 5; background: url('globalsearch_bg.png') no-repeat scroll 100% 0px transparent; }
+#g-search { display: block; position: relative; }
+#sp-searchtext { width: 100px; height: 16px; border: 0px none; padding: 2px 20px; color: rgb(255, 255, 255); background: url('globalsearch_field.png') no-repeat scroll 0px 0px transparent; }
+#sp-searchtext:focus { color: rgb(0, 0, 0); background-position: 0px 100%; outline: medium none; }
+#g-search label { display: block; margin-top: -2px; }
+.globalheader-js #g-search { width: 100px; height: 16px; border: 0px none; padding: 2px 20px; color: rgb(255, 255, 255); background: url('globalsearch_field.png') no-repeat scroll 0px 0px transparent; }
+.globalheader-js #sp-searchtext { padding: 0px; color: rgb(255, 255, 255); background: none repeat scroll 0% 0% transparent; }
+#globalsearch .reset { position: absolute; width: 11px; height: 11px; overflow: hidden; z-index: 6; top: 5px; right: 6px; background: url('globalsearch_reset.gif') repeat scroll 0% 0% transparent; }
+#globalsearch .reset, .searchmode #globalsearch .empty .reset { display: none; }
+@media only screen and (max-device-width: 768px) {
+	#globalsearch .reset { display: none ! important; }
+}
+#globalsearch .spinner { position: absolute; display: none; width: 11px; height: 11px; overflow: hidden; z-index: 7; top: 5px; right: 6px; background: url('globalsearch_spinner.gif') repeat scroll 0% 0% transparent; }
+#sp-results { position: absolute; top: 32px; right: 0px; width: 290px; line-height: 0; z-index: 9999; }
+#globalheader #globalnav li a span { background-image: url('globalnav_text_001.png'); }
+#globalheader.svg #globalnav li a span { background-image: url('globalnav_text_001.svg'); }
+/* ::::: http://images.apple.com/support/css/suggest2.css ::::: */
+
+/* ::::: http://images.apple.com/support/assets/css/global/nav/fr/enhanced.css ::::: */
+
+/* ::::: http://images.apple.com/support/assets/css/global/nav/styles/enhanced.css ::::: */
+
+#globalheader, #globalheader #globalnav, #globalheader #globalnav li, #globalheader #globalnav li a { height: 36px; }
+#globalheader { background: -moz-linear-gradient(center top , rgba(0, 0, 0, 0.2) 0px, transparent 5%, transparent 97%, rgba(0, 0, 0, 0.45) 100%) repeat scroll 0% 0%, -moz-linear-gradient(left center , rgba(0, 0, 0, 0.2) 0px, transparent 0.2%, transparent 99.8%, rgba(0, 0, 0, 0.2) 100%) repeat scroll 0% 0%, url('undefined') no-repeat scroll 50% 50%, -moz-linear-gradient(center bottom , rgb(102, 102, 102) 0px, rgb(94, 94, 94) 50%, rgb(112, 112, 112) 51%, rgb(128, 128, 128) 100%) repeat scroll 0% 0% transparent; }
+#globalheader #globalnav { display: table; float: left; width: 845px; table-layout: fixed; }
+#globalheader #globalnav:after { content: ""; display: none; }
+#globalheader #globalnav li { display: table-cell; width: 100%; overflow: hidden; }
+@media not all {
+	#globalheader #globalnav li { width: auto; }
+}
+#globalheader #globalnav li a { display: block; float: none; text-decoration: none; border-width: 0px 2px 0px 1px; border-image: url('undefined') 0 2 0 1; }
+#globalheader #globalnav li a.before { border-image: url('undefined') 0 2 0 1; }
+#globalheader #globalnav li:first-child a { border-width: 0px 2px 0px 0px; border-radius: 4px 0px 0px 4px; }
+#globalheader #globalnav:last-child li:last-child a { border-width: 0px 0px 0px 1px; border-radius: 0px 4px 4px 0px; }
+#globalheader #globalnav li a, #globalheader #globalnav.tabs6-nosearch li a, #globalheader #globalnav.tabs7-nosearch li a, #globalheader #globalnav.nosearch li a, #globalheader #globalnav.tabs7 li a { width: auto; background: none repeat scroll 0% 0% transparent; }
+#globalheader #globalnav li a:hover, #globalheader #globalnav li a:focus, #globalheader #globalnav li#gn-apple a:hover, #globalheader #globalnav li#gn-apple a:focus, #globalheader #globalnav.tabs6-nosearch li.gn-last a:hover, #globalheader #globalnav.tabs6-nosearch li.gn-last a:focus, #globalheader #globalnav.tabs7-nosearch li.gn-last a:hover, #globalheader #globalnav.tabs7-nosearch li.gn-last a:focus, #globalheader #globalnav.nosearch li.gn-last a:hover, #globalheader #globalnav.nosearch li.gn-last a:focus { border-image: url('undefined') 0 2 0 1; background: url('undefined') repeat-x scroll 0px 0px, url('undefined') repeat-y scroll 100% 0px, url('undefined') repeat-y scroll 0px 0px, none repeat scroll 0% 0% rgba(0, 0, 0, 0.4); }
+#globalheader #globalnav li a:active, #globalheader #globalnav li#gn-apple a:active, #globalheader #globalnav.tabs6-nosearch li.gn-last a:active, #globalheader #globalnav.tabs7-nosearch li.gn-last a:active, #globalheader #globalnav.nosearch li.gn-last a:active { border-image: url('undefined') 0 2 0 1; background: url('undefined') repeat-x scroll 100% 0px, url('undefined') repeat-y scroll 100% 0px, url('undefined') repeat-y scroll 0px 0px, none repeat scroll 0% 0% rgba(0, 0, 0, 0.4); }
+#globalheader #globalnav li#gn-apple a:active { background: url('undefined') repeat-x scroll 100% 0px, url('undefined') repeat-y scroll 100% 0px, url('undefined') repeat-y scroll 0px 0px, none repeat scroll 0% 0% rgba(0, 0, 0, 0.4); }
+#globalheader.store #globalnav li#gn-store a, #globalheader.mac #globalnav li#gn-mac a, #globalheader.ipod #globalnav li#gn-ipod a, #globalheader.iphone #globalnav li#gn-iphone a, #globalheader.ipad #globalnav li#gn-ipad a, #globalheader.itunes #globalnav li#gn-itunes a, #globalheader.support #globalnav li#gn-support a { border-image: url('undefined') 0 2 0 1; background: -moz-linear-gradient(center top , rgba(0, 0, 0, 0.8) 0px, transparent 10%, transparent 100%) repeat scroll 0% 0%, -moz-linear-gradient(center top , rgba(0, 0, 0, 0.2) 0px, transparent 30%, transparent 70%, rgba(0, 0, 0, 0.2) 100%) repeat scroll 0% 0%, -moz-linear-gradient(left center , rgba(0, 0, 0, 0.2) 0px, transparent 20%, transparent 80%, rgba(0, 0, 0, 0.2) 100%) repeat scroll 0% 0%, -moz-linear-gradient(center top , rgb(30, 30, 30) 0px, rgb(75, 75, 75) 97%, transparent 97%, rgba(0, 0, 0, 0.45) 100%) repeat scroll 0% 0% transparent; }
+#globalheader.store #globalnav li#gn-store a:focus, #globalheader.mac #globalnav li#gn-mac a:focus, #globalheader.ipod #globalnav li#gn-ipod a:focus, #globalheader.iphone #globalnav li#gn-iphone a:focus, #globalheader.ipad #globalnav li#gn-ipad a:focus, #globalheader.itunes #globalnav li#gn-itunes a:focus, #globalheader.support #globalnav li#gn-support a:focus { background: -moz-linear-gradient(center top , rgba(0, 0, 0, 0.8) 0px, transparent 10%, transparent 100%) repeat scroll 0% 0%, -moz-linear-gradient(center top , rgba(0, 0, 0, 0.2) 0px, transparent 30%, transparent 70%, rgba(0, 0, 0, 0.2) 100%) repeat scroll 0% 0%, -moz-linear-gradient(left center , rgba(0, 0, 0, 0.2) 0px, transparent 20%, transparent 80%, rgba(0, 0, 0, 0.2) 100%) repeat scroll 0% 0%, -moz-linear-gradient(center top , rgb(0, 0, 0) 0px, rgb(38, 38, 38) 100%) repeat scroll 0% 0% transparent; }
+#globalheader #globalsearch { position: absolute; top: 0px; right: 0px; width: 106px; padding: 8px 13px; background: none repeat scroll 0% 0% transparent; border-width: 0px 2px 0px 1px; border-image: url('undefined') 0 2 0 1; }
+#globalheader #g-search { position: relative; padding: 0px; width: 100%; height: auto; background-image: none; background-color: rgba(255, 255, 255, 0.1); border-radius: 12px 12px 12px 12px; box-shadow: 0px 2px 1px rgba(0, 0, 0, 0.6) inset, 0px 1px 0px rgba(255, 255, 255, 0.2); }
+#globalheader #g-search label, #globalheader #g-search .sp-label { margin: 0px; }
+#globalheader #sp-searchtext { width: 100%; height: 19px; padding: 2px 18px 1px 22px; background-image: none; border-radius: 12px 12px 12px 12px; -moz-box-sizing: border-box; }
+#globalsearch .spinner, #globalsearch .reset { top: 5px; right: 5px; }
+#globalsearch .reset { background: url('undefined') repeat scroll 0% 0% transparent; }
+#globalsearch .reset, .searchmode #globalsearch .reset, .searchmode #globalsearch .empty .reset { display: block; opacity: 0; }
+#globalheader #sp-magnify { position: absolute; top: 13px; left: 18px; width: 15px; height: 14px; }
+#globalheader #sp-magnify * { position: absolute; opacity: 1; width: 15px; height: 14px; background: url('undefined') no-repeat scroll 0px 0px transparent; }
+#globalheader #sp-magnify .magnify { opacity: 0; background: url('undefined') no-repeat scroll 0px 0px transparent; }
+#globalheader.svg #sp-magnify * { background-image: url('undefined'); }
+#globalheader.svg #sp-magnify .magnify { background-image: url('undefined'); }
+#globalheader.globalheader-loaded #globalnav, #globalheader.globalheader-loaded #globalsearch, #globalheader.globalheader-loaded #globalsearch .reset, #globalheader.globalheader-loaded #sp-magnify * { transition: width 0.3s ease-in-out 0s; }
+#globalheader.globalheader-loaded #globalsearch .reset, #globalheader.globalheader-loaded #sp-magnify * { transition-property: opacity; }
+#globalheader.globalheader-loaded #g-search {  }
+#globalheader.globalheader-loaded #sp-searchtext {  }
+@media only screen and (min-device-width: 320px) and (max-device-width: 480px) {
+	#globalheader #globalnav, #globalheader.searchmode #globalnav { width: 811px; }
+	#globalheader #globalsearch, #globalheader.searchmode #globalsearch { width: 140px; }
+}
+#globalheader #globalnav, #globalheader #globalsearch, #globalheader #g-search, #globalheader #sp-searchtext, #globalheader #sp-magnify, #globalheader #sp-magnify *, #globalheader #globalsearch .reset { z-index: 0; }
+#globalheader-loaded-test { position: absolute; top: -1px; left: -1px; height: 0px; line-height: 0; width: 0px; }

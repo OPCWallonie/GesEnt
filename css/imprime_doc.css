@@ -1,0 +1,57 @@
+.ui-helper-hidden-accessible { position: absolute; left: -1e+8px; }
+.ui-helper-clearfix:after { content: "."; display: block; height: 0px; clear: both; visibility: hidden; }
+.ui-helper-clearfix { display: inline-block; }
+.ui-helper-clearfix { display: block; }
+.ui-widget { font-family: Verdana,Arial,sans-serif; font-size: 1.1em; }
+.ui-widget-content { border: 1px solid rgb(170, 170, 170); background: url('ui-bg_flat_75_ffffff_40x100.png') repeat-x scroll 50% 50% rgb(255, 255, 255); color: rgb(34, 34, 34); }
+.ui-widget :active { outline: medium none; }
+.ui-corner-all { border-radius: 4px 4px 4px 4px; }
+button.ui-button::-moz-focus-inner { border: 0px none; padding: 0px; }
+.ui-datepicker { width: 17em; padding: 0.2em 0.2em 0px; z-index: 2; display: none; }
+
+
+a.button { display: inline-block; height: 30px; background: url('../images/bouton-right.png') no-repeat scroll 100% 0px transparent; line-height: 30px; font-size: 14px; font-weight: normal; }
+a.button span { display: block; height: 30px; margin-right: 3px; padding: 0px 3px 0px 6px; background: url('../images/bouton-left.png') no-repeat scroll 0px 0px transparent; }
+a.button:hover, a.button:focus { background-position: 100% -30px; text-decoration: none; cursor: pointer; }
+a.button:hover span { background-position: 0px -30px; }
+a.button span img { float: left; margin: 8px 5px 7px 0px; display: inline; }
+
+
+* { margin: 0px; padding: 0px; position: relative; }
+body { color: rgb(0, 0, 0); font: 0.8em/1.3em "Trebuchet MS",Verdana,"Lucida Grande",Tahoma,Helvetica,Sans-Serif; }
+a, a:visited { color: rgb(0, 0, 0); outline: medium none; text-decoration: none; }
+hr { clear: both; visibility: hidden; }
+table { width: 100%; padding: 1px; border-width: 1px; border-style: solid; }
+table th { padding: 8px 5px; }
+table tr td { padding: 8px 5px; background: none repeat scroll 0% 0% rgb(255, 255, 255); border-bottom: 1px solid rgb(204, 204, 204); overflow: hidden; text-overflow: ellipsis; }
+table tr:hover td, table tr.alternate:hover td { background: none repeat scroll 0% 0% rgb(255, 255, 204); }
+.aleft { text-align: left; }
+.acenter { text-align: center; }
+.aright { text-align: right; }
+.gras { font-weight: bold; }
+.margin-top { margin-top: 10px; }
+table#tab_document div { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dotted rgb(0, 0, 0); font-weight: bold; }
+table#tab_document tr:hover td, table#tab_document tr.alternate:hover td { background: none repeat scroll 0% 0% rgb(255, 255, 255); }
+#tab_document tr td { border-left: 1px solid rgb(153, 153, 153); }
+#tab_document tr td:first-child { background: none repeat scroll 0% 0% rgb(226, 226, 226); border-left: 0px none; }
+table#tab_document tr:hover td:first-child { background: none repeat scroll 0% 0% rgb(226, 226, 226); }
+#apercu_devis { border: 1px solid rgb(204, 204, 204); margin: 0px auto; text-align: left; width: 720px; }
+#apercu_devis #mention_wuro_facture { margin: 150px 0px 0px 20px; font-style: italic; }
+
+
+body { background-color: rgb(226, 226, 226); }
+table { border-color: rgb(63, 63, 63); }
+table th { background: none repeat scroll 0% 0% rgb(63, 63, 63); }
+table th, table th a, table th a:visited { color: rgb(204, 204, 204); }
+#apercu_devis { background-color: rgb(255, 255, 255); padding: 0px 30px; }
+.tableau_totaux { float: right; width: 250px; text-align: right; }
+.tableau_tva { float: left; width: 400px; text-align: right; }
+.cocontractants { float: left; width: 400px; text-align: center;}
+.autres_infos { float:inherit;  }
+
+
+body { background: none repeat scroll 0% 0% transparent; }
+
+div.cond_gen {
+	display:none;
+}

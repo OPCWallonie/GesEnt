@@ -1,0 +1,41 @@
+/* Tuto Alsacreations : Faites bonne impression - Feuille styles css imprimante */
+
+body { /* Modifications : la couleur de fond de page - la police - l'unité utilisée pour la taille de la police  */
+	background-color:#fff;
+	font-family:Serif;
+	
+
+}
+
+#page { /* Modifications : suppression de la bordure - marges */
+	margin:0;
+	border:none;
+}
+
+#banner, #menuright, #footer, #button { /* Les éléments qui ne seront pas affichés  */
+	display:none;
+}
+
+
+img.droite {
+  float:right;
+}
+
+table#tab_document {
+ width:700px;	
+}
+
+.bleu {
+background-color: rgb(0, 90, 155); 
+color: rgb(255, 255, 255);	
+}
+
+div#blocTotaux {
+margin-right:10px;	
+}
+
+div.cond_gen {
+	display:block;
+}
+
+

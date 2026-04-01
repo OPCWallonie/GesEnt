@@ -1,0 +1,182 @@
+/* ::::: http://www.wuro.fr/static/css/shadowbox.css ::::: */
+
+#sb-title-inner, #sb-info-inner, #sb-loading-inner, div.sb-message { font-family: "HelveticaNeue-Light","Helvetica Neue",Helvetica,Arial,sans-serif; font-weight: 200; color: rgb(255, 255, 255); }
+#sb-container { position: fixed; margin: 0px; padding: 0px; top: 0px; left: 0px; z-index: 999; text-align: left; visibility: hidden; display: none; }
+#sb-overlay { position: relative; height: 100%; width: 100%; }
+#sb-wrapper { position: absolute; visibility: hidden; width: 100px; }
+#sb-wrapper-inner { position: relative; overflow: hidden; height: 100px; }
+#sb-body { position: relative; height: 100%; }
+#sb-body-inner { position: absolute; height: 100%; width: 100%; }
+#sb-loading { position: relative; height: 100%; }
+#sb-loading-inner { position: absolute; font-size: 14px; line-height: 24px; height: 24px; top: 50%; margin-top: -12px; width: 100%; text-align: center; }
+#sb-loading-inner span { background: url('ajax.gif') no-repeat scroll 0% 0% transparent; padding-left: 34px; display: inline-block; }
+#sb-body, #sb-loading { background-color: rgb(255, 255, 255); }
+#sb-title, #sb-info { position: relative; margin: 0px; padding: 0px; overflow: hidden; }
+#sb-title, #sb-title-inner { height: 26px; line-height: 26px; display: none; }
+#sb-title-inner { font-size: 16px; }
+#sb-info { width: 100%; height: 20px; line-height: 20px; position: absolute; top: 5px; }
+#sb-info-inner { height: 20px; line-height: 20px; }
+#sb-info-inner { font-size: 12px; }
+#sb-nav { float: right; margin-right: 5px; height: 16px; padding: 2px 0px; width: 45%; }
+#sb-nav a { display: block; float: right; height: 16px; width: 16px; margin-left: 3px; cursor: pointer; background-repeat: no-repeat; }
+#sb-nav-close { background-image: url('cross.png'); }
+#sb-nav-next { background-image: url('next.png'); }
+#sb-nav-previous { background-image: url('previous.png'); }
+#sb-nav-play { background-image: url('play.png'); }
+#sb-nav-pause { background-image: url('pause.png'); }
+#sb-counter { float: left; width: 45%; }
+/* ::::: http://www.wuro.fr/static/css/jquery-ui-1.7.2.custom.css ::::: */
+
+.ui-helper-hidden-accessible { position: absolute; left: -1e+8px; }
+.ui-helper-clearfix:after { content: "."; display: block; height: 0px; clear: both; visibility: hidden; }
+.ui-helper-clearfix { display: inline-block; }
+.ui-helper-clearfix { display: block; }
+.ui-widget { font-family: Verdana,Arial,sans-serif; font-size: 1.1em; }
+.ui-widget-content { border: 1px solid rgb(170, 170, 170); background: url('ui-bg_flat_75_ffffff_40x100.png') repeat-x scroll 50% 50% rgb(255, 255, 255); color: rgb(34, 34, 34); }
+.ui-widget :active { outline: medium none; }
+.ui-corner-all { border-radius: 4px 4px 4px 4px; }
+button.ui-button::-moz-focus-inner { border: 0px none; padding: 0px; }
+.ui-datepicker { width: 17em; padding: 0.2em 0.2em 0px; z-index: 2; display: none; }
+/* ::::: http://www.wuro.fr/static/css/css_xav.css ::::: */
+
+.login_error, .pass_error { color: red; background: url('warning.png') no-repeat scroll 0px 2px transparent; padding-left: 21px; display: none; }
+.check_email { background: url('warning.png') no-repeat scroll 0px 2px transparent; padding-left: 21px; color: red; display: none; }
+/* ::::: http://www.wuro.fr/static/css/style.css ::::: */
+
+* { margin: 0px; padding: 0px; position: relative; }
+body { color: rgb(0, 0, 0); font: 0.8em/1.3em "Trebuchet MS",Verdana,"Lucida Grande",Tahoma,Helvetica,Sans-Serif; }
+h2 { margin-bottom: 20px; padding-bottom: 10px; font-size: 1.6em; text-shadow: 1px 1px 0px rgb(204, 204, 204); background: url('hr.png') no-repeat scroll 0px 100% transparent; }
+h3 { margin-bottom: 10px; font-size: 1.2em; }
+a, a:visited { color: rgb(0, 0, 0); outline: medium none; text-decoration: none; }
+img { border: 0px none; display: block; }
+ul { list-style: none outside none; }
+table { width: 100%; padding: 1px; border-width: 1px; border-style: solid; }
+table th { padding: 8px 5px; }
+table tr td { padding: 8px 5px; background: none repeat scroll 0% 0% rgb(255, 255, 255); border-bottom: 1px solid rgb(204, 204, 204); overflow: hidden; text-overflow: ellipsis; }
+table tr:hover td, table tr.alternate:hover td { background: none repeat scroll 0% 0% rgb(255, 255, 204); }
+table tr.alternate td { background: none repeat scroll 0% 0% rgb(230, 230, 230); }
+table tr td.vtop { vertical-align: top; }
+table td a:hover { text-decoration: underline; }
+table tr td img { margin: 0px auto; }
+table a.link_tr { display: none; }
+form p { padding: 5px; line-height: 25px; clear: both; height: auto; min-height: 25px; z-index: 1; }
+form p.acenter { margin-top: 15px; }
+input.textfield, textarea { background-image: url('bg_textfield.png'); background-position: 0px 0px; background-repeat: repeat-x; }
+input.textfield, select, textarea { padding: 4px; background-color: rgb(255, 255, 255); border: 1px solid rgb(191, 191, 191); border-radius: 2px 2px 2px 2px; resize: none; font-weight: normal; }
+input.datepicker, input.code { width: 5em; }
+input:focus, select:focus, textarea:focus { border-color: rgb(60, 60, 60); }
+input.checkbox, input.radio { vertical-align: -2px; }
+select option { padding-right: 10px; }
+fieldset { margin-bottom: 20px; border: 1px solid rgb(230, 230, 230); z-index: 1; }
+label { width: 160px; height: 25px; margin-right: 5px; line-height: 25px; float: left; font-weight: bold; }
+form.search { margin: 10px 0px; padding: 3px; background: none repeat scroll 0% 0% rgb(230, 230, 230); z-index: 1; }
+form.search select { width: 160px; margin-top: 1px; }
+form.search input.string { width: 140px; }
+form.search div.fleft { margin-right: 5px; height: 30px; line-height: 30px; position: relative; }
+.small { font-size: 0.8em; }
+.em { font-style: italic; }
+a.underline { text-decoration: underline; }
+a.underline:hover { text-decoration: none; }
+.aleft { text-align: left; }
+.acenter { text-align: center; }
+.gris { color: rgb(102, 102, 102); }
+.padding5 { padding: 5px; }
+.gris01 { background: none repeat scroll 0% 0% rgb(230, 230, 230); }
+a.button { display: inline-block; height: 30px; background: url('bouton-right.png') no-repeat scroll 100% 0px transparent; line-height: 30px; font-size: 14px; font-weight: normal; }
+a.button span { display: block; height: 30px; margin-right: 3px; padding: 0px 3px 0px 6px; background: url('bouton-left.png') no-repeat scroll 0px 0px transparent; }
+a.button:hover, a.button:focus { background-position: 100% -30px; text-decoration: none; cursor: pointer; }
+a.button:hover span { background-position: 0px -30px; }
+a.button span img { float: left; margin: 8px 5px 7px 0px; display: inline; }
+div.message { margin-bottom: 10px; padding: 5px; }
+div.message.info { background: none repeat scroll 0% 0% rgb(218, 235, 243); border: 1px solid rgb(168, 216, 235); }
+div.message.info span { display: block; background: url('exclamation.png') no-repeat scroll 0px 0px transparent; padding-left: 20px; }
+div.message.info a { text-decoration: underline; }
+p.toggle { width: 928px; font-size: 1.2em; font-weight: bold; margin-bottom: 10px; background: none repeat scroll 0% 0% rgb(204, 204, 204); padding: 5px; z-index: 0; }
+p.toggle a { display: block; width: 907px; padding-left: 21px; background: url('bullet_toggle_plus.png') no-repeat scroll -8px 50% transparent; }
+p.toggle + div { width: 100%; z-index: 1; }
+.margin-top { margin-top: 10px; }
+.margin-right { margin-right: 10px; }
+.margin-bottom { margin-bottom: 10px; }
+.margin-left { margin-left: 10px; }
+.fleft { float: left; }
+.hide { display: none; }
+.box { width: 938px; padding: 20px; border: 1px solid rgb(204, 204, 204); border-radius: 5px 5px 5px 5px; background: none repeat scroll 0% 0% rgb(242, 242, 242); }
+div#header { height: 120px; padding: 10px 0px; border-bottom-width: 1px; border-bottom-style: solid; z-index: 1; }
+div#header-content { width: 980px; height: 120px; margin: 0px auto; }
+ul#tools { position: absolute; width: 461px; top: 18px; left: 250px; }
+ul#tools li { float: left; }
+ul#tools li a { float: left; display: block; width: 80px; height: 14px; padding: 70px 5px 5px; background-repeat: no-repeat; background-position: center top; text-align: center; border-width: 1px; border-style: solid; border-radius: 5px 5px 5px 5px; }
+ul#tools li a.icon-alertes { background-image: url('male-user-warning64.png'); }
+ul#tools li a.icon-contacts { background-image: url('sign-up64.png'); }
+ul#tools li a.icon-docs { background-image: url('folder64.png'); }
+ul#tools li a.icon-prefs { background-image: url('wheel64.png'); }
+ul#tools li a.icon-versions { background-image: url('box64.png'); }
+#nb_notifications { position: absolute; left: 47px; top: 39px; z-index: 1; font-weight: bold; font-size: 17px; width: 20px; display: block; text-align: center; }
+#notifications { position: absolute; left: 60px; top: 80px; border: 1px solid black; width: 275px; background: none repeat scroll 0% 0% rgb(245, 241, 232); color: rgb(0, 0, 0); border-radius: 5px 5px 5px 5px; overflow: hidden; }
+div#header-content #notifications a { color: rgb(0, 0, 0); }
+#notifications h4 { background: none repeat scroll 0% 0% rgb(226, 226, 226); padding: 3px; border-radius: 5px 5px 0px 0px; }
+#notifications p { margin: 5px; }
+#notifications p.acenter { margin: 20px 5px; }
+.fermer_notifications { position: absolute; right: 5px; top: 5px; cursor: pointer; z-index: 2; }
+div#infos_user { width: 248px; height: 108px; float: right; padding: 5px; border: 1px solid rgb(81, 81, 81); border-radius: 5px 5px 5px 5px; }
+div#infos_user h1 { font-size: 18px; font-weight: normal; height: 32px; padding-left: 35px; line-height: 32px; background: url('contact32.png') no-repeat scroll 0% 0% transparent; overflow: hidden; }
+div#infos_user a#deconnexion { margin: 0px 10px 0px 35px; }
+div#infos_user select { width: 248px; font-size: 1.2em; margin-top: 25px; }
+div#menuh { border-width: 1px 0px; height: 40px; border-style: solid; }
+#menuh ul { width: 980px; height: 40px; margin: 0px auto; font-size: 1.4em; line-height: 40px; }
+#menuh ul li { float: left; padding-left: 5px; height: 40px; color: rgb(63, 63, 63); }
+#menuh ul li img { margin-top: 4px; }
+#menuh ul li a { display: block; height: 40px; float: left; padding-right: 25px; background: url('arrow_breadcrumbs.png') no-repeat scroll 100% 0px transparent; color: rgb(113, 113, 113); }
+#menuh ul li a:hover { color: rgb(63, 63, 63); }
+div#contenant { width: 980px; margin: 40px auto; height: auto; min-height: 600px; }
+div#brand { width: 980px; margin: 0px auto 10px; clear: both; text-align: right; line-height: 1; }
+div#brand a, div#brand a:visited { color: rgb(102, 102, 102); font-size: 3em; text-shadow: 1px 1px 0px rgb(255, 255, 255); font-style: italic; }
+div#footer { width: 100%; padding: 5px 0px; border-top: 1px solid rgb(0, 0, 0); position: relative; background: none repeat scroll 0% 0% rgb(63, 63, 63); }
+div#footer p { margin: 0px 5px; color: rgb(204, 204, 204); }
+div#footer p a { color: rgb(204, 204, 204); }
+div#footer p a:hover { color: rgb(255, 255, 255); }
+ul#menu { overflow-y: auto; margin-bottom: 20px; }
+ul#menu li { float: left; font-size: 0.8em; text-align: center; }
+ul#menu li a, #lien_user_add { cursor: pointer; float: left; padding: 5px; text-align: center; }
+ul#menu li a:hover, #lien_user_add:hover { background: none repeat scroll 0% 0% rgb(230, 230, 230); }
+ul#menu li a.actif, ul#menu li a.actif:hover { background: none repeat scroll 0% 0% rgb(204, 204, 204); cursor: default; }
+ul#menu li a img { display: inline; }
+ul#menu li a span { display: block; }
+/* ::::: http://www.wuro.fr/static/css/skin.css ::::: */
+
+body { background-color: rgb(226, 226, 226); }
+table { border-color: rgb(63, 63, 63); }
+table th { background: none repeat scroll 0% 0% rgb(63, 63, 63); }
+table th, table th a, table th a:visited { color: rgb(204, 204, 204); }
+div#header { color: rgb(255, 255, 255); background-color: rgb(63, 63, 63); border-bottom-color: rgb(245, 241, 232); }
+div#header-content a { color: rgb(153, 153, 153); }
+div#header-content a:hover { color: rgb(255, 255, 255); }
+ul#tools li a { border-color: rgb(63, 63, 63); }
+ul#tools li a:hover { border-color: rgb(255, 255, 255); }
+div#menuh { background-color: rgb(245, 241, 232); }
+div#footer a { color: rgb(153, 153, 153); }
+/* ::::: http://www.wuro.fr/static/css/autoComplete.css ::::: */
+
+.suggestionsBox { position: absolute; background-color: rgb(0, 0, 0); top: 43px; width: 200px; border-radius: 5px 5px 5px 5px; border: 2px solid rgb(0, 0, 0); color: rgb(255, 255, 255); display: none; z-index: 100; }
+.suggestionsBox img { top: -12px; left: 30px; }
+/* ::::: http://www.wuro.fr/static/js/jquery.alerts-1.1/jquery.alerts.css ::::: */
+
+/* ::::: http://www.wuro.fr/static/js/jquery-tooltip/jquery.tooltip.css ::::: */
+
+span.toolTip { display: block; height: 16px; width: 16px; z-index: 100; background: url('help.png') no-repeat scroll 0px 0px transparent; cursor: help; float: left; margin-right: 8px; margin-top: 1px; }
+p span.toolTip { margin-top: 4px; }
+
+
+
+p.toggle { width: 928px; font-size: 1.2em; font-weight: bold; margin-top:10px; margin-bottom: 10px; background: none repeat scroll 0% 0% rgb(204, 204, 204); padding: 5px; z-index: 0; }
+p.toggle a { display: block; width: 907px; padding-left: 21px; background: url('../images/bullet_toggle_plus.png') no-repeat scroll -8px 50% transparent; }
+p.toggle.open a { background-image: url('../images/bullet_toggle_minus.png'); }
+p.toggle + div { width: 100%; z-index: 1; }
+.margin-top { margin-top: 10px; }
+.margin-right { margin-right: 10px; }
+.margin-bottom { margin-bottom: 10px; }
+.fleft { float: left; }
+.clear { clear: both; }
+.inline { display: inline; }
+.hide { display: none; }
+.box { width: 938px; padding: 20px; border: 1px solid rgb(204, 204, 204); border-radius: 5px 5px 5px 5px; background: none repeat scroll 0% 0% rgb(242, 242, 242); }
