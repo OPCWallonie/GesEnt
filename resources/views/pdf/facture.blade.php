@@ -15,7 +15,13 @@
 <table width="100%" style="margin-bottom: 25px; border-bottom: 2px solid #1e3a5f; padding-bottom: 10px;">
     <tr>
         <td>
-            <h1>FACTURE</h1>
+            <h1>FACTURE
+                @if($facture->numero_situation)
+                    <span style="font-size: 14px; color: #4338ca; font-weight: normal;">
+                        — Situation n°{{ $facture->numero_situation }}
+                    </span>
+                @endif
+            </h1>
             <p class="doc-ref" style="margin-top: 4px;">
                 <strong>{{ $facture->numero }}</strong>
                 &nbsp;&nbsp;|&nbsp;&nbsp;
@@ -24,7 +30,7 @@
                     &nbsp;&nbsp;|&nbsp;&nbsp; Échéance : <strong>{{ $facture->date_echeance->format('d/m/Y') }}</strong>
                 @endif
                 @if($facture->bonCommande)
-                    <br>Réf. BDC : {{ $facture->bonCommande->numero }}
+                    <br>Réf. marché : {{ $facture->bonCommande->numero }}
                 @endif
                 @if($facture->chantier)
                     &nbsp;&nbsp;| Chantier : {{ $facture->chantier->nom }}
@@ -33,6 +39,49 @@
         </td>
     </tr>
 </table>
+
+{{-- Bloc situation (facturation partielle) --}}
+@if($facture->numero_situation)
+@php $totauxBdc = $facture->bonCommande?->montantTotalAvecAvenants(); @endphp
+<div style="background: #f0f4ff; border: 1px solid #c7d2fe; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px;">
+    <table style="width: 100%; font-size: 11px; color: #312e81;">
+        <tr>
+            <td style="font-weight: bold; font-size: 13px;" colspan="2">
+                Situation n°{{ $facture->numero_situation }}
+                @if($facture->pourcentage_avancement)
+                    — Avancement {{ number_format($facture->pourcentage_avancement, 0) }}%
+                @endif
+            </td>
+        </tr>
+        @if($facture->bonCommande && $totauxBdc)
+        <tr>
+            <td style="padding-top: 6px;">Référence marché :</td>
+            <td style="padding-top: 6px; text-align: right; font-weight: bold;">{{ $facture->bonCommande->numero }}</td>
+        </tr>
+        <tr>
+            <td>Montant total du marché TTC :</td>
+            <td style="text-align: right;">{{ number_format($totauxBdc['ttc'], 2, ',', ' ') }} €</td>
+        </tr>
+        @endif
+        @if($facture->montant_anterieur > 0)
+        <tr>
+            <td>Montant antérieur facturé TTC :</td>
+            <td style="text-align: right;">{{ number_format($facture->montant_anterieur, 2, ',', ' ') }} €</td>
+        </tr>
+        @endif
+        <tr style="font-weight: bold; border-top: 1px solid #c7d2fe;">
+            <td style="padding-top: 6px;">Montant de la présente situation :</td>
+            <td style="padding-top: 6px; text-align: right;">{{ number_format($facture->montant_ttc, 2, ',', ' ') }} €</td>
+        </tr>
+        @if($facture->pourcentage_cumule)
+        <tr>
+            <td>Avancement cumulé :</td>
+            <td style="text-align: right; font-weight: bold;">{{ number_format($facture->pourcentage_cumule, 0) }}%</td>
+        </tr>
+        @endif
+    </table>
+</div>
+@endif
 
 @php $document = $facture; @endphp
 @include('pdf.partials.entete')

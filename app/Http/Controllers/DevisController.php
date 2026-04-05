@@ -129,7 +129,7 @@ class DevisController extends Controller
 
     public function edit(Devis $devis)
     {
-        if ($devis->statut->is(DevisArchive::class)) {
+        if ($devis->statut instanceof DevisArchive) {
             return redirect()->route('devis.show', $devis)->with('error', 'Ce devis est archivé.');
         }
 
@@ -199,9 +199,55 @@ class DevisController extends Controller
         return redirect()->route('devis.index')->with('success', "Devis {$devis->numero} supprimé.");
     }
 
+    public function dupliquer(Devis $devis)
+    {
+        $devis->load('lignes');
+
+        $nouveau = DB::transaction(function () use ($devis) {
+            $nouveau = Devis::create([
+                'numero'           => $this->numerotation->suivant('devis'),
+                'client_id'        => $devis->client_id,
+                'chantier_id'      => null,
+                'mode_paiement_id' => $devis->mode_paiement_id,
+                'created_by'       => auth()->id(),
+                'statut'           => 'brouillon',
+                'date_document'    => now()->toDateString(),
+                'date_validite'    => now()->addDays(30)->toDateString(),
+                'frais_port'       => $devis->frais_port,
+                'ristourne_globale' => $devis->ristourne_globale,
+                'acompte'          => $devis->acompte,
+                'delai_reglement'  => $devis->delai_reglement,
+                'notes'            => $devis->notes,
+            ]);
+
+            foreach ($devis->lignes as $ligne) {
+                $nouveau->lignes()->create([
+                    'ordre'         => $ligne->ordre,
+                    'est_section'   => $ligne->est_section,
+                    'produit_id'    => $ligne->produit_id,
+                    'designation'   => $ligne->designation,
+                    'detail'        => $ligne->detail,
+                    'unite'         => $ligne->unite,
+                    'quantite'      => $ligne->quantite,
+                    'prix_unitaire' => $ligne->prix_unitaire,
+                    'remise_valeur' => $ligne->remise_valeur,
+                    'remise_type'   => $ligne->remise_type,
+                    'taux_tva'      => $ligne->taux_tva,
+                    'montant_ht'    => $ligne->montant_ht,
+                ]);
+            }
+
+            $this->documentService->recalculerMontants($nouveau);
+            return $nouveau;
+        });
+
+        return redirect()->route('devis.edit', $nouveau)
+            ->with('success', "Devis dupliqué depuis {$devis->numero}. Modifiez le client et les détails.");
+    }
+
     public function convertirEnBdc(Devis $devis)
     {
-        if (!$devis->statut->is(DevisValide::class)) {
+        if (!($devis->statut instanceof DevisValide)) {
             return back()->with('error', 'Le devis doit être validé pour être converti.');
         }
         if ($devis->bonCommande) {

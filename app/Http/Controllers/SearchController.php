@@ -39,12 +39,14 @@ class SearchController extends Controller
             ->where('actif', true)
             ->limit(4)
             ->get(['id', 'nom', 'ville'])
-            ->each(fn($c) => $results[] = [
-                'type'  => 'Client',
-                'icon'  => 'users',
-                'label' => $c->nom . ($c->ville ? " — {$c->ville}" : ''),
-                'url'   => route('clients.show', $c),
-            ]);
+            ->each(function ($c) use (&$results) {
+                $results[] = [
+                    'type'  => 'Client',
+                    'icon'  => 'users',
+                    'label' => $c->nom . ($c->ville ? " — {$c->ville}" : ''),
+                    'url'   => route('clients.show', $c),
+                ];
+            });
 
         // Chantiers : nom, adresse, ville, code postal
         Chantier::where(function ($query) use ($like) {
@@ -56,14 +58,16 @@ class SearchController extends Controller
             ->with('client:id,nom')
             ->limit(4)
             ->get(['id', 'nom', 'client_id', 'ville'])
-            ->each(fn($c) => $results[] = [
-                'type'  => 'Chantier',
-                'icon'  => 'building',
-                'label' => $c->nom
-                    . ($c->ville ? " ({$c->ville})" : '')
-                    . ($c->client ? " — {$c->client->nom}" : ''),
-                'url'   => route('chantiers.show', $c),
-            ]);
+            ->each(function ($c) use (&$results) {
+                $results[] = [
+                    'type'  => 'Chantier',
+                    'icon'  => 'building',
+                    'label' => $c->nom
+                        . ($c->ville ? " ({$c->ville})" : '')
+                        . ($c->client ? " — {$c->client->nom}" : ''),
+                    'url'   => route('chantiers.show', $c),
+                ];
+            });
 
         // Devis : numéro, nom client, désignation des lignes
         Devis::where(function ($query) use ($like) {
@@ -74,14 +78,16 @@ class SearchController extends Controller
             ->with('client:id,nom')
             ->limit(4)
             ->get(['id', 'numero', 'client_id', 'montant_ttc'])
-            ->each(fn($d) => $results[] = [
-                'type'  => 'Devis',
-                'icon'  => 'document',
-                'label' => $d->numero
-                    . ($d->client ? ' — ' . $d->client->nom : '')
-                    . ' (' . number_format($d->montant_ttc, 0, ',', ' ') . ' €)',
-                'url'   => route('devis.show', $d),
-            ]);
+            ->each(function ($d) use (&$results) {
+                $results[] = [
+                    'type'  => 'Devis',
+                    'icon'  => 'document',
+                    'label' => $d->numero
+                        . ($d->client ? ' — ' . $d->client->nom : '')
+                        . ' (' . number_format($d->montant_ttc, 0, ',', ' ') . ' €)',
+                    'url'   => route('devis.show', $d),
+                ];
+            });
 
         // Bons de commande : numéro, nom client, désignation des lignes
         BonCommande::where(function ($query) use ($like) {
@@ -92,14 +98,16 @@ class SearchController extends Controller
             ->with('client:id,nom')
             ->limit(4)
             ->get(['id', 'numero', 'client_id', 'montant_ttc'])
-            ->each(fn($b) => $results[] = [
-                'type'  => 'Bon de commande',
-                'icon'  => 'document',
-                'label' => $b->numero
-                    . ($b->client ? ' — ' . $b->client->nom : '')
-                    . ' (' . number_format($b->montant_ttc, 0, ',', ' ') . ' €)',
-                'url'   => route('bons-commande.show', $b),
-            ]);
+            ->each(function ($b) use (&$results) {
+                $results[] = [
+                    'type'  => 'Bon de commande',
+                    'icon'  => 'document',
+                    'label' => $b->numero
+                        . ($b->client ? ' — ' . $b->client->nom : '')
+                        . ' (' . number_format($b->montant_ttc, 0, ',', ' ') . ' €)',
+                    'url'   => route('bons-commande.show', $b),
+                ];
+            });
 
         // Factures : numéro, nom client, désignation des lignes
         Facture::where(function ($query) use ($like) {
@@ -110,14 +118,16 @@ class SearchController extends Controller
             ->with('client:id,nom')
             ->limit(4)
             ->get(['id', 'numero', 'client_id', 'montant_ttc', 'statut'])
-            ->each(fn($f) => $results[] = [
-                'type'  => 'Facture',
-                'icon'  => 'currency',
-                'label' => $f->numero
-                    . ($f->client ? ' — ' . $f->client->nom : '')
-                    . ' (' . number_format($f->montant_ttc, 0, ',', ' ') . ' €)',
-                'url'   => route('factures.show', $f),
-            ]);
+            ->each(function ($f) use (&$results) {
+                $results[] = [
+                    'type'  => 'Facture',
+                    'icon'  => 'currency',
+                    'label' => $f->numero
+                        . ($f->client ? ' — ' . $f->client->nom : '')
+                        . ' (' . number_format($f->montant_ttc, 0, ',', ' ') . ' €)',
+                    'url'   => route('factures.show', $f),
+                ];
+            });
 
         // Factures d'achat : numéro, nom fournisseur
         FactureAchat::where(function ($query) use ($like) {
@@ -127,14 +137,16 @@ class SearchController extends Controller
             ->with('fournisseur:id,nom')
             ->limit(3)
             ->get(['id', 'numero', 'fournisseur_id', 'montant_ttc'])
-            ->each(fn($fa) => $results[] = [
-                'type'  => 'Facture achat',
-                'icon'  => 'currency',
-                'label' => $fa->numero
-                    . ($fa->fournisseur ? ' — ' . $fa->fournisseur->nom : '')
-                    . ' (' . number_format($fa->montant_ttc, 0, ',', ' ') . ' €)',
-                'url'   => route('factures-achat.show', $fa),
-            ]);
+            ->each(function ($fa) use (&$results) {
+                $results[] = [
+                    'type'  => 'Facture achat',
+                    'icon'  => 'currency',
+                    'label' => $fa->numero
+                        . ($fa->fournisseur ? ' — ' . $fa->fournisseur->nom : '')
+                        . ' (' . number_format($fa->montant_ttc, 0, ',', ' ') . ' €)',
+                    'url'   => route('factures-achat.show', $fa),
+                ];
+            });
 
         // Fournisseurs : nom, email, n° TVA
         Fournisseur::where(function ($query) use ($like) {
@@ -144,12 +156,14 @@ class SearchController extends Controller
             })
             ->limit(3)
             ->get(['id', 'nom'])
-            ->each(fn($f) => $results[] = [
-                'type'  => 'Fournisseur',
-                'icon'  => 'users',
-                'label' => $f->nom,
-                'url'   => route('fournisseurs.show', $f),
-            ]);
+            ->each(function ($f) use (&$results) {
+                $results[] = [
+                    'type'  => 'Fournisseur',
+                    'icon'  => 'users',
+                    'label' => $f->nom,
+                    'url'   => route('fournisseurs.show', $f),
+                ];
+            });
 
         return response()->json($results);
     }

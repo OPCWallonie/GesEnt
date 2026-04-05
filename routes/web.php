@@ -42,6 +42,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Documents — Devis
     Route::resource('devis', DevisController::class);
+    Route::post('devis/{devis}/dupliquer', [DevisController::class, 'dupliquer'])->name('devis.dupliquer');
     Route::post('devis/{devis}/convertir-bdc', [DevisController::class, 'convertirEnBdc'])->name('devis.convertir-bdc');
     Route::post('devis/{devis}/envoyer', [DevisController::class, 'envoyer'])->name('devis.envoyer');
     Route::get('devis/{devis}/pdf', [DevisController::class, 'pdf'])->name('devis.pdf');
@@ -98,9 +99,10 @@ Route::middleware(['auth'])->group(function () {
     // Statistiques & Exports — comptable + admin
     Route::middleware(['role:admin|comptable'])->group(function () {
         Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');
-        Route::get('/export/factures',       [ExportController::class, 'factures'])->name('export.factures');
-        Route::get('/export/factures-achat', [ExportController::class, 'facturesAchat'])->name('export.factures-achat');
-        Route::get('/export/devis',          [ExportController::class, 'devis'])->name('export.devis');
+        Route::get('/export/factures',           [ExportController::class, 'factures'])->name('export.factures');
+        Route::get('/export/factures-achat',     [ExportController::class, 'facturesAchat'])->name('export.factures-achat');
+        Route::get('/export/devis',              [ExportController::class, 'devis'])->name('export.devis');
+        Route::get('/export/factures-pdf-zip',   [ExportController::class, 'facturesPdfZip'])->name('export.factures-pdf-zip');
     });
 
     // Gestion des utilisateurs — admin uniquement

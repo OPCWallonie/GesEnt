@@ -112,7 +112,7 @@ class Facture extends Model
             'date_paiement'      => $dernierPaiement?->date_paiement,
         ]);
 
-        if ($total >= $this->montant_net_a_payer && !$this->statut->is(Payee::class)) {
+        if ($total >= $this->montant_net_a_payer && !($this->statut instanceof Payee)) {
             try {
                 $this->statut->transitionTo(Payee::class);
             } catch (TransitionNotFound $e) {

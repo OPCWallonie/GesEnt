@@ -119,6 +119,41 @@
             </div>
             @endif
 
+            {{-- Graphique avancement financier --}}
+            @if(count($moisLabels) > 1)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <h3 class="font-semibold text-gray-700 mb-3 text-sm">Avancement financier</h3>
+                <canvas id="chartChantier" height="160"></canvas>
+            </div>
+            @endif
+
+            {{-- Barres de progression facturation / encaissement --}}
+            @if($pctFacture > 0 || $pctPaye > 0)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <h3 class="font-semibold text-gray-700 mb-3 text-sm">Progression</h3>
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gray-500">Facturé</span>
+                            <span class="font-medium text-blue-700">{{ number_format($pctFacture, 0) }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2.5">
+                            <div class="bg-blue-500 h-2.5 rounded-full" style="width: {{ $pctFacture }}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gray-500">Encaissé</span>
+                            <span class="font-medium text-green-700">{{ number_format($pctPaye, 0) }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2.5">
+                            <div class="bg-green-500 h-2.5 rounded-full" style="width: {{ $pctPaye }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             {{-- Avancement --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                 <div class="flex items-center justify-between mb-2">
@@ -398,4 +433,63 @@
         </div>
     </div>
 
+@if(count($moisLabels) > 1)
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chartChantier'), {
+    type: 'line',
+    data: {
+        labels: @json($moisLabels),
+        datasets: [
+            {
+                label: 'Ventes cumulées',
+                data: @json($ventesParMois),
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.08)',
+                fill: true,
+                tension: 0.3,
+            },
+            {
+                label: 'Achats cumulés',
+                data: @json($achatsParMois),
+                borderColor: '#f97316',
+                backgroundColor: 'rgba(249,115,22,0.08)',
+                fill: true,
+                tension: 0.3,
+            },
+            {
+                label: 'Marge cumulée',
+                data: @json($margeCumulee),
+                borderColor: '#22c55e',
+                borderDash: [5, 5],
+                fill: false,
+                tension: 0.3,
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ctx.dataset.label + ': ' +
+                        new Intl.NumberFormat('fr-BE', {style:'currency', currency:'EUR'}).format(ctx.raw)
+                }
+            }
+        },
+        scales: {
+            y: {
+                ticks: {
+                    callback: v => new Intl.NumberFormat('fr-BE', {
+                        notation: 'compact', compactDisplay: 'short',
+                        style: 'currency', currency: 'EUR'
+                    }).format(v)
+                }
+            }
+        }
+    }
+});
+</script>
+@endif
 </x-app-layout>

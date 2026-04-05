@@ -78,7 +78,7 @@ class RelancerFactures extends Command
                 ]);
 
                 // Transition vers en_retard via la machine à états (idempotente)
-                if (!$facture->statut->is(EnRetard::class)) {
+                if (!($facture->statut instanceof EnRetard)) {
                     try {
                         $facture->statut->transitionTo(EnRetard::class);
                     } catch (TransitionNotFound $e) {

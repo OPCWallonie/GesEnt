@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Chantier;
 use App\Models\Client;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ChantierController extends Controller
@@ -64,7 +65,67 @@ class ChantierController extends Controller
         $factures      = $chantier->factures()->latest('date_document')->get();
         $facturesAchat = $chantier->facturesAchat()->with('fournisseur')->latest('date_document')->get();
 
-        return view('chantiers.show', compact('chantier', 'devis', 'bonsCommande', 'factures', 'facturesAchat'));
+        // Graphique avancement financier mensuel
+        $moisLabels    = [];
+        $ventesParMois = [];
+        $achatsParMois = [];
+        $margeCumulee  = [];
+
+        $premiereFacture      = $chantier->factures()->orderBy('date_document')->first();
+        $premiereFactureAchat = $chantier->facturesAchat()->orderBy('date_document')->first();
+        $debut = collect([$premiereFacture?->date_document, $premiereFactureAchat?->date_document])
+            ->filter()->min();
+
+        if ($debut) {
+            $debut       = Carbon::parse($debut)->startOfMonth();
+            $fin         = now()->endOfMonth();
+            $cumulVentes = 0;
+            $cumulAchats = 0;
+            $cursor      = $debut->copy();
+
+            while ($cursor <= $fin) {
+                $debutMois = $cursor->copy()->startOfMonth();
+                $finMois   = $cursor->copy()->endOfMonth();
+
+                $ventesMois = $chantier->factures()
+                    ->whereIn('statut', ['en_attente', 'envoyee', 'payee', 'en_retard'])
+                    ->whereBetween('date_document', [$debutMois, $finMois])
+                    ->sum('montant_ttc');
+
+                $achatsMois = $chantier->facturesAchat()
+                    ->whereBetween('date_document', [$debutMois, $finMois])
+                    ->sum('montant_ttc');
+
+                $cumulVentes += $ventesMois;
+                $cumulAchats += $achatsMois;
+
+                $moisLabels[]    = $cursor->locale('fr')->isoFormat('MMM YY');
+                $ventesParMois[] = round($cumulVentes, 2);
+                $achatsParMois[] = round($cumulAchats, 2);
+                $margeCumulee[]  = round($cumulVentes - $cumulAchats, 2);
+
+                $cursor->addMonth();
+            }
+        }
+
+        // Barres de progression facturation / encaissement
+        $ventes     = $chantier->totalVentes();
+        $pctFacture = 0;
+        $pctPaye    = 0;
+        if ($ventes > 0 || $bonsCommande->isNotEmpty()) {
+            $totalBdc = $bonsCommande->sum(fn($b) => $b->montantTotalAvecAvenants()['ttc']);
+            if ($totalBdc > 0) {
+                $pctFacture = min(100, ($ventes / $totalBdc) * 100);
+                $totalPaye  = $chantier->factures()->where('statut', 'payee')->sum('montant_paye');
+                $pctPaye    = min(100, ($totalPaye / $totalBdc) * 100);
+            }
+        }
+
+        return view('chantiers.show', compact(
+            'chantier', 'devis', 'bonsCommande', 'factures', 'facturesAchat',
+            'moisLabels', 'ventesParMois', 'achatsParMois', 'margeCumulee',
+            'pctFacture', 'pctPaye'
+        ));
     }
 
     public function edit(Chantier $chantier)

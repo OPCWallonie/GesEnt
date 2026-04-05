@@ -154,7 +154,7 @@ class FactureController extends Controller
 
     public function edit(Facture $facture)
     {
-        if ($facture->statut->is(Payee::class)) {
+        if ($facture->statut instanceof Payee) {
             return redirect()->route('factures.show', $facture)->with('error', 'Une facture payée ne peut plus être modifiée.');
         }
 
@@ -238,7 +238,7 @@ class FactureController extends Controller
 
     public function destroy(Facture $facture)
     {
-        if ($facture->statut->is(Payee::class)) {
+        if ($facture->statut instanceof Payee) {
             return back()->with('error', 'Impossible de supprimer une facture payée.');
         }
         DB::transaction(function () use ($facture) {
@@ -287,7 +287,7 @@ class FactureController extends Controller
         try {
             Mail::to($data['email'])->send(new FactureEnvoyee($facture, $data['message'] ?? ''));
 
-            if ($facture->statut->is(EnAttente::class)) {
+            if ($facture->statut instanceof EnAttente) {
                 $facture->statut->transitionTo(Envoyee::class);
             }
 
@@ -299,7 +299,7 @@ class FactureController extends Controller
 
     public function relancer(Facture $facture)
     {
-        if ($facture->statut->is(Payee::class)) {
+        if ($facture->statut instanceof Payee) {
             return back()->with('error', 'Cette facture est déjà payée.');
         }
         $facture->enregistrerRelance();
@@ -336,7 +336,7 @@ class FactureController extends Controller
 
     public function pdf(Facture $facture)
     {
-        $facture->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande');
+        $facture->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande.avenants');
         $parametres = ParametresEntreprise::instance();
         $totauxTva  = $this->documentService->calculerTotauxTva($facture->lignes);
 
