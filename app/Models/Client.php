@@ -13,11 +13,12 @@ class Client extends Model
         'nom', 'statut_juridique', 'adresse', 'code_postal', 'ville', 'pays',
         'telephone', 'fax', 'gsm', 'email', 'site_web',
         'numero_tva', 'numero_affiliation', 'code_client',
-        'notes', 'actif',
+        'notes', 'actif', 'coefficient_marge',
     ];
 
     protected $casts = [
-        'actif' => 'boolean',
+        'actif'             => 'boolean',
+        'coefficient_marge' => 'decimal:2',
     ];
 
     public function chantiers()

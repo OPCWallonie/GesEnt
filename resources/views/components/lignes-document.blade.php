@@ -380,18 +380,28 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
             this.catalogLoading = false;
         },
 
+        appliquerMarge(prixBase, coeff) {
+            if (!coeff || coeff <= 0) return prixBase;
+            return Math.round(prixBase * (1 + coeff / 100) * 100) / 100;
+        },
+
         ajouterDepuisCatalogue(produit) {
+            const coeff  = window.coefficientMargeActuel || 0;
+            const prix   = coeff > 0 && produit.prix_base > 0
+                ? this.appliquerMarge(parseFloat(produit.prix_base), coeff)
+                : parseFloat(produit.prix) || 0;
+
             this.lignes.push({
                 designation:   produit.designation,
                 detail:        produit.reference ? `Réf. ${produit.reference} — ${produit.fournisseur}` : '',
                 unite:         produit.unite,
                 quantite:      1,
-                prix_unitaire: parseFloat(produit.prix) || 0,
+                prix_unitaire: prix,
                 remise_valeur: 0,
                 remise_type:   'montant',
                 taux_tva:      parseFloat(produit.taux_tva) || tvaDefaut,
                 est_section:   false,
-                montant_ht:    parseFloat(produit.prix) || 0,
+                montant_ht:    prix,
             });
             this.catalogOpen = false;
         },

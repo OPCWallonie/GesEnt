@@ -45,6 +45,7 @@ class ClientController extends Controller
             'numero_affiliation'  => 'nullable|string|max:20',
             'code_client'         => 'nullable|string|max:20|unique:clients',
             'notes'               => 'nullable|string',
+            'coefficient_marge'   => 'nullable|numeric|min:0|max:200',
         ]);
 
         $client = Client::create($data);
@@ -103,6 +104,7 @@ class ClientController extends Controller
             'numero_affiliation'  => 'nullable|string|max:20',
             'code_client'         => 'nullable|string|max:20|unique:clients,code_client,' . $client->id,
             'notes'               => 'nullable|string',
+            'coefficient_marge'   => 'nullable|numeric|min:0|max:200',
         ]);
 
         $client->update($data);
@@ -123,9 +125,14 @@ class ClientController extends Controller
         return response()->json(
             $client->chantiers()
                 ->where('statut', 'actif')
-                ->select('id', 'nom')
+                ->select('id', 'nom', 'coefficient_marge')
                 ->orderBy('nom')
                 ->get()
+                ->map(fn($c) => [
+                    'id'               => $c->id,
+                    'nom'              => $c->nom,
+                    'coefficient_marge' => (float) ($c->coefficient_marge ?? $client->coefficient_marge ?? 0),
+                ])
         );
     }
 }

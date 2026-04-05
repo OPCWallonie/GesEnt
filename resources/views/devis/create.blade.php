@@ -6,10 +6,14 @@
               clientId: '{{ old('client_id', $clientSelectionne?->id ?? '') }}',
               chantiers: @js($chantiers ?? collect()),
               chargerChantiers(id) {
-                  if (!id) { this.chantiers = []; return; }
+                  if (!id) { this.chantiers = []; window.coefficientMargeActuel = 0; return; }
                   fetch('/api/clients/' + id + '/chantiers')
                       .then(r => r.json())
                       .then(data => { this.chantiers = data; });
+              },
+              changerChantier(id) {
+                  const c = this.chantiers.find(c => c.id == id);
+                  window.coefficientMargeActuel = c ? (c.coefficient_marge || 0) : 0;
               }
           }"
           x-init="clientId && chargerChantiers(clientId)">
@@ -39,7 +43,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Chantier</label>
-                            <select name="chantier_id"
+                            <select name="chantier_id" @change="changerChantier($event.target.value)"
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option value="">Aucun chantier</option>
                                 <template x-for="c in chantiers" :key="c.id">

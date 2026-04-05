@@ -61,7 +61,7 @@ class CatalogController extends Controller
             ->when($fournisseur, fn($query) => $query->where('fournisseur', $fournisseur))
             ->orderByRaw('en_stock DESC')
             ->limit(15)
-            ->get(['id', 'fournisseur', 'reference', 'designation', 'unite', 'prix_revente', 'taux_tva', 'en_stock', 'marque']);
+            ->get(['id', 'fournisseur', 'reference', 'designation', 'unite', 'prix_revente', 'prix_catalogue', 'taux_tva', 'en_stock', 'marque']);
 
         return response()->json($produits->map(fn($p) => [
             'id'          => $p->id,
@@ -70,6 +70,7 @@ class CatalogController extends Controller
             'designation' => $p->designation . ($p->marque ? " ({$p->marque})" : ''),
             'unite'       => $p->unite,
             'prix'        => (float) $p->prix_revente,
+            'prix_base'   => (float) $p->prix_catalogue,
             'taux_tva'    => (float) $p->taux_tva,
             'en_stock'    => $p->en_stock,
         ]));

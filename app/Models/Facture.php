@@ -19,6 +19,7 @@ class Facture extends Model
         'montant_net_a_payer', 'delai_reglement',
         'date_paiement', 'montant_paye', 'montant_total_paye', 'notes',
         'nb_relances', 'derniere_relance_at',
+        'numero_situation', 'pourcentage_avancement', 'pourcentage_cumule', 'montant_anterieur',
     ];
 
     protected $casts = [
@@ -39,6 +40,10 @@ class Facture extends Model
         'montant_paye'                 => 'decimal:4',
         'montant_total_paye'           => 'decimal:4',
         'nb_relances'                  => 'integer',
+        'numero_situation'             => 'integer',
+        'pourcentage_avancement'       => 'decimal:2',
+        'pourcentage_cumule'           => 'decimal:2',
+        'montant_anterieur'            => 'decimal:4',
     ];
 
     public function bonCommande()

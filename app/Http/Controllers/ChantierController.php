@@ -45,8 +45,9 @@ class ChantierController extends Controller
             'date_debut'       => 'nullable|date',
             'date_fin_prevue'  => 'nullable|date|after_or_equal:date_debut',
             'date_debut_reel'  => 'nullable|date',
-            'date_fin_reelle'  => 'nullable|date',
-            'notes'            => 'nullable|string',
+            'date_fin_reelle'    => 'nullable|date',
+            'notes'              => 'nullable|string',
+            'coefficient_marge'  => 'nullable|numeric|min:0|max:200',
         ]);
 
         $chantier = Chantier::create($data);
@@ -87,8 +88,9 @@ class ChantierController extends Controller
             'date_debut'       => 'nullable|date',
             'date_fin_prevue'  => 'nullable|date|after_or_equal:date_debut',
             'date_debut_reel'  => 'nullable|date',
-            'date_fin_reelle'  => 'nullable|date',
-            'notes'            => 'nullable|string',
+            'date_fin_reelle'    => 'nullable|date',
+            'notes'              => 'nullable|string',
+            'coefficient_marge'  => 'nullable|numeric|min:0|max:200',
         ]);
 
         $chantier->update($data);

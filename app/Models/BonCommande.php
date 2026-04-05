@@ -57,9 +57,15 @@ class BonCommande extends Model
         return $this->hasMany(Avenant::class)->orderBy('numero_ordre');
     }
 
-    public function facture()
+    public function factures()
     {
-        return $this->hasOne(Facture::class);
+        return $this->hasMany(Facture::class)->orderBy('numero_situation');
+    }
+
+    // Accesseur rétrocompatible : retourne la dernière facture (ou null)
+    public function getFactureAttribute(): ?Facture
+    {
+        return $this->factures->last();
     }
 
     public function lignes()
@@ -87,11 +93,44 @@ class BonCommande extends Model
         ];
     }
 
+    public function pourcentageFacture(): float
+    {
+        return (float) $this->factures()
+            ->whereIn('statut', ['en_attente', 'envoyee', 'payee', 'en_retard'])
+            ->sum('pourcentage_avancement');
+    }
+
+    public function pourcentageRestant(): float
+    {
+        return max(0, 100 - $this->pourcentageFacture());
+    }
+
+    public function montantFacture(): float
+    {
+        return (float) $this->factures()
+            ->whereIn('statut', ['en_attente', 'envoyee', 'payee', 'en_retard'])
+            ->sum('montant_ttc');
+    }
+
+    public function montantRestant(): float
+    {
+        $totaux = $this->montantTotalAvecAvenants();
+        return max(0, $totaux['ttc'] - $this->montantFacture());
+    }
+
     public function peutEtreFacture(): bool
     {
-        if ($this->statut !== 'valide') {
+        if (!in_array($this->statut, ['valide', 'en_cours'])) {
             return false;
         }
-        return $this->avenants->every(fn($a) => $a->statut === 'valide');
+        if (!$this->avenants->every(fn($a) => $a->statut === 'valide')) {
+            return false;
+        }
+        return $this->pourcentageRestant() > 0;
+    }
+
+    public function prochainNumeroSituation(): int
+    {
+        return (int) $this->factures()->max('numero_situation') + 1;
     }
 }

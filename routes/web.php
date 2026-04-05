@@ -73,6 +73,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/produits/search', [ProduitController::class, 'search'])->name('produits.search');
     Route::get('/api/catalog/search', [CatalogController::class, 'search'])->name('catalog.search');
     Route::get('/api/clients/{client}/chantiers', [ClientController::class, 'chantiers'])->name('clients.chantiers');
+    Route::get('/api/chantiers/{chantier}/coefficient-marge', function (\App\Models\Chantier $chantier) {
+        $chantier->load('client');
+        return response()->json(['coefficient_marge' => $chantier->coefficientMargeEffectif()]);
+    })->name('chantiers.coefficient-marge');
 
     // Catalogue fournisseurs
     Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');

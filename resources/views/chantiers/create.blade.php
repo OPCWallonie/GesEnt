@@ -94,11 +94,21 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-                <h2 class="font-semibold text-gray-700 border-b pb-2">Notes internes</h2>
+                <h2 class="font-semibold text-gray-700 border-b pb-2">Notes & marge</h2>
                 <div>
                     <textarea name="notes" rows="4"
                               placeholder="Informations complémentaires, remarques…"
                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">{{ old('notes') }}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Coefficient de marge spécifique (%)
+                        <span class="text-xs text-gray-400 font-normal">— laissez vide pour utiliser la marge du client</span>
+                    </label>
+                    <input type="number" name="coefficient_marge"
+                           value="{{ old('coefficient_marge') }}"
+                           step="0.01" min="0" max="200" placeholder="Ex: 15"
+                           class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
                 </div>
             </div>
 

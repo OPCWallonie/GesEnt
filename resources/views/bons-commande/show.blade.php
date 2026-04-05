@@ -6,30 +6,31 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             PDF
         </a>
-        @if(!$bdc->facture)
+        @if($bdc->factures->isEmpty())
             <a href="{{ route('bons-commande.edit', $bdc) }}"
                class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
                 Modifier
             </a>
-            <a href="{{ route('bons-commande.avenants.create', $bdc) }}"
-               class="inline-flex items-center gap-2 px-3 py-2 border border-indigo-300 text-indigo-700 text-sm rounded-lg hover:bg-indigo-50">
-                + Avenant
-            </a>
         @endif
-        @if($bdc->peutEtreFacture() && !$bdc->facture)
+        <a href="{{ route('bons-commande.avenants.create', $bdc) }}"
+           class="inline-flex items-center gap-2 px-3 py-2 border border-indigo-300 text-indigo-700 text-sm rounded-lg hover:bg-indigo-50">
+            + Avenant
+        </a>
+        @if($bdc->peutEtreFacture())
             <form method="POST" action="{{ route('bons-commande.facturer', $bdc) }}">
                 @csrf
                 <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
-                    Facturer →
+                    Facturer sit. n°{{ $bdc->prochainNumeroSituation() }}
+                    ({{ number_format($bdc->pourcentageRestant(), 0) }}% restant) →
                 </button>
             </form>
         @endif
-        @if($bdc->facture)
-            <a href="{{ route('factures.show', $bdc->facture) }}"
+        @foreach($bdc->factures as $f)
+            <a href="{{ route('factures.show', $f) }}"
                class="inline-flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 text-sm rounded-lg hover:bg-green-200">
-                Facture : {{ $bdc->facture->numero }}
+                Sit. {{ $f->numero_situation }} — {{ $f->numero }}
             </a>
-        @endif
+        @endforeach
     </x-slot>
 
     <div class="grid grid-cols-3 gap-6">
@@ -84,7 +85,7 @@
                 </dl>
             </div>
 
-            @if(!$bdc->facture)
+            @if($bdc->factures->isEmpty())
                 <form method="POST" action="{{ route('bons-commande.destroy', $bdc) }}"
                       onsubmit="return confirm('Supprimer ce BDC et tous ses avenants ?')">
                     @csrf @method('DELETE')
@@ -134,11 +135,51 @@
                 </table>
             </div>
 
+            {{-- Situations facturées --}}
+            @if($bdc->factures->isNotEmpty())
+            <div class="bg-white rounded-xl shadow-sm border border-green-200 overflow-hidden">
+                <div class="px-5 py-4 border-b border-green-100 flex items-center justify-between">
+                    <h3 class="font-semibold text-green-700 text-sm">Situations facturées</h3>
+                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                        {{ number_format($bdc->pourcentageFacture(), 0) }}% facturé
+                    </span>
+                </div>
+                <div class="divide-y divide-green-50">
+                    @foreach($bdc->factures as $facture)
+                    <div class="flex items-center justify-between px-5 py-3 hover:bg-green-50">
+                        <div>
+                            <a href="{{ route('factures.show', $facture) }}" class="font-medium text-green-700 hover:underline text-sm">
+                                Sit. {{ $facture->numero_situation }} — {{ $facture->numero }}
+                            </a>
+                            <x-badge :statut="$facture->statut" />
+                        </div>
+                        <div class="text-right text-sm">
+                            @if($facture->pourcentage_avancement)
+                                <span class="text-gray-500 text-xs">{{ number_format($facture->pourcentage_avancement, 0) }}%</span>
+                            @endif
+                            <span class="font-medium text-gray-700 ml-2">{{ number_format($facture->montant_ttc, 2, ',', ' ') }} €</span>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                <div class="px-5 py-3 bg-green-50 flex justify-between text-sm font-semibold text-green-800">
+                    <span>Total facturé</span>
+                    <span>{{ number_format($bdc->montantFacture(), 2, ',', ' ') }} €
+                          @if($bdc->pourcentageRestant() > 0)
+                              <span class="text-xs font-normal text-gray-500">
+                                  ({{ number_format($bdc->montantRestant(), 2, ',', ' ') }} € restant)
+                              </span>
+                          @endif
+                    </span>
+                </div>
+            </div>
+            @endif
+
             {{-- Avenants --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                     <h3 class="font-semibold text-gray-700">Avenants ({{ $bdc->avenants->count() }})</h3>
-                    @if(!$bdc->facture)
+                    @if($bdc->factures->isEmpty())
                         <a href="{{ route('bons-commande.avenants.create', $bdc) }}"
                            class="text-sm text-indigo-600 hover:underline">+ Ajouter un avenant</a>
                     @endif

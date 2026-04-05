@@ -15,6 +15,60 @@
             <input type="hidden" name="bon_commande_id" value="{{ $bdcSource->id }}">
         @endif
 
+        {{-- Bloc situation (facturation partielle depuis un BDC) --}}
+        @if($infoSituation)
+        <div x-data="{ pct: {{ min(100, $infoSituation['pct_restant']) }} }"
+             class="bg-indigo-50 border border-indigo-200 rounded-xl p-5">
+            <h3 class="font-semibold text-indigo-900 mb-3">
+                Situation n°{{ $infoSituation['numero_situation'] }}
+                — BDC {{ $bdcSource->numero }}
+            </h3>
+
+            @if($infoSituation['factures_precedentes']->isNotEmpty())
+            <div class="text-sm text-indigo-700 mb-3 space-y-1">
+                @foreach($infoSituation['factures_precedentes'] as $fp)
+                <div class="flex justify-between">
+                    <span>Situation {{ $fp->numero_situation }} ({{ $fp->numero }})</span>
+                    <span>{{ number_format($fp->pourcentage_avancement, 0) }}% — {{ number_format($fp->montant_ttc, 2, ',', ' ') }} €</span>
+                </div>
+                @endforeach
+            </div>
+            @endif
+
+            <div class="grid grid-cols-3 gap-4 text-sm mb-4">
+                <div>
+                    <span class="text-indigo-500">Déjà facturé</span>
+                    <div class="font-bold text-indigo-900">{{ number_format($infoSituation['pct_deja_facture'], 0) }}%</div>
+                    <div class="text-xs text-indigo-500">{{ number_format($infoSituation['montant_deja_facture'], 2, ',', ' ') }} €</div>
+                </div>
+                <div>
+                    <span class="text-indigo-500">Reste à facturer</span>
+                    <div class="font-bold text-indigo-900">{{ number_format($infoSituation['pct_restant'], 0) }}%</div>
+                    <div class="text-xs text-indigo-500">{{ number_format($infoSituation['montant_restant'], 2, ',', ' ') }} €</div>
+                </div>
+                <div>
+                    <span class="text-indigo-500">Montant total BDC</span>
+                    <div class="font-bold text-indigo-900">{{ number_format($infoSituation['montant_total_bdc'], 2, ',', ' ') }} €</div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-indigo-800 mb-1">
+                    Avancement de cette situation : <span x-text="pct + '%'" class="font-bold"></span>
+                </label>
+                <input type="range" name="pourcentage_avancement" x-model="pct"
+                       min="1" max="{{ $infoSituation['pct_restant'] }}" step="1"
+                       class="w-full accent-indigo-600">
+                <input type="hidden" name="numero_situation" value="{{ $infoSituation['numero_situation'] }}">
+                <input type="hidden" name="pourcentage_cumule"
+                       :value="{{ $infoSituation['pct_deja_facture'] }} + parseInt(pct)">
+                <p class="text-xs text-indigo-500 mt-1">
+                    Les lignes sont saisies librement ; ce pourcentage est enregistré pour le suivi d'avancement du BDC.
+                </p>
+            </div>
+        </div>
+        @endif
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
             <h2 class="font-semibold text-gray-700 border-b pb-2">Informations</h2>
             <div class="grid grid-cols-2 gap-4">

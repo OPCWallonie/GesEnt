@@ -94,6 +94,17 @@
                     <textarea name="notes" rows="3"
                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm">{{ old('notes', $client->notes) }}</textarea>
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Coefficient de marge par défaut (%)
+                        <span class="text-xs text-gray-400 font-normal">— appliqué sur les prix catalogue</span>
+                    </label>
+                    <input type="number" name="coefficient_marge"
+                           value="{{ old('coefficient_marge', $client->coefficient_marge) }}"
+                           step="0.01" min="0" max="200" placeholder="Ex: 25"
+                           class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                    <p class="text-xs text-gray-400 mt-1">Peut être surchargé par chantier.</p>
+                </div>
             </div>
 
             <div class="flex justify-between">

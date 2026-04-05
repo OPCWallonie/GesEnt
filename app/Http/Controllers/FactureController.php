@@ -40,7 +40,7 @@ class FactureController extends Controller
     public function create(Request $request)
     {
         $bdcSource = $request->bon_commande_id
-            ? BonCommande::with('client', 'chantier', 'modePaiement', 'avenants')->find($request->bon_commande_id)
+            ? BonCommande::with('client', 'chantier', 'modePaiement', 'avenants', 'factures')->find($request->bon_commande_id)
             : null;
 
         $modesPaiement = ModePaiement::actif()->orderBy('nom')->get();
@@ -49,23 +49,41 @@ class FactureController extends Controller
         // Pré-calculer les totaux depuis le BDC + avenants
         $totauxBdc = $bdcSource ? $bdcSource->montantTotalAvecAvenants() : null;
 
-        return view('factures.create', compact('bdcSource', 'modesPaiement', 'tauxTva', 'totauxBdc'));
+        // Informations de situation pour la facturation partielle
+        $infoSituation = null;
+        if ($bdcSource) {
+            $totaux        = $bdcSource->montantTotalAvecAvenants();
+            $infoSituation = [
+                'numero_situation'     => $bdcSource->prochainNumeroSituation(),
+                'pct_deja_facture'     => $bdcSource->pourcentageFacture(),
+                'pct_restant'          => $bdcSource->pourcentageRestant(),
+                'montant_total_bdc'    => $totaux['ttc'],
+                'montant_deja_facture' => $bdcSource->montantFacture(),
+                'montant_restant'      => $bdcSource->montantRestant(),
+                'factures_precedentes' => $bdcSource->factures,
+            ];
+        }
+
+        return view('factures.create', compact('bdcSource', 'modesPaiement', 'tauxTva', 'totauxBdc', 'infoSituation'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'bon_commande_id'      => 'nullable|exists:bons_commande,id',
-            'mode_paiement_id'     => 'nullable|exists:modes_paiement,id',
-            'statut'               => 'required|in:en_attente,envoyee',
-            'date_document'        => 'required|date',
-            'date_echeance'        => 'nullable|date',
-            'frais_port'           => 'nullable|numeric|min:0',
-            'ristourne_globale'    => 'nullable|numeric|min:0|max:100',
-            'acompte_deduit'       => 'nullable|numeric|min:0',
-            'retenue_garantie_pct' => 'nullable|numeric|min:0|max:100',
-            'delai_reglement'      => 'nullable|integer|min:0',
-            'notes'                => 'nullable|string',
+            'bon_commande_id'        => 'nullable|exists:bons_commande,id',
+            'mode_paiement_id'       => 'nullable|exists:modes_paiement,id',
+            'statut'                 => 'required|in:en_attente,envoyee',
+            'date_document'          => 'required|date',
+            'date_echeance'          => 'nullable|date',
+            'frais_port'             => 'nullable|numeric|min:0',
+            'ristourne_globale'      => 'nullable|numeric|min:0|max:100',
+            'acompte_deduit'         => 'nullable|numeric|min:0',
+            'retenue_garantie_pct'   => 'nullable|numeric|min:0|max:100',
+            'delai_reglement'        => 'nullable|integer|min:0',
+            'notes'                  => 'nullable|string',
+            'numero_situation'       => 'nullable|integer|min:1',
+            'pourcentage_avancement' => 'nullable|numeric|min:0|max:100',
+            'pourcentage_cumule'     => 'nullable|numeric|min:0|max:100',
             'lignes'           => 'required|array|min:1',
             'lignes.*.designation'   => 'required|string|max:255',
             'lignes.*.detail'        => 'nullable|string',
@@ -101,6 +119,17 @@ class FactureController extends Controller
 
             $this->documentService->enregistrerLignes($facture, $data['lignes']);
             $this->documentService->recalculerMontants($facture);
+
+            // Champs de situation (facturation partielle)
+            if (!empty($data['numero_situation'])) {
+                $facture->update([
+                    'numero_situation'       => $data['numero_situation'],
+                    'pourcentage_avancement' => $data['pourcentage_avancement'] ?? null,
+                    'pourcentage_cumule'     => $data['pourcentage_cumule'] ?? null,
+                    'montant_anterieur'      => $bdc ? $bdc->montantFacture() - $facture->montant_ttc : 0,
+                ]);
+            }
+
             return $facture;
         });
 

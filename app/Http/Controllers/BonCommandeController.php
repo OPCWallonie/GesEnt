@@ -107,7 +107,7 @@ class BonCommandeController extends Controller
 
     public function show(BonCommande $bonsCommande)
     {
-        $bonsCommande->load('client', 'chantier', 'modePaiement', 'lignes', 'avenants.lignes', 'facture', 'devis');
+        $bonsCommande->load('client', 'chantier', 'modePaiement', 'lignes', 'avenants.lignes', 'factures', 'devis');
         $parametres = ParametresEntreprise::instance();
         $totaux     = $bonsCommande->montantTotalAvecAvenants();
 
@@ -120,7 +120,7 @@ class BonCommandeController extends Controller
 
     public function edit(BonCommande $bonsCommande)
     {
-        if ($bonsCommande->facture) {
+        if ($bonsCommande->factures->isNotEmpty()) {
             return redirect()->route('bons-commande.show', $bonsCommande)
                 ->with('error', 'Ce BDC est déjà facturé.');
         }
@@ -186,7 +186,7 @@ class BonCommandeController extends Controller
 
     public function destroy(BonCommande $bonsCommande)
     {
-        if ($bonsCommande->facture) {
+        if ($bonsCommande->factures->isNotEmpty()) {
             return back()->with('error', 'Impossible de supprimer un BDC facturé.');
         }
         DB::transaction(function () use ($bonsCommande) {
@@ -203,13 +203,13 @@ class BonCommandeController extends Controller
     public function facturer(BonCommande $bonsCommande)
     {
         if (! $bonsCommande->peutEtreFacture()) {
-            return back()->with('error', 'Le BDC et tous ses avenants doivent être validés avant facturation.');
+            return back()->with('error', 'Le BDC doit être validé, ses avenants aussi, et il doit rester du montant à facturer.');
         }
-        if ($bonsCommande->facture) {
-            return redirect()->route('factures.show', $bonsCommande->facture)
-                ->with('error', 'Ce BDC est déjà facturé.');
-        }
-        return redirect()->route('factures.create', ['bon_commande_id' => $bonsCommande->id]);
+
+        return redirect()->route('factures.create', [
+            'bon_commande_id' => $bonsCommande->id,
+            'situation'       => $bonsCommande->prochainNumeroSituation(),
+        ]);
     }
 
     public function pdf(BonCommande $bonsCommande)

@@ -13,15 +13,16 @@ class Chantier extends Model
         'client_id', 'nom', 'description',
         'adresse_chantier', 'code_postal', 'ville', 'pays',
         'statut', 'avancement', 'date_debut', 'date_fin_prevue',
-        'date_debut_reel', 'date_fin_reelle', 'notes',
+        'date_debut_reel', 'date_fin_reelle', 'notes', 'coefficient_marge',
     ];
 
     protected $casts = [
-        'date_debut'      => 'date',
-        'date_fin_prevue' => 'date',
-        'date_debut_reel' => 'date',
-        'date_fin_reelle' => 'date',
-        'avancement'      => 'integer',
+        'date_debut'        => 'date',
+        'date_fin_prevue'   => 'date',
+        'date_debut_reel'   => 'date',
+        'date_fin_reelle'   => 'date',
+        'avancement'        => 'integer',
+        'coefficient_marge' => 'decimal:2',
     ];
 
     public function client()
@@ -68,6 +69,17 @@ class Chantier extends Model
     {
         $ventes = $this->totalVentes();
         return $ventes > 0 ? ($this->marge() / $ventes) * 100 : null;
+    }
+
+    /**
+     * Coefficient de marge effectif : chantier > client > 0
+     */
+    public function coefficientMargeEffectif(): float
+    {
+        if ($this->coefficient_marge !== null && $this->coefficient_marge > 0) {
+            return (float) $this->coefficient_marge;
+        }
+        return (float) ($this->client?->coefficient_marge ?? 0);
     }
 
     public function journal()
