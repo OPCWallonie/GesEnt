@@ -15,9 +15,11 @@ class ParametresEntreprise extends Model
         'logo_path', 'conditions_generales', 'mentions_pied_page',
         'delai_reglement_defaut', 'validite_devis_defaut',
         'ai_provider', 'ai_api_key', 'ai_model', 'ai_url',
+        'peppol_mode', 'peppol_provider', 'peppol_api_key', 'peppol_entity_id',
+        'peppol_id', 'peppol_environment',
     ];
 
-    protected $hidden = ['ai_api_key'];
+    protected $hidden = ['ai_api_key', 'peppol_api_key'];
 
     public static function instance(): self
     {
@@ -44,5 +46,20 @@ class ParametresEntreprise extends Model
     public function aiConfiguree(): bool
     {
         return !empty($this->ai_provider) && (!empty($this->ai_api_key) || $this->ai_provider === 'ollama');
+    }
+
+    // --- Peppol ---
+
+    public function getPeppolApiKeyDecrypteAttribute(): ?string
+    {
+        if (!$this->peppol_api_key) return null;
+        try { return decrypt($this->peppol_api_key); } catch (\Exception) { return null; }
+    }
+
+    public function peppolActif(): bool
+    {
+        return in_array($this->peppol_mode ?? 'desactive', ['envoi', 'complet'])
+            && !empty($this->peppol_provider)
+            && !empty($this->peppol_api_key);
     }
 }

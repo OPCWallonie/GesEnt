@@ -13,6 +13,14 @@
         </a>
     </x-slot>
 
+    @if(($peppolMode ?? 'desactive') === 'desactive')
+    <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4 text-sm text-amber-800 flex items-center gap-2">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Pensez à exporter vos factures vers votre logiciel comptable pour l'envoi Peppol obligatoire.
+        <a href="{{ route('export-comptable.index') }}" class="font-medium underline ml-1">Exporter →</a>
+    </div>
+    @endif
+
     <form method="GET" class="mb-4 flex gap-3">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Numéro ou client…"
                class="flex-1 rounded-lg border-gray-300 shadow-sm text-sm">

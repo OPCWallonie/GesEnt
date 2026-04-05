@@ -40,6 +40,12 @@ class ParametresController extends Controller
             'ai_api_key'              => 'nullable|string|max:500',
             'ai_model'                => 'nullable|string|max:100',
             'ai_url'                  => 'nullable|url|max:200',
+            'peppol_mode'             => 'required|in:desactive,envoi,complet',
+            'peppol_provider'         => 'nullable|in:storecove,billit,einvoice_be',
+            'peppol_api_key'          => 'nullable|string|max:500',
+            'peppol_entity_id'        => 'nullable|string|max:100',
+            'peppol_id'               => 'nullable|string|max:50',
+            'peppol_environment'      => 'nullable|in:sandbox,production',
         ]);
 
         $parametres = ParametresEntreprise::instance();
@@ -64,6 +70,13 @@ class ParametresController extends Controller
             $data['ai_api_key']  = null;
             $data['ai_model']    = null;
             $data['ai_url']      = null;
+        }
+
+        // Clé API Peppol : chiffrer si nouvelle valeur, conserver sinon
+        if (!empty($data['peppol_api_key'])) {
+            $data['peppol_api_key'] = encrypt($data['peppol_api_key']);
+        } else {
+            unset($data['peppol_api_key']);
         }
 
         $parametres->update($data);

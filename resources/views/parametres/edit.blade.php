@@ -211,6 +211,155 @@
             </div>
         </div>
 
+        {{-- Facturation électronique Peppol --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4"
+             id="peppol"
+             x-data="{ mode: '{{ old('peppol_mode', $parametres->peppol_mode ?? 'desactive') }}', provider: '{{ old('peppol_provider', $parametres->peppol_provider) }}' }">
+
+            <h2 class="font-semibold text-gray-700 border-b pb-2">Facturation électronique (Peppol)</h2>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                <p class="font-semibold">Obligation légale belge depuis le 1<sup>er</sup> janvier 2026</p>
+                <p class="mt-1">
+                    Toutes les factures B2B doivent être envoyées via le réseau Peppol.
+                    Les factures PDF par email ne sont plus suffisantes.
+                    Choisissez ci-dessous comment Gesent gère cette obligation.
+                </p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Mode de fonctionnement</label>
+                <div class="space-y-3">
+                    <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer"
+                           :class="mode === 'desactive' ? 'border-amber-300 bg-amber-50' : 'border-gray-200 hover:bg-gray-50'">
+                        <input type="radio" name="peppol_mode" value="desactive" x-model="mode"
+                               class="mt-0.5 text-amber-600 focus:ring-amber-500">
+                        <div>
+                            <span class="font-medium text-gray-900">Peppol désactivé</span>
+                            <span class="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">Nécessite un logiciel comptable</span>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Gesent génère les factures en PDF. Vous devez exporter vers votre logiciel
+                                comptable (Winbooks, BOB, Exact…) qui se charge de l'envoi Peppol.
+                            </p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer"
+                           :class="mode === 'envoi' ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'">
+                        <input type="radio" name="peppol_mode" value="envoi" x-model="mode"
+                               class="mt-0.5 text-blue-600 focus:ring-blue-500">
+                        <div>
+                            <span class="font-medium text-gray-900">Peppol envoi uniquement</span>
+                            <span class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Recommandé</span>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Gesent envoie les factures de vente directement via Peppol + une copie PDF
+                                de courtoisie par email. La réception des factures achats reste gérée par
+                                votre comptable.
+                            </p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer"
+                           :class="mode === 'complet' ? 'border-green-300 bg-green-50' : 'border-gray-200 hover:bg-gray-50'">
+                        <input type="radio" name="peppol_mode" value="complet" x-model="mode"
+                               class="mt-0.5 text-green-600 focus:ring-green-500">
+                        <div>
+                            <span class="font-medium text-gray-900">Peppol complet (autonome)</span>
+                            <span class="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Lot 6B — bientôt disponible</span>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Gesent envoie ET reçoit via Peppol. Les factures fournisseurs arrivent
+                                automatiquement. Pas besoin de logiciel comptable pour l'envoi/réception.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            {{-- Configuration Access Point (visible si mode != desactive) --}}
+            <div x-show="mode !== 'desactive'" x-cloak class="space-y-4 pt-2 border-t border-gray-100">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Access Point Peppol</label>
+                    <select name="peppol_provider" x-model="provider"
+                            class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        <option value="">— Choisir un provider —</option>
+                        <option value="storecove" @selected(old('peppol_provider', $parametres->peppol_provider) === 'storecove')>
+                            Storecove — API REST/JSON, international, sandbox gratuite
+                        </option>
+                        <option value="billit" @selected(old('peppol_provider', $parametres->peppol_provider) === 'billit')>
+                            Billit — Belge, populaire, 15 jours d'essai gratuit
+                        </option>
+                        <option value="einvoice_be" @selected(old('peppol_provider', $parametres->peppol_provider) === 'einvoice_be')>
+                            e-invoice.be — Belge, pay-per-use (0,25 €/facture), SDK PHP
+                        </option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Clé API</label>
+                        <input type="password" name="peppol_api_key"
+                               placeholder="{{ $parametres->peppol_api_key ? '••••••••• (laisser vide pour conserver)' : 'Votre clé API' }}"
+                               autocomplete="new-password"
+                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            ID entité légale
+                            <span class="text-xs text-gray-400 font-normal">— fourni par le provider</span>
+                        </label>
+                        <input type="text" name="peppol_entity_id"
+                               value="{{ old('peppol_entity_id', $parametres->peppol_entity_id) }}"
+                               placeholder="Ex: 12345"
+                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Peppol ID entreprise
+                            <span class="text-xs text-gray-400 font-normal">— format 0208:BEXXXXXXXXXX</span>
+                        </label>
+                        <input type="text" name="peppol_id"
+                               value="{{ old('peppol_id', $parametres->peppol_id) }}"
+                               placeholder="0208:BE0123456789"
+                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm font-mono">
+                        <p class="text-xs text-gray-400 mt-1">0208: = schéma BCE belge, suivi de votre n° d'entreprise.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Environnement</label>
+                        <select name="peppol_environment" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                            <option value="sandbox" @selected(($parametres->peppol_environment ?? 'sandbox') === 'sandbox')>
+                                Sandbox (test)
+                            </option>
+                            <option value="production" @selected(($parametres->peppol_environment ?? '') === 'production')>
+                                Production
+                            </option>
+                        </select>
+                        <p class="text-xs text-amber-600 mt-1">Commencez en sandbox pour tester, puis passez en production.</p>
+                    </div>
+                </div>
+
+                {{-- Infos providers --}}
+                <div class="grid grid-cols-1 gap-2">
+                    <div x-show="provider === 'storecove'" class="text-xs bg-indigo-50 border border-indigo-200 rounded p-3 text-indigo-700">
+                        <strong>Storecove</strong> — API REST/JSON, sandbox gratuite.
+                        Créez un compte sur <em>app.storecove.com</em>, créez une Legal Entity, copiez le <code>legal_entity_id</code>.
+                        <a href="https://www.storecove.com/docs/" target="_blank" class="underline">Documentation API →</a>
+                    </div>
+                    <div x-show="provider === 'billit'" class="text-xs bg-sky-50 border border-sky-200 rounded p-3 text-sky-700">
+                        <strong>Billit</strong> — Solution belge, 15 jours d'essai.
+                        Créez un compte sur <em>app.billit.eu</em>, récupérez votre Party ID dans les paramètres.
+                    </div>
+                    <div x-show="provider === 'einvoice_be'" class="text-xs bg-teal-50 border border-teal-200 rounded p-3 text-teal-700">
+                        <strong>e-invoice.be</strong> — Solution belge pay-per-use (0,25 €/facture).
+                        Créez un compte sur <em>e-invoice.be</em>, récupérez votre clé API dans l'espace client.
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" class="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
                 Sauvegarder

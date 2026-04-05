@@ -59,6 +59,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('factures', FactureController::class);
     Route::get('factures/{facture}/pdf', [FactureController::class, 'pdf'])->name('factures.pdf');
     Route::post('factures/{facture}/envoyer', [FactureController::class, 'envoyer'])->name('factures.envoyer');
+    Route::post('factures/{facture}/envoyer-peppol', [FactureController::class, 'envoyerPeppol'])->name('factures.envoyer-peppol');
     Route::patch('factures/{facture}/marquer-payee', [FactureController::class, 'marquerPayee'])->name('factures.marquer-payee');
     Route::patch('factures/{facture}/relancer', [FactureController::class, 'relancer'])->name('factures.relancer');
     Route::patch('factures/{facture}/liberer-retenue', [FactureController::class, 'libererRetenue'])->name('factures.liberer-retenue');

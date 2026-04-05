@@ -11,6 +11,7 @@ use App\Models\TauxTva;
 use App\Models\Paiement;
 use App\Services\DocumentService;
 use App\Services\NumerotationService;
+use App\Services\PeppolService;
 use App\States\Facture\Archive as FactureArchive;
 use App\States\Facture\EnAttente;
 use App\States\Facture\EnRetard;
@@ -277,24 +278,66 @@ class FactureController extends Controller
         return redirect()->route('factures.show', $facture)->with('success', $message);
     }
 
-    public function envoyer(Request $request, Facture $facture)
+    public function envoyer(Request $request, Facture $facture, PeppolService $peppol)
     {
         $data = $request->validate([
             'email'   => 'required|email',
             'message' => 'nullable|string|max:2000',
         ]);
 
+        $params   = ParametresEntreprise::instance();
+        $resultats = [];
+
+        // 1. Envoi Peppol si activé et pas encore envoyé
+        if ($params->peppolActif() && !$facture->peppol_envoye_at) {
+            $resultatPeppol = $peppol->envoyerFacture($facture);
+            if ($resultatPeppol['success']) {
+                $facture->update([
+                    'peppol_reference' => $resultatPeppol['reference'],
+                    'peppol_envoye_at' => now(),
+                ]);
+                $resultats[] = 'Peppol OK';
+            } else {
+                $resultats[] = 'Peppol échoué : ' . $resultatPeppol['message'];
+            }
+        }
+
+        // 2. Envoi email PDF
         try {
             Mail::to($data['email'])->send(new FactureEnvoyee($facture, $data['message'] ?? ''));
+            $resultats[] = "PDF envoyé à {$data['email']}";
+
+            if ($facture->statut instanceof EnAttente) {
+                $facture->statut->transitionTo(Envoyee::class);
+            }
+        } catch (\Exception $e) {
+            $resultats[] = 'Email échoué : ' . $e->getMessage();
+        }
+
+        $message  = implode(' — ', $resultats);
+        $isError  = str_contains($message, 'échoué') && !str_contains($message, 'OK');
+
+        return back()->with($isError ? 'error' : 'success', "Facture {$facture->numero} : {$message}");
+    }
+
+    public function envoyerPeppol(Facture $facture, PeppolService $peppol)
+    {
+        $resultat = $peppol->envoyerFacture($facture);
+
+        if ($resultat['success']) {
+            $facture->update([
+                'peppol_reference' => $resultat['reference'],
+                'peppol_envoye_at' => now(),
+            ]);
 
             if ($facture->statut instanceof EnAttente) {
                 $facture->statut->transitionTo(Envoyee::class);
             }
 
-            return back()->with('success', "Facture {$facture->numero} envoyée à {$data['email']}.");
-        } catch (\Exception $e) {
-            return back()->with('error', 'Erreur d\'envoi : ' . $e->getMessage() . '. Vérifiez la configuration SMTP dans le fichier .env.');
+            return back()->with('success', $resultat['message']);
         }
+
+        return back()->with('error', $resultat['message']);
     }
 
     public function relancer(Facture $facture)

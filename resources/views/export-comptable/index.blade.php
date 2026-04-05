@@ -3,6 +3,18 @@
 
     <div class="max-w-2xl space-y-6">
 
+        {{-- Rappel Peppol si désactivé --}}
+        @if(($peppolMode ?? 'desactive') === 'desactive')
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
+            <p class="font-semibold">Rappel : envoi Peppol via votre logiciel comptable</p>
+            <p class="mt-1">
+                Après l'import dans votre logiciel comptable (Winbooks, BOB, Exact…),
+                assurez-vous que celui-ci envoie bien les factures via Peppol à vos clients B2B.
+                C'est une obligation légale depuis le 1<sup>er</sup> janvier 2026.
+            </p>
+        </div>
+        @endif
+
         {{-- Info --}}
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
             <p class="font-semibold mb-1">Exports compatibles avec votre logiciel comptable belge</p>

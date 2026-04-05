@@ -16,6 +16,15 @@
             <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                 <div @click.outside="open = false" class="bg-white rounded-xl shadow-xl p-6 w-[480px] space-y-4">
                     <h3 class="font-semibold text-gray-800">Envoyer la facture par email</h3>
+                    @if(($peppolMode ?? 'desactive') === 'desactive')
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <p class="text-xs text-amber-800 font-semibold">Attention — copie de courtoisie uniquement</p>
+                        <p class="text-xs text-amber-700 mt-1">
+                            Ce PDF est envoyé à titre informatif. Pour être conforme à la loi belge,
+                            cette facture doit aussi être transmise via Peppol (directement ou via votre logiciel comptable).
+                        </p>
+                    </div>
+                    @endif
                     <form method="POST" action="{{ route('factures.envoyer', $facture) }}" class="space-y-3">
                         @csrf
                         <div>
@@ -34,12 +43,42 @@
                             <button type="button" @click="open = false"
                                     class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">Annuler</button>
                             <button type="submit"
-                                    class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Envoyer</button>
+                                    class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                                @if(($peppolMode ?? 'desactive') === 'desactive')
+                                    Envoyer copie PDF (courtoisie)
+                                @elseif(($peppolMode ?? '') === 'envoi')
+                                    Envoyer via Peppol + copie PDF
+                                @else
+                                    Envoyer PDF
+                                @endif
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
+        {{-- Bouton Peppol --}}
+        @if(($peppolMode ?? 'desactive') !== 'desactive' && \App\Models\ParametresEntreprise::instance()->peppolActif())
+            @if(!$facture->peppol_envoye_at)
+                <form method="POST" action="{{ route('factures.envoyer-peppol', $facture) }}"
+                      onsubmit="return confirm('Envoyer cette facture via Peppol à {{ addslashes($facture->client->nom) }} ?')">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Envoyer via Peppol
+                    </button>
+                </form>
+            @else
+                <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Peppol {{ $facture->peppol_envoye_at->format('d/m/Y H:i') }}
+                    @if($facture->peppol_reference)
+                        <span class="text-xs text-green-500">({{ $facture->peppol_reference }})</span>
+                    @endif
+                </span>
+            @endif
+        @endif
         {{-- Avoir --}}
         @if((string) $facture->statut !== 'archive')
             <a href="{{ route('avoirs.create', $facture) }}"

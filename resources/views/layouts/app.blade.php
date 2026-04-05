@@ -244,6 +244,43 @@
             </div>
         </header>
 
+        {{-- Avertissement conformité Peppol --}}
+        @if(($peppolMode ?? 'desactive') === 'desactive')
+        <div class="mx-6 mt-3 p-4 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-sm flex items-start gap-3"
+             x-data="{ dismissed: localStorage.getItem('peppol-warning-dismissed') === '{{ now()->toDateString() }}' }"
+             x-show="!dismissed"
+             x-cloak>
+            <svg class="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.072 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+            </svg>
+            <div class="flex-1">
+                <p class="font-semibold">Facturation électronique Peppol non configurée</p>
+                <p class="mt-1">
+                    Depuis le 1<sup>er</sup> janvier 2026, les factures PDF envoyées par email ne sont
+                    <strong>plus valides</strong> pour les transactions B2B en Belgique.
+                    Vos factures doivent transiter par le réseau Peppol ou être exportées vers un logiciel
+                    comptable qui s'en charge.
+                </p>
+                <div class="mt-2 flex items-center gap-3 flex-wrap">
+                    @hasrole('admin')
+                    <a href="{{ route('parametres.edit') }}#peppol"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded-lg hover:bg-amber-700">
+                        Configurer Peppol
+                    </a>
+                    @endhasrole
+                    <a href="{{ route('export-comptable.index') }}"
+                       class="text-xs text-amber-700 hover:underline font-medium">
+                        Exporter vers logiciel comptable →
+                    </a>
+                    <button @click="dismissed = true; localStorage.setItem('peppol-warning-dismissed', '{{ now()->toDateString() }}')"
+                            class="text-xs text-amber-500 hover:text-amber-700 ml-auto">
+                        Masquer pour aujourd'hui
+                    </button>
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- Flash messages --}}
         @if(session('success'))
             <div class="mx-6 mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm flex items-center gap-2"
