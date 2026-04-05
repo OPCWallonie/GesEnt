@@ -6,13 +6,17 @@ use App\Models\Avenant;
 use App\Models\BonCommande;
 use App\Models\ModePaiement;
 use App\Models\TauxTva;
+use App\Services\DocumentService;
 use App\Services\NumerotationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AvenantController extends Controller
 {
-    public function __construct(private NumerotationService $numerotation) {}
+    public function __construct(
+        private NumerotationService $numerotation,
+        private DocumentService $documentService,
+    ) {}
 
     public function create(BonCommande $bonCommande)
     {
@@ -59,8 +63,8 @@ class AvenantController extends Controller
                 'notes'         => $data['notes'] ?? null,
             ]);
 
-            $this->enregistrerLignes($avenant, $data['lignes']);
-            $this->recalculerMontants($avenant);
+            $this->documentService->enregistrerLignes($avenant, $data['lignes']);
+            $this->documentService->recalculerMontants($avenant);
             return $avenant;
         });
 
@@ -112,8 +116,8 @@ class AvenantController extends Controller
                 'notes'         => $data['notes'] ?? null,
             ]);
             $avenant->lignes()->delete();
-            $this->enregistrerLignes($avenant, $data['lignes']);
-            $this->recalculerMontants($avenant);
+            $this->documentService->enregistrerLignes($avenant, $data['lignes']);
+            $this->documentService->recalculerMontants($avenant);
         });
 
         return redirect()->route('bons-commande.show', $avenant->bonCommande)
@@ -131,47 +135,4 @@ class AvenantController extends Controller
             ->with('success', "Avenant {$avenant->numero} supprimé.");
     }
 
-    private function enregistrerLignes($avenant, array $lignes): void
-    {
-        foreach ($lignes as $ordre => $ligneData) {
-            $estSection = ! empty($ligneData['est_section']);
-            $montantHt  = 0;
-
-            if (! $estSection) {
-                $brut   = (float)($ligneData['prix_unitaire'] ?? 0) * (float)($ligneData['quantite'] ?? 1);
-                $remise = ($ligneData['remise_type'] ?? 'montant') === 'pourcentage'
-                    ? $brut * ((float)($ligneData['remise_valeur'] ?? 0) / 100)
-                    : (float)($ligneData['remise_valeur'] ?? 0);
-                $montantHt = max(0, $brut - $remise);
-            }
-
-            $avenant->lignes()->create([
-                'ordre'          => $ordre,
-                'est_section'    => $estSection,
-                'designation'    => $ligneData['designation'],
-                'detail'         => $ligneData['detail'] ?? null,
-                'unite'          => $ligneData['unite'] ?? 'pièce',
-                'quantite'       => $ligneData['quantite'] ?? 1,
-                'prix_unitaire'  => $ligneData['prix_unitaire'] ?? 0,
-                'remise_valeur'  => $ligneData['remise_valeur'] ?? 0,
-                'remise_type'    => $ligneData['remise_type'] ?? 'montant',
-                'taux_tva'       => $ligneData['taux_tva'] ?? 21,
-                'montant_ht'     => $montantHt,
-            ]);
-        }
-    }
-
-    private function recalculerMontants(Avenant $avenant): void
-    {
-        $lignes = $avenant->lignes;
-        $ht  = $lignes->where('est_section', false)->sum('montant_ht');
-        $tva = $lignes->where('est_section', false)->sum(
-            fn($l) => $l->montant_ht * ($l->taux_tva / 100)
-        );
-        $avenant->update([
-            'montant_ht'  => $ht + $avenant->frais_port,
-            'montant_tva' => $tva,
-            'montant_ttc' => $ht + $avenant->frais_port + $tva,
-        ]);
-    }
 }

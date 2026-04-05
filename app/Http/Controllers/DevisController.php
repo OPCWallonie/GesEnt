@@ -9,6 +9,7 @@ use App\Models\Devis;
 use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
+use App\Services\DocumentService;
 use App\Services\NumerotationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -17,7 +18,10 @@ use Illuminate\Support\Facades\Mail;
 
 class DevisController extends Controller
 {
-    public function __construct(private NumerotationService $numerotation) {}
+    public function __construct(
+        private NumerotationService $numerotation,
+        private DocumentService $documentService,
+    ) {}
 
     public function index(Request $request)
     {
@@ -103,8 +107,8 @@ class DevisController extends Controller
                 'notes'             => $data['notes'] ?? null,
             ]);
 
-            $this->enregistrerLignes($devis, $data['lignes']);
-            $devis->recalculerMontants();
+            $this->documentService->enregistrerLignes($devis, $data['lignes']);
+            $this->documentService->recalculerMontants($devis);
             return $devis;
         });
 
@@ -116,7 +120,7 @@ class DevisController extends Controller
     {
         $devis->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande');
         $parametres = ParametresEntreprise::instance();
-        $totauxTva  = self::calculerTotauxTva($devis->lignes);
+        $totauxTva  = $this->documentService->calculerTotauxTva($devis->lignes);
 
         return view('devis.show', compact('devis', 'parametres', 'totauxTva'));
     }
@@ -177,8 +181,8 @@ class DevisController extends Controller
                 'notes'             => $data['notes'] ?? null,
             ]);
             $devis->lignes()->delete();
-            $this->enregistrerLignes($devis, $data['lignes']);
-            $devis->recalculerMontants();
+            $this->documentService->enregistrerLignes($devis, $data['lignes']);
+            $this->documentService->recalculerMontants($devis);
         });
 
         return redirect()->route('devis.show', $devis)->with('success', 'Devis mis à jour.');
@@ -224,7 +228,7 @@ class DevisController extends Controller
     {
         $devis->load('client', 'chantier', 'modePaiement', 'lignes');
         $parametres = ParametresEntreprise::instance();
-        $totauxTva  = self::calculerTotauxTva($devis->lignes);
+        $totauxTva  = $this->documentService->calculerTotauxTva($devis->lignes);
 
         $pdf = Pdf::loadView('pdf.devis', compact('devis', 'parametres', 'totauxTva'))
             ->setPaper('a4', 'portrait');
@@ -232,43 +236,4 @@ class DevisController extends Controller
         return $pdf->stream("devis-{$devis->numero}.pdf");
     }
 
-    private function enregistrerLignes($devis, array $lignes): void
-    {
-        foreach ($lignes as $ordre => $ligneData) {
-            $estSection = ! empty($ligneData['est_section']);
-            $montantHt  = 0;
-
-            if (! $estSection) {
-                $brut   = (float)($ligneData['prix_unitaire'] ?? 0) * (float)($ligneData['quantite'] ?? 1);
-                $remise = ($ligneData['remise_type'] ?? 'montant') === 'pourcentage'
-                    ? $brut * ((float)($ligneData['remise_valeur'] ?? 0) / 100)
-                    : (float)($ligneData['remise_valeur'] ?? 0);
-                $montantHt = max(0, $brut - $remise);
-            }
-
-            $devis->lignes()->create([
-                'ordre'          => $ordre,
-                'est_section'    => $estSection,
-                'designation'    => $ligneData['designation'],
-                'detail'         => $ligneData['detail'] ?? null,
-                'unite'          => $ligneData['unite'] ?? 'pièce',
-                'quantite'       => $ligneData['quantite'] ?? 1,
-                'prix_unitaire'  => $ligneData['prix_unitaire'] ?? 0,
-                'remise_valeur'  => $ligneData['remise_valeur'] ?? 0,
-                'remise_type'    => $ligneData['remise_type'] ?? 'montant',
-                'taux_tva'       => $ligneData['taux_tva'] ?? 21,
-                'montant_ht'     => $montantHt,
-            ]);
-        }
-    }
-
-    public static function calculerTotauxTva($lignes): array
-    {
-        $totaux = [];
-        foreach ($lignes->where('est_section', false) as $ligne) {
-            $taux = number_format((float)$ligne->taux_tva, 2);
-            $totaux[$taux] = ($totaux[$taux] ?? 0) + ((float)$ligne->montant_ht * ((float)$ligne->taux_tva / 100));
-        }
-        return $totaux;
-    }
 }

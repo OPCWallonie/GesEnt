@@ -8,6 +8,8 @@ use App\Models\Facture;
 use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
+use App\Models\Paiement;
+use App\Services\DocumentService;
 use App\Services\NumerotationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -16,7 +18,10 @@ use Illuminate\Support\Facades\Mail;
 
 class FactureController extends Controller
 {
-    public function __construct(private NumerotationService $numerotation) {}
+    public function __construct(
+        private NumerotationService $numerotation,
+        private DocumentService $documentService,
+    ) {}
 
     public function index(Request $request)
     {
@@ -94,8 +99,8 @@ class FactureController extends Controller
                 'notes'                => $data['notes'] ?? null,
             ]);
 
-            $this->enregistrerLignes($facture, $data['lignes']);
-            $this->recalculerMontants($facture);
+            $this->documentService->enregistrerLignes($facture, $data['lignes']);
+            $this->documentService->recalculerMontants($facture);
             return $facture;
         });
 
@@ -105,9 +110,9 @@ class FactureController extends Controller
 
     public function show(Facture $facture)
     {
-        $facture->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande', 'avoirs');
+        $facture->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande', 'avoirs', 'paiements');
         $parametres = ParametresEntreprise::instance();
-        $totauxTva  = DevisController::calculerTotauxTva($facture->lignes);
+        $totauxTva  = $this->documentService->calculerTotauxTva($facture->lignes);
 
         return view('factures.show', compact('facture', 'parametres', 'totauxTva'));
     }
@@ -168,8 +173,8 @@ class FactureController extends Controller
                 'notes'                => $data['notes'] ?? null,
             ]);
             $facture->lignes()->delete();
-            $this->enregistrerLignes($facture, $data['lignes']);
-            $this->recalculerMontants($facture);
+            $this->documentService->enregistrerLignes($facture, $data['lignes']);
+            $this->documentService->recalculerMontants($facture);
         });
 
         return redirect()->route('factures.show', $facture)->with('success', 'Facture mise à jour.');
@@ -191,17 +196,29 @@ class FactureController extends Controller
     {
         $data = $request->validate([
             'date_paiement' => 'required|date',
-            'montant_paye'  => 'required|numeric|min:0',
+            'montant_paye'  => 'required|numeric|min:0.01',
+            'mode'          => 'nullable|string|max:50',
+            'reference'     => 'nullable|string|max:100',
+            'notes'         => 'nullable|string|max:500',
         ]);
 
-        $facture->update([
-            'statut'        => 'payee',
+        Paiement::create([
+            'facture_id'    => $facture->id,
+            'created_by'    => auth()->id(),
             'date_paiement' => $data['date_paiement'],
-            'montant_paye'  => $data['montant_paye'],
+            'montant'       => $data['montant_paye'],
+            'mode'          => $data['mode'] ?? null,
+            'reference'     => $data['reference'] ?? null,
+            'notes'         => $data['notes'] ?? null,
         ]);
 
-        return redirect()->route('factures.show', $facture)
-            ->with('success', "Facture {$facture->numero} marquée comme payée.");
+        $facture->recalculerPaiements();
+
+        $message = $facture->est_totalement_payee
+            ? "Facture {$facture->numero} entièrement payée."
+            : "Paiement de " . number_format($data['montant_paye'], 2, ',', ' ') . " € enregistré pour {$facture->numero}.";
+
+        return redirect()->route('factures.show', $facture)->with('success', $message);
     }
 
     public function envoyer(Request $request, Facture $facture)
@@ -254,7 +271,7 @@ class FactureController extends Controller
     {
         $facture->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande');
         $parametres = ParametresEntreprise::instance();
-        $totauxTva  = DevisController::calculerTotauxTva($facture->lignes);
+        $totauxTva  = $this->documentService->calculerTotauxTva($facture->lignes);
 
         $pdf = Pdf::loadView('pdf.facture', compact('facture', 'parametres', 'totauxTva'))
             ->setPaper('a4', 'portrait');
@@ -262,57 +279,4 @@ class FactureController extends Controller
         return $pdf->stream("facture-{$facture->numero}.pdf");
     }
 
-    private function enregistrerLignes($facture, array $lignes): void
-    {
-        foreach ($lignes as $ordre => $ligneData) {
-            $estSection = ! empty($ligneData['est_section']);
-            $montantHt  = 0;
-
-            if (! $estSection) {
-                $brut   = (float)($ligneData['prix_unitaire'] ?? 0) * (float)($ligneData['quantite'] ?? 1);
-                $remise = ($ligneData['remise_type'] ?? 'montant') === 'pourcentage'
-                    ? $brut * ((float)($ligneData['remise_valeur'] ?? 0) / 100)
-                    : (float)($ligneData['remise_valeur'] ?? 0);
-                $montantHt = max(0, $brut - $remise);
-            }
-
-            $facture->lignes()->create([
-                'ordre'          => $ordre,
-                'est_section'    => $estSection,
-                'designation'    => $ligneData['designation'],
-                'detail'         => $ligneData['detail'] ?? null,
-                'unite'          => $ligneData['unite'] ?? 'pièce',
-                'quantite'       => $ligneData['quantite'] ?? 1,
-                'prix_unitaire'  => $ligneData['prix_unitaire'] ?? 0,
-                'remise_valeur'  => $ligneData['remise_valeur'] ?? 0,
-                'remise_type'    => $ligneData['remise_type'] ?? 'montant',
-                'taux_tva'       => $ligneData['taux_tva'] ?? 21,
-                'montant_ht'     => $montantHt,
-            ]);
-        }
-    }
-
-    private function recalculerMontants(Facture $facture): void
-    {
-        $lignes = $facture->lignes;
-        $ht  = $lignes->where('est_section', false)->sum('montant_ht');
-        $tva = $lignes->where('est_section', false)->sum(
-            fn($l) => $l->montant_ht * ($l->taux_tva / 100)
-        );
-        $ristourne = $ht * ($facture->ristourne_globale / 100);
-        $htNet     = $ht - $ristourne + $facture->frais_port;
-        $tvaNet    = $tva * (1 - $facture->ristourne_globale / 100);
-        $ttc       = $htNet + $tvaNet;
-        $base      = max(0, $ttc - $facture->acompte_deduit);
-        $retenue   = $base * ($facture->retenue_garantie_pct / 100);
-        $netAPayer = max(0, $base - $retenue);
-
-        $facture->update([
-            'montant_ht'               => $htNet,
-            'montant_tva'              => $tvaNet,
-            'montant_ttc'              => $ttc,
-            'retenue_garantie_montant' => $retenue,
-            'montant_net_a_payer'      => $netAPayer,
-        ]);
-    }
 }

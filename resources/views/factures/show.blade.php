@@ -68,7 +68,7 @@
             @endif
             <button x-data @click="$dispatch('open-modal', 'marquer-payee')"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
-                ✓ Marquer payée
+                ✓ {{ $facture->paiements->isNotEmpty() ? 'Ajouter un paiement' : 'Marquer payée' }}
             </button>
         @endif
     </x-slot>
@@ -90,8 +90,26 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Montant encaissé (€) *</label>
-                        <input type="number" name="montant_paye" value="{{ $facture->montant_net_a_payer }}" step="0.01" min="0" required
+                        <input type="number" name="montant_paye"
+                               value="{{ $facture->montant_restant > 0 ? $facture->montant_restant : $facture->montant_net_a_payer }}"
+                               step="0.01" min="0.01" required
                                class="w-full rounded-lg border-gray-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mode de paiement</label>
+                        <select name="mode" class="w-full rounded-lg border-gray-300 text-sm">
+                            <option value="">—</option>
+                            <option value="virement">Virement</option>
+                            <option value="cheque">Chèque</option>
+                            <option value="cash">Cash</option>
+                            <option value="carte">Carte bancaire</option>
+                            <option value="domiciliation">Domiciliation</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Référence (n° chèque, réf virement…)</label>
+                        <input type="text" name="reference" class="w-full rounded-lg border-gray-300 text-sm"
+                               placeholder="Optionnel">
                     </div>
                     <div class="flex gap-3 pt-2">
                         <button type="button" @click="open = false"
@@ -201,14 +219,46 @@
                             </div>
                         @endif
                     @endif
-                    @if($facture->montant_paye > 0)
-                        <div class="flex justify-between text-green-600"><dt>Encaissé</dt><dd>{{ number_format($facture->montant_paye, 2, ',', ' ') }} €</dd></div>
-                        @if($facture->resteAPayer() > 0)
-                            <div class="flex justify-between text-red-600 font-medium"><dt>Reste à payer</dt><dd>{{ number_format($facture->resteAPayer(), 2, ',', ' ') }} €</dd></div>
+                    @if($facture->montant_total_paye > 0)
+                        <div class="flex justify-between text-green-600"><dt>Encaissé</dt><dd>{{ number_format($facture->montant_total_paye, 2, ',', ' ') }} €</dd></div>
+                        @if($facture->montant_restant > 0)
+                            <div class="flex justify-between text-red-600 font-medium"><dt>Reste à payer</dt><dd>{{ number_format($facture->montant_restant, 2, ',', ' ') }} €</dd></div>
                         @endif
                     @endif
                 </dl>
             </div>
+
+            @if($facture->paiements->isNotEmpty())
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <h3 class="font-semibold text-gray-700 mb-3 text-sm">Historique des paiements</h3>
+                <div class="space-y-2">
+                    @foreach($facture->paiements as $paiement)
+                    <div class="flex items-center justify-between text-sm border-b border-gray-100 pb-2 last:border-0">
+                        <div>
+                            <span class="font-medium text-gray-800">{{ number_format($paiement->montant, 2, ',', ' ') }} €</span>
+                            <span class="text-gray-400 ml-2">{{ $paiement->date_paiement->format('d/m/Y') }}</span>
+                            @if($paiement->mode)
+                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-2">{{ $paiement->mode }}</span>
+                            @endif
+                        </div>
+                        @if($paiement->reference)
+                            <span class="text-xs text-gray-400">Réf: {{ $paiement->reference }}</span>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+                <div class="flex justify-between font-semibold text-sm mt-3 pt-2 border-t border-gray-200">
+                    <span>Total encaissé</span>
+                    <span class="text-green-700">{{ number_format($facture->montant_total_paye, 2, ',', ' ') }} €</span>
+                </div>
+                @if($facture->montant_restant > 0)
+                <div class="flex justify-between text-sm mt-1">
+                    <span class="text-gray-400">Reste à encaisser</span>
+                    <span class="text-amber-600 font-medium">{{ number_format($facture->montant_restant, 2, ',', ' ') }} €</span>
+                </div>
+                @endif
+            </div>
+            @endif
 
             @if($facture->statut !== 'payee')
                 <form method="POST" action="{{ route('factures.destroy', $facture) }}"

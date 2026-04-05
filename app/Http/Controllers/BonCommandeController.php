@@ -8,6 +8,7 @@ use App\Models\Devis;
 use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
+use App\Services\DocumentService;
 use App\Services\NumerotationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -15,7 +16,10 @@ use Illuminate\Support\Facades\DB;
 
 class BonCommandeController extends Controller
 {
-    public function __construct(private NumerotationService $numerotation) {}
+    public function __construct(
+        private NumerotationService $numerotation,
+        private DocumentService $documentService,
+    ) {}
 
     public function index(Request $request)
     {
@@ -92,8 +96,8 @@ class BonCommandeController extends Controller
                 'notes'              => $data['notes'] ?? null,
             ]);
 
-            $this->enregistrerLignes($bdc, $data['lignes']);
-            $this->recalculerMontants($bdc);
+            $this->documentService->enregistrerLignes($bdc, $data['lignes']);
+            $this->documentService->recalculerMontants($bdc);
             return $bdc;
         });
 
@@ -173,8 +177,8 @@ class BonCommandeController extends Controller
                 'notes'              => $data['notes'] ?? null,
             ]);
             $bonsCommande->lignes()->delete();
-            $this->enregistrerLignes($bonsCommande, $data['lignes']);
-            $this->recalculerMontants($bonsCommande);
+            $this->documentService->enregistrerLignes($bonsCommande, $data['lignes']);
+            $this->documentService->recalculerMontants($bonsCommande);
         });
 
         return redirect()->route('bons-commande.show', $bonsCommande)->with('success', 'BDC mis à jour.');
@@ -213,7 +217,7 @@ class BonCommandeController extends Controller
         $bonsCommande->load('client', 'chantier', 'modePaiement', 'lignes', 'avenants.lignes');
         $parametres = ParametresEntreprise::instance();
         $totaux     = $bonsCommande->montantTotalAvecAvenants();
-        $totauxTva  = DevisController::calculerTotauxTva($bonsCommande->toutesLesLignes());
+        $totauxTva  = $this->documentService->calculerTotauxTva($bonsCommande->toutesLesLignes());
 
         $pdf = Pdf::loadView('pdf.bon-commande', compact('bonsCommande', 'parametres', 'totaux', 'totauxTva'))
             ->setPaper('a4', 'portrait');
@@ -221,51 +225,4 @@ class BonCommandeController extends Controller
         return $pdf->stream("bdc-{$bonsCommande->numero}.pdf");
     }
 
-    private function enregistrerLignes($document, array $lignes): void
-    {
-        foreach ($lignes as $ordre => $ligneData) {
-            $estSection = ! empty($ligneData['est_section']);
-            $montantHt  = 0;
-
-            if (! $estSection) {
-                $brut   = (float)($ligneData['prix_unitaire'] ?? 0) * (float)($ligneData['quantite'] ?? 1);
-                $remise = ($ligneData['remise_type'] ?? 'montant') === 'pourcentage'
-                    ? $brut * ((float)($ligneData['remise_valeur'] ?? 0) / 100)
-                    : (float)($ligneData['remise_valeur'] ?? 0);
-                $montantHt = max(0, $brut - $remise);
-            }
-
-            $document->lignes()->create([
-                'ordre'          => $ordre,
-                'est_section'    => $estSection,
-                'designation'    => $ligneData['designation'],
-                'detail'         => $ligneData['detail'] ?? null,
-                'unite'          => $ligneData['unite'] ?? 'pièce',
-                'quantite'       => $ligneData['quantite'] ?? 1,
-                'prix_unitaire'  => $ligneData['prix_unitaire'] ?? 0,
-                'remise_valeur'  => $ligneData['remise_valeur'] ?? 0,
-                'remise_type'    => $ligneData['remise_type'] ?? 'montant',
-                'taux_tva'       => $ligneData['taux_tva'] ?? 21,
-                'montant_ht'     => $montantHt,
-            ]);
-        }
-    }
-
-    private function recalculerMontants(BonCommande $bdc): void
-    {
-        $lignes = $bdc->lignes;
-        $ht = $lignes->where('est_section', false)->sum('montant_ht');
-        $tva = $lignes->where('est_section', false)->sum(
-            fn($l) => $l->montant_ht * ($l->taux_tva / 100)
-        );
-        $ristourne = $ht * ($bdc->ristourne_globale / 100);
-        $htNet = $ht - $ristourne + $bdc->frais_port;
-        $tvaNet = $tva * (1 - $bdc->ristourne_globale / 100);
-
-        $bdc->update([
-            'montant_ht'  => $htNet,
-            'montant_tva' => $tvaNet,
-            'montant_ttc' => $htNet + $tvaNet,
-        ]);
-    }
 }

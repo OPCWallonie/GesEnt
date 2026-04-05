@@ -17,7 +17,7 @@ class Facture extends Model
         'frais_port', 'ristourne_globale', 'acompte_deduit',
         'retenue_garantie_pct', 'retenue_garantie_montant', 'retenue_garantie_liberee_at',
         'montant_net_a_payer', 'delai_reglement',
-        'date_paiement', 'montant_paye', 'notes',
+        'date_paiement', 'montant_paye', 'montant_total_paye', 'notes',
         'nb_relances', 'derniere_relance_at',
     ];
 
@@ -37,6 +37,7 @@ class Facture extends Model
         'retenue_garantie_montant'     => 'decimal:4',
         'montant_net_a_payer'          => 'decimal:4',
         'montant_paye'                 => 'decimal:4',
+        'montant_total_paye'           => 'decimal:4',
         'nb_relances'                  => 'integer',
     ];
 
@@ -77,10 +78,38 @@ class Facture extends Model
         return max(0, $this->montant_net_a_payer - $this->montant_paye);
     }
 
+    public function getMontantRestantAttribute(): float
+    {
+        return max(0, $this->montant_net_a_payer - $this->montant_total_paye);
+    }
+
+    public function getEstTotalementPayeeAttribute(): bool
+    {
+        return $this->montant_total_paye >= $this->montant_net_a_payer;
+    }
+
+    public function recalculerPaiements(): void
+    {
+        $total           = $this->paiements()->sum('montant');
+        $dernierPaiement = $this->paiements()->latest('date_paiement')->first();
+
+        $this->update([
+            'montant_total_paye' => $total,
+            'montant_paye'       => $total,
+            'date_paiement'      => $dernierPaiement?->date_paiement,
+            'statut'             => $total >= $this->montant_net_a_payer ? 'payee' : $this->statut,
+        ]);
+    }
+
     public function enregistrerRelance(): void
     {
         $this->increment('nb_relances');
         $this->update(['derniere_relance_at' => now()->toDateString()]);
+    }
+
+    public function paiements()
+    {
+        return $this->hasMany(Paiement::class)->orderBy('date_paiement');
     }
 
     public function avoirs()
