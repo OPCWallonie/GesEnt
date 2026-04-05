@@ -61,6 +61,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('factures/{facture}/marquer-payee', [FactureController::class, 'marquerPayee'])->name('factures.marquer-payee');
     Route::patch('factures/{facture}/relancer', [FactureController::class, 'relancer'])->name('factures.relancer');
     Route::patch('factures/{facture}/liberer-retenue', [FactureController::class, 'libererRetenue'])->name('factures.liberer-retenue');
+    Route::patch('factures/{facture}/toggle-relance-auto', [FactureController::class, 'toggleRelanceAuto'])->name('factures.toggle-relance-auto');
 
     // Avoirs
     Route::get('factures/{facture}/avoirs/create', [AvoirController::class, 'create'])->name('avoirs.create');

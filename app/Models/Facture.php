@@ -18,7 +18,7 @@ class Facture extends Model
         'retenue_garantie_pct', 'retenue_garantie_montant', 'retenue_garantie_liberee_at',
         'montant_net_a_payer', 'delai_reglement',
         'date_paiement', 'montant_paye', 'montant_total_paye', 'notes',
-        'nb_relances', 'derniere_relance_at',
+        'nb_relances', 'derniere_relance_at', 'prochaine_relance_at', 'relance_auto',
         'numero_situation', 'pourcentage_avancement', 'pourcentage_cumule', 'montant_anterieur',
     ];
 
@@ -40,6 +40,8 @@ class Facture extends Model
         'montant_paye'                 => 'decimal:4',
         'montant_total_paye'           => 'decimal:4',
         'nb_relances'                  => 'integer',
+        'prochaine_relance_at'         => 'date',
+        'relance_auto'                 => 'boolean',
         'numero_situation'             => 'integer',
         'pourcentage_avancement'       => 'decimal:2',
         'pourcentage_cumule'           => 'decimal:2',
@@ -109,7 +111,10 @@ class Facture extends Model
     public function enregistrerRelance(): void
     {
         $this->increment('nb_relances');
-        $this->update(['derniere_relance_at' => now()->toDateString()]);
+        $this->update([
+            'derniere_relance_at'  => now()->toDateString(),
+            'prochaine_relance_at' => now()->addDays(14)->toDateString(),
+        ]);
     }
 
     public function paiements()

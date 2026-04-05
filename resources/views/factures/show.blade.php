@@ -161,6 +161,31 @@
                             </dd>
                         </div>
                     @endif
+                    @if(!in_array($facture->statut, ['payee', 'archive']))
+                        <div class="flex justify-between items-center pt-1">
+                            <dt class="text-gray-400 text-xs">Relance auto</dt>
+                            <dd>
+                                <form method="POST" action="{{ route('factures.toggle-relance-auto', $facture) }}">
+                                    @csrf @method('PATCH')
+                                    <label class="flex items-center gap-1.5 cursor-pointer">
+                                        <input type="checkbox" name="relance_auto" value="1"
+                                               {{ $facture->relance_auto ? 'checked' : '' }}
+                                               onchange="this.form.submit()"
+                                               class="rounded border-gray-300 text-blue-600 text-xs">
+                                        <span class="text-xs {{ $facture->relance_auto ? 'text-blue-600' : 'text-gray-400' }}">
+                                            {{ $facture->relance_auto ? 'Activée' : 'Désactivée' }}
+                                        </span>
+                                    </label>
+                                </form>
+                            </dd>
+                        </div>
+                        @if($facture->prochaine_relance_at)
+                            <div class="flex justify-between">
+                                <dt class="text-gray-400 text-xs">Prochaine relance</dt>
+                                <dd class="text-xs text-gray-500">{{ $facture->prochaine_relance_at->format('d/m/Y') }}</dd>
+                            </div>
+                        @endif
+                    @endif
                     @if($facture->date_paiement)
                         <div class="flex justify-between"><dt class="text-gray-400">Payée le</dt><dd class="text-green-600 font-medium">{{ $facture->date_paiement->format('d/m/Y') }}</dd></div>
                     @endif

@@ -13,39 +13,39 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class FactureEnvoyee extends Mailable
+class RelanceFacture extends Mailable
 {
     use Queueable, SerializesModels;
 
     public function __construct(
         public Facture $facture,
-        public string $messagePersonnalise = '',
+        public int $niveauRelance, // 1, 2, 3+
     ) {}
 
     public function envelope(): Envelope
     {
-        $parametres = ParametresEntreprise::instance();
-        return new Envelope(
-            subject: "Facture {$this->facture->numero} — {$parametres->nom}",
-        );
+        $sujet = match (true) {
+            $this->niveauRelance === 1 => "Rappel — Facture {$this->facture->numero}",
+            $this->niveauRelance === 2 => "2ème rappel — Facture {$this->facture->numero} en retard",
+            default                    => "URGENT — Facture {$this->facture->numero} impayée",
+        };
+
+        return new Envelope(subject: $sujet);
     }
 
     public function content(): Content
     {
-        return new Content(view: 'mail.facture');
+        return new Content(view: 'emails.relance-facture');
     }
 
     public function attachments(): array
     {
-        $this->facture->loadMissing('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande');
+        $facture    = $this->facture->loadMissing('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande');
         $parametres = ParametresEntreprise::instance();
-        $totauxTva  = app(DocumentService::class)->calculerTotauxTva($this->facture->lignes);
+        $totauxTva  = app(DocumentService::class)->calculerTotauxTva($facture->lignes);
 
-        $pdf = Pdf::loadView('pdf.facture', [
-            'facture'    => $this->facture,
-            'parametres' => $parametres,
-            'totauxTva'  => $totauxTva,
-        ])->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('pdf.facture', compact('facture', 'parametres', 'totauxTva'))
+            ->setPaper('a4', 'portrait');
 
         return [
             Attachment::fromData(

@@ -279,6 +279,17 @@ class FactureController extends Controller
         return back()->with('success', "Relance n°{$facture->nb_relances} enregistrée pour {$facture->numero}.");
     }
 
+    public function toggleRelanceAuto(Request $request, Facture $facture)
+    {
+        $facture->update(['relance_auto' => $request->boolean('relance_auto')]);
+
+        $message = $facture->relance_auto
+            ? 'Relance automatique activée.'
+            : 'Relance automatique désactivée pour cette facture.';
+
+        return back()->with('success', $message);
+    }
+
     public function libererRetenue(Facture $facture)
     {
         if ($facture->retenue_garantie_pct <= 0) {

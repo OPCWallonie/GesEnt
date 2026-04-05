@@ -16,3 +16,6 @@ Schedule::command('gesent:sync-catalog')->dailyAt('03:00');
 
 // Toutes les heures : envoie les notifications in-app (factures en retard, devis expirants)
 Schedule::command('gesent:envoyer-notifications')->hourly();
+
+// Tous les jours à 8h : envoie les relances email automatiques aux clients en retard
+Schedule::command('factures:relancer')->dailyAt('08:00');
