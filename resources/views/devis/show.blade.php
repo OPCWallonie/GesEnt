@@ -3,7 +3,7 @@
 
     <x-slot name="actions">
         <div class="flex items-center gap-2">
-            @if($devis->statut === 'valide' && !$devis->bonCommande)
+            @if((string) $devis->statut === 'valide' && !$devis->bonCommande)
                 <form method="POST" action="{{ route('devis.convertir-bdc', $devis) }}">
                     @csrf
                     <button type="submit"
@@ -57,7 +57,7 @@
                     </div>
                 </div>
             </div>
-            @if($devis->statut !== 'archive')
+            @if((string) $devis->statut !== 'archive')
                 <a href="{{ route('devis.edit', $devis) }}"
                    class="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +95,7 @@
                             Émis le {{ $devis->date_document->format('d/m/Y') }}
                             @if($devis->date_validite)
                                 · Valide jusqu'au
-                                <span class="{{ $devis->date_validite->isPast() && $devis->statut !== 'valide' ? 'text-red-600 font-medium' : '' }}">
+                                <span class="{{ $devis->date_validite->isPast() && (string) $devis->statut !== 'valide' ? 'text-red-600 font-medium' : '' }}">
                                     {{ $devis->date_validite->format('d/m/Y') }}
                                 </span>
                             @endif

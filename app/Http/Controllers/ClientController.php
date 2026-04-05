@@ -11,9 +11,9 @@ class ClientController extends Controller
     public function index(Request $request)
     {
         $clients = Client::query()
-            ->when($request->q, fn($q, $search) => $q->where('nom', 'like', "%{$search}%")
-                ->orWhere('code_client', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%"))
+            ->when($request->q, fn($q, $search) => $q->where('nom', 'like', '%' . like_escape($search) . '%')
+                ->orWhere('code_client', 'like', '%' . like_escape($search) . '%')
+                ->orWhere('email', 'like', '%' . like_escape($search) . '%'))
             ->withCount('devis', 'factures')
             ->orderBy('nom')
             ->paginate(20)

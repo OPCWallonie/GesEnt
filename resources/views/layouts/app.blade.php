@@ -192,9 +192,13 @@
                 }" class="relative hidden md:block">
                     <div class="relative">
                         <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" x-model="q" @input="search()" @keydown.escape="open = false; q = ''"
-                               placeholder="Rechercher…"
-                               class="pl-9 pr-4 py-1.5 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 w-56 outline-none transition">
+                        <input type="text" x-model="q" id="global-search-input"
+                               @input="search()"
+                               @keydown.escape="open = false; q = ''"
+                               placeholder="Rechercher… (Ctrl+K)"
+                               class="pl-9 pr-16 py-1.5 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 w-64 outline-none transition">
+                        <kbd class="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-200 rounded"
+                             x-show="!q">⌘K</kbd>
                         <div x-show="loading" class="absolute right-3 top-1/2 -translate-y-1/2">
                             <svg class="animate-spin w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                         </div>
@@ -262,5 +266,19 @@
     </div>
 </div>
 
+<script>
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+K ou Cmd+K : ouvrir la recherche globale
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('global-search-input')?.focus();
+        }
+        // "/" hors champ de saisie : ouvrir la recherche globale
+        if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+            e.preventDefault();
+            document.getElementById('global-search-input')?.focus();
+        }
+    });
+</script>
 </body>
 </html>

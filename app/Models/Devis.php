@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\States\Devis\DevisStatut;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\ModelStates\HasStates;
 
 class Devis extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasStates;
 
     protected $fillable = [
         'numero', 'client_id', 'chantier_id', 'mode_paiement_id', 'created_by',
@@ -18,6 +20,7 @@ class Devis extends Model
     ];
 
     protected $casts = [
+        'statut'          => DevisStatut::class,
         'date_document'   => 'date',
         'date_validite'   => 'date',
         'date_statut'     => 'date',

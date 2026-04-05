@@ -11,6 +11,8 @@ use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Services\DocumentService;
 use App\Services\NumerotationService;
+use App\States\Devis\Archive as DevisArchive;
+use App\States\Devis\Valide as DevisValide;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,8 +28,8 @@ class DevisController extends Controller
     public function index(Request $request)
     {
         $devis = Devis::with('client', 'chantier')
-            ->when($request->q, fn($q, $s) => $q->whereHas('client', fn($q) => $q->where('nom', 'like', "%{$s}%"))
-                ->orWhere('numero', 'like', "%{$s}%"))
+            ->when($request->q, fn($q, $s) => $q->whereHas('client', fn($q) => $q->where('nom', 'like', '%' . like_escape($s) . '%'))
+                ->orWhere('numero', 'like', '%' . like_escape($s) . '%'))
             ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
             ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
             ->orderByDesc('date_document')
@@ -127,7 +129,7 @@ class DevisController extends Controller
 
     public function edit(Devis $devis)
     {
-        if ($devis->statut === 'archive') {
+        if ($devis->statut->is(DevisArchive::class)) {
             return redirect()->route('devis.show', $devis)->with('error', 'Ce devis est archivé.');
         }
 
@@ -199,7 +201,7 @@ class DevisController extends Controller
 
     public function convertirEnBdc(Devis $devis)
     {
-        if ($devis->statut !== 'valide') {
+        if (!$devis->statut->is(DevisValide::class)) {
             return back()->with('error', 'Le devis doit être validé pour être converti.');
         }
         if ($devis->bonCommande) {

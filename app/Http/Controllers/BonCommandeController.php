@@ -24,8 +24,8 @@ class BonCommandeController extends Controller
     public function index(Request $request)
     {
         $bons = BonCommande::with('client', 'chantier', 'devis')
-            ->when($request->q, fn($q, $s) => $q->where('numero', 'like', "%{$s}%")
-                ->orWhereHas('client', fn($q) => $q->where('nom', 'like', "%{$s}%")))
+            ->when($request->q, fn($q, $s) => $q->where('numero', 'like', '%' . like_escape($s) . '%')
+                ->orWhereHas('client', fn($q) => $q->where('nom', 'like', '%' . like_escape($s) . '%')))
             ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
             ->orderByDesc('date_document')
             ->paginate(20)

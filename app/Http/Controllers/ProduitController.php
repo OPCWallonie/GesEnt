@@ -13,7 +13,7 @@ class ProduitController extends Controller
     public function index(Request $request)
     {
         $produits = Produit::query()
-            ->when($request->q, fn($q, $s) => $q->where('designation', 'like', "%{$s}%"))
+            ->when($request->q, fn($q, $s) => $q->where('designation', 'like', '%' . like_escape($s) . '%'))
             ->when($request->categorie, fn($q, $c) => $q->where('categorie', $c))
             ->orderBy('designation')
             ->paginate(20)
@@ -199,7 +199,7 @@ class ProduitController extends Controller
     public function search(Request $request)
     {
         $results = Produit::actif()
-            ->where('designation', 'like', '%' . $request->q . '%')
+            ->where('designation', 'like', '%' . like_escape($request->string('q')->toString()) . '%')
             ->orderBy('designation')
             ->limit(10)
             ->get(['id', 'designation', 'prix_unitaire', 'taux_tva', 'unite']);

@@ -16,9 +16,9 @@ class FactureAchatController extends Controller
     public function index(Request $request)
     {
         $factures = FactureAchat::with('fournisseur', 'chantier')
-            ->when($request->q, fn($q, $s) => $q->where('numero', 'like', "%{$s}%")
-                ->orWhereHas('fournisseur', fn($q) => $q->where('nom', 'like', "%{$s}%"))
-                ->orWhere('reference_fournisseur', 'like', "%{$s}%"))
+            ->when($request->q, fn($q, $s) => $q->where('numero', 'like', '%' . like_escape($s) . '%')
+                ->orWhereHas('fournisseur', fn($q) => $q->where('nom', 'like', '%' . like_escape($s) . '%'))
+                ->orWhere('reference_fournisseur', 'like', '%' . like_escape($s) . '%'))
             ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
             ->when($request->categorie, fn($q, $c) => $q->where('categorie', $c))
             ->when($request->fournisseur_id, fn($q, $f) => $q->where('fournisseur_id', $f))

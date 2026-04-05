@@ -37,11 +37,12 @@ class CatalogProduit extends Model
 
     public function scopeSearch(Builder $q, string $terme): Builder
     {
-        return $q->where(function ($q) use ($terme) {
-            $q->where('designation', 'like', "%{$terme}%")
-              ->orWhere('reference', 'like', "%{$terme}%")
-              ->orWhere('marque', 'like', "%{$terme}%")
-              ->orWhere('ean', 'like', "%{$terme}%");
+        $safe = '%' . like_escape($terme) . '%';
+        return $q->where(function ($q) use ($safe) {
+            $q->where('designation', 'like', $safe)
+              ->orWhere('reference', 'like', $safe)
+              ->orWhere('marque', 'like', $safe)
+              ->orWhere('ean', 'like', $safe);
         });
     }
 

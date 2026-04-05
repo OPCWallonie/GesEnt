@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\States\Facture\FactureStatut;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\ModelStates\HasStates;
 
 class Facture extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasStates;
 
     protected $fillable = [
         'numero', 'bon_commande_id', 'client_id', 'chantier_id',
@@ -23,6 +25,7 @@ class Facture extends Model
     ];
 
     protected $casts = [
+        'statut'                       => FactureStatut::class,
         'date_document'                => 'date',
         'date_echeance'                => 'date',
         'date_paiement'                => 'date',
@@ -77,7 +80,7 @@ class Facture extends Model
     {
         return $this->date_echeance
             && $this->date_echeance->isPast()
-            && in_array($this->statut, ['en_attente', 'envoyee']);
+            && in_array((string) $this->statut, ['en_attente', 'envoyee']);
     }
 
     public function resteAPayer(): float
@@ -104,7 +107,7 @@ class Facture extends Model
             'montant_total_paye' => $total,
             'montant_paye'       => $total,
             'date_paiement'      => $dernierPaiement?->date_paiement,
-            'statut'             => $total >= $this->montant_net_a_payer ? 'payee' : $this->statut,
+            'statut'             => $total >= $this->montant_net_a_payer ? 'payee' : (string) $this->statut,
         ]);
     }
 

@@ -11,7 +11,7 @@ class ChantierController extends Controller
     public function index(Request $request)
     {
         $chantiers = Chantier::with('client')
-            ->when($request->q, fn($q, $s) => $q->where('nom', 'like', "%{$s}%"))
+            ->when($request->q, fn($q, $s) => $q->where('nom', 'like', '%' . like_escape($s) . '%'))
             ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
             ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
             ->orderByDesc('created_at')

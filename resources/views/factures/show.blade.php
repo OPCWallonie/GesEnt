@@ -41,21 +41,21 @@
             </div>
         </div>
         {{-- Avoir --}}
-        @if($facture->statut !== 'archive')
+        @if((string) $facture->statut !== 'archive')
             <a href="{{ route('avoirs.create', $facture) }}"
                class="inline-flex items-center gap-2 px-3 py-2 border border-red-300 text-red-600 text-sm rounded-lg hover:bg-red-50">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                 Avoir
             </a>
         @endif
-        @if($facture->statut !== 'payee')
+        @if((string) $facture->statut !== 'payee')
             <a href="{{ route('factures.edit', $facture) }}"
                class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
                 Modifier
             </a>
         @endif
-        @if(!in_array($facture->statut, ['payee', 'archive']))
-            @if($facture->estEnRetard() || in_array($facture->statut, ['en_attente', 'envoyee']))
+        @if(!in_array((string) $facture->statut, ['payee', 'archive']))
+            @if($facture->estEnRetard() || in_array((string) $facture->statut, ['en_attente', 'envoyee']))
                 <form method="POST" action="{{ route('factures.relancer', $facture) }}">
                     @csrf @method('PATCH')
                     <button type="submit"
@@ -161,7 +161,7 @@
                             </dd>
                         </div>
                     @endif
-                    @if(!in_array($facture->statut, ['payee', 'archive']))
+                    @if(!in_array((string) $facture->statut, ['payee', 'archive']))
                         <div class="flex justify-between items-center pt-1">
                             <dt class="text-gray-400 text-xs">Relance auto</dt>
                             <dd>
@@ -285,7 +285,7 @@
             </div>
             @endif
 
-            @if($facture->statut !== 'payee')
+            @if((string) $facture->statut !== 'payee')
                 <form method="POST" action="{{ route('factures.destroy', $facture) }}"
                       onsubmit="return confirm('Supprimer cette facture ?')">
                     @csrf @method('DELETE')

@@ -1,6 +1,9 @@
 @props(['statut'])
 
 @php
+// Compatibilité State object (spatie/laravel-model-states) et string bruts
+$statut = (string) $statut;
+
 $colors = [
     'brouillon'   => 'bg-gray-100 text-gray-700',
     'en_attente'  => 'bg-yellow-100 text-yellow-800',

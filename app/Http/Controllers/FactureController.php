@@ -11,6 +11,9 @@ use App\Models\TauxTva;
 use App\Models\Paiement;
 use App\Services\DocumentService;
 use App\Services\NumerotationService;
+use App\States\Facture\EnAttente;
+use App\States\Facture\Envoyee;
+use App\States\Facture\Payee;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,8 +29,8 @@ class FactureController extends Controller
     public function index(Request $request)
     {
         $factures = Facture::with('client', 'chantier', 'bonCommande')
-            ->when($request->q, fn($q, $s) => $q->where('numero', 'like', "%{$s}%")
-                ->orWhereHas('client', fn($q) => $q->where('nom', 'like', "%{$s}%")))
+            ->when($request->q, fn($q, $s) => $q->where('numero', 'like', '%' . like_escape($s) . '%')
+                ->orWhereHas('client', fn($q) => $q->where('nom', 'like', '%' . like_escape($s) . '%')))
             ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
             ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
             ->orderByDesc('date_document')
@@ -148,7 +151,7 @@ class FactureController extends Controller
 
     public function edit(Facture $facture)
     {
-        if ($facture->statut === 'payee') {
+        if ($facture->statut->is(Payee::class)) {
             return redirect()->route('factures.show', $facture)->with('error', 'Une facture payée ne peut plus être modifiée.');
         }
 
@@ -211,7 +214,7 @@ class FactureController extends Controller
 
     public function destroy(Facture $facture)
     {
-        if ($facture->statut === 'payee') {
+        if ($facture->statut->is(Payee::class)) {
             return back()->with('error', 'Impossible de supprimer une facture payée.');
         }
         DB::transaction(function () use ($facture) {
@@ -260,8 +263,8 @@ class FactureController extends Controller
         try {
             Mail::to($data['email'])->send(new FactureEnvoyee($facture, $data['message'] ?? ''));
 
-            if ($facture->statut === 'en_attente') {
-                $facture->update(['statut' => 'envoyee']);
+            if ($facture->statut->is(EnAttente::class)) {
+                $facture->statut->transitionTo(Envoyee::class);
             }
 
             return back()->with('success', "Facture {$facture->numero} envoyée à {$data['email']}.");
@@ -272,7 +275,7 @@ class FactureController extends Controller
 
     public function relancer(Facture $facture)
     {
-        if ($facture->statut === 'payee') {
+        if ($facture->statut->is(Payee::class)) {
             return back()->with('error', 'Cette facture est déjà payée.');
         }
         $facture->enregistrerRelance();

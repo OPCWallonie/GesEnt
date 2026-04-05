@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\States\BonCommande\BdcStatut;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\ModelStates\HasStates;
 
 class BonCommande extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasStates;
 
     protected $table = 'bons_commande';
 
@@ -20,6 +22,7 @@ class BonCommande extends Model
     ];
 
     protected $casts = [
+        'statut'            => BdcStatut::class,
         'date_document'     => 'date',
         'date_debut_travaux' => 'date',
         'date_fin_prevue'   => 'date',
@@ -120,7 +123,7 @@ class BonCommande extends Model
 
     public function peutEtreFacture(): bool
     {
-        if (!in_array($this->statut, ['valide', 'en_cours'])) {
+        if (!in_array((string) $this->statut, ['valide', 'en_cours'])) {
             return false;
         }
         if (!$this->avenants->every(fn($a) => $a->statut === 'valide')) {

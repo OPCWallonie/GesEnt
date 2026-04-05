@@ -10,8 +10,8 @@ class FournisseurController extends Controller
     public function index(Request $request)
     {
         $fournisseurs = Fournisseur::withCount('facturesAchat')
-            ->when($request->q, fn($q, $s) => $q->where('nom', 'like', "%{$s}%")
-                ->orWhere('numero_tva', 'like', "%{$s}%"))
+            ->when($request->q, fn($q, $s) => $q->where('nom', 'like', '%' . like_escape($s) . '%')
+                ->orWhere('numero_tva', 'like', '%' . like_escape($s) . '%'))
             ->when($request->has('inactifs'), fn($q) => $q, fn($q) => $q->where('actif', true))
             ->orderBy('nom')
             ->paginate(20)

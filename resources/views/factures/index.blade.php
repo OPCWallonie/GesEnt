@@ -33,7 +33,7 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Numéro</th>
-                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
+                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client / Chantier</th>
                     <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                     <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Échéance</th>
                     <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
@@ -51,13 +51,21 @@
                         </td>
                         <td class="px-5 py-4">
                             <a href="{{ route('clients.show', $facture->client) }}" class="text-gray-700 hover:text-blue-600">{{ $facture->client->nom }}</a>
+                            @if($facture->chantier)
+                                <div class="text-xs text-gray-400 mt-0.5">{{ $facture->chantier->nom }}</div>
+                            @endif
                         </td>
                         <td class="px-5 py-4 text-gray-600">{{ $facture->date_document->format('d/m/Y') }}</td>
                         <td class="px-5 py-4 {{ $facture->estEnRetard() ? 'text-red-600 font-medium' : 'text-gray-600' }}">
                             {{ $facture->date_echeance?->format('d/m/Y') ?? '—' }}
                             @if($facture->estEnRetard()) <span class="text-xs">(retard)</span> @endif
                         </td>
-                        <td class="px-5 py-4"><x-badge :statut="$facture->statut"/></td>
+                        <td class="px-5 py-4">
+                            <x-badge :statut="$facture->statut"/>
+                            @if($facture->retenue_garantie_pct > 0 && !$facture->retenue_garantie_liberee_at)
+                                <span class="ml-1 text-amber-500 text-xs" title="Retenue de garantie {{ $facture->retenue_garantie_pct }}% non libérée">&#128274;</span>
+                            @endif
+                        </td>
                         <td class="px-5 py-4 text-right font-semibold {{ $facture->estEnRetard() ? 'text-red-600' : 'text-gray-800' }}">
                             {{ number_format($facture->montant_net_a_payer, 2, ',', ' ') }} €
                         </td>
