@@ -62,27 +62,10 @@ class Devis extends Model
         return $this->hasOne(BonCommande::class);
     }
 
-    public function recalculerMontants(): void
-    {
-        $ht = $this->lignes->sum('montant_ht');
-        $tva = $this->lignes->groupBy('taux_tva')->map(function ($lignes, $taux) {
-            return $lignes->sum('montant_ht') * ($taux / 100);
-        })->sum();
-
-        $ristourne = $ht * ($this->ristourne_globale / 100);
-        $htNet = $ht - $ristourne + $this->frais_port;
-        $tvaNet = $tva * (1 - $this->ristourne_globale / 100);
-
-        $this->update([
-            'montant_ht'  => $htNet,
-            'montant_tva' => $tvaNet,
-            'montant_ttc' => $htNet + $tvaNet,
-        ]);
-    }
-
     public function estExpire(): bool
     {
-        return $this->date_validite && $this->date_validite->isPast()
-            && ! in_array($this->statut, ['valide', 'archive', 'refuse']);
+        return $this->date_validite
+            && $this->date_validite->isPast()
+            && ! in_array((string) $this->statut, ['valide', 'archive', 'refuse']);
     }
 }

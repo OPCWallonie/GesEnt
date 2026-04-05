@@ -3,7 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Facture;
+use App\States\Facture\EnRetard;
 use Illuminate\Console\Command;
+use Spatie\ModelStates\Exceptions\TransitionNotFound;
 
 class DetecterFacturesEnRetard extends Command
 {
@@ -17,13 +19,19 @@ class DetecterFacturesEnRetard extends Command
             ->where('date_echeance', '<', now())
             ->get();
 
-        $count = 0;
+        $count   = 0;
+        $ignored = 0;
         foreach ($factures as $facture) {
-            $facture->update(['statut' => 'en_retard']);
-            $count++;
+            try {
+                $facture->statut->transitionTo(EnRetard::class);
+                $count++;
+            } catch (TransitionNotFound $e) {
+                $this->warn("  {$facture->numero} : transition vers en_retard impossible depuis {$facture->statut}.");
+                $ignored++;
+            }
         }
 
-        $this->info("{$count} facture(s) passée(s) en retard.");
+        $this->info("{$count} facture(s) passée(s) en retard" . ($ignored ? ", {$ignored} ignorée(s)." : '.'));
         return Command::SUCCESS;
     }
 }

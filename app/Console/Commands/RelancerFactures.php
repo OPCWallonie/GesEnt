@@ -6,9 +6,11 @@ use App\Mail\RelanceFacture;
 use App\Models\Facture;
 use App\Models\User;
 use App\Notifications\FactureEnRetard;
+use App\States\Facture\EnRetard;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Spatie\ModelStates\Exceptions\TransitionNotFound;
 
 class RelancerFactures extends Command
 {
@@ -73,8 +75,17 @@ class RelancerFactures extends Command
                     'nb_relances'          => $niveauRelance,
                     'derniere_relance_at'  => now()->toDateString(),
                     'prochaine_relance_at' => now()->addDays(14)->toDateString(),
-                    'statut'               => 'en_retard',
                 ]);
+
+                // Transition vers en_retard via la machine à états (idempotente)
+                if (!$facture->statut->is(EnRetard::class)) {
+                    try {
+                        $facture->statut->transitionTo(EnRetard::class);
+                    } catch (TransitionNotFound $e) {
+                        // Déjà dans un état incompatible, log sans interrompre
+                        Log::warning("Relance {$facture->numero} : transition en_retard impossible depuis {$facture->statut}.");
+                    }
+                }
 
                 // Notifier les admins en interne
                 $admins = User::role('admin')->get();

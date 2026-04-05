@@ -99,12 +99,12 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
                         <select name="statut"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="brouillon" {{ old('statut', $devis->statut) === 'brouillon' ? 'selected' : '' }}>Brouillon</option>
-                            <option value="en_attente" {{ old('statut', $devis->statut) === 'en_attente' ? 'selected' : '' }}>En attente</option>
-                            <option value="valide" {{ old('statut', $devis->statut) === 'valide' ? 'selected' : '' }}>Validé</option>
-                            <option value="refuse" {{ old('statut', $devis->statut) === 'refuse' ? 'selected' : '' }}>Refusé</option>
-                            <option value="expire" {{ old('statut', $devis->statut) === 'expire' ? 'selected' : '' }}>Expiré</option>
-                            <option value="archive" {{ old('statut', $devis->statut) === 'archive' ? 'selected' : '' }}>Archivé</option>
+                            <option value="brouillon" {{ old('statut', (string) $devis->statut) === 'brouillon' ? 'selected' : '' }}>Brouillon</option>
+                            <option value="en_attente" {{ old('statut', (string) $devis->statut) === 'en_attente' ? 'selected' : '' }}>En attente</option>
+                            <option value="valide" {{ old('statut', (string) $devis->statut) === 'valide' ? 'selected' : '' }}>Validé</option>
+                            <option value="refuse" {{ old('statut', (string) $devis->statut) === 'refuse' ? 'selected' : '' }}>Refusé</option>
+                            <option value="expire" {{ old('statut', (string) $devis->statut) === 'expire' ? 'selected' : '' }}>Expiré</option>
+                            <option value="archive" {{ old('statut', (string) $devis->statut) === 'archive' ? 'selected' : '' }}>Archivé</option>
                         </select>
                         @error('statut')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>

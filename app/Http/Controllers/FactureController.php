@@ -11,9 +11,12 @@ use App\Models\TauxTva;
 use App\Models\Paiement;
 use App\Services\DocumentService;
 use App\Services\NumerotationService;
+use App\States\Facture\Archive as FactureArchive;
 use App\States\Facture\EnAttente;
+use App\States\Facture\EnRetard;
 use App\States\Facture\Envoyee;
 use App\States\Facture\Payee;
+use Spatie\ModelStates\Exceptions\TransitionNotFound;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -189,25 +192,46 @@ class FactureController extends Controller
             'lignes.*.est_section'   => 'nullable',
         ]);
 
-        DB::transaction(function () use ($facture, $data) {
-            $facture->update([
-                'mode_paiement_id'     => $data['mode_paiement_id'] ?? null,
-                'statut'               => $data['statut'],
-                'date_document'        => $data['date_document'],
-                'date_echeance'        => $data['date_echeance'] ?? null,
-                'frais_port'           => $data['frais_port'] ?? 0,
-                'ristourne_globale'    => $data['ristourne_globale'] ?? 0,
-                'acompte_deduit'       => $data['acompte_deduit'] ?? 0,
-                'retenue_garantie_pct' => $data['retenue_garantie_pct'] ?? 0,
-                'delai_reglement'      => $data['delai_reglement'] ?? 30,
-                'date_paiement'        => $data['date_paiement'] ?? null,
-                'montant_paye'         => $data['montant_paye'] ?? 0,
-                'notes'                => $data['notes'] ?? null,
-            ]);
-            $facture->lignes()->delete();
-            $this->documentService->enregistrerLignes($facture, $data['lignes']);
-            $this->documentService->recalculerMontants($facture);
-        });
+        $nouveauStatut = $data['statut'];
+        $ancienStatut  = (string) $facture->statut;
+
+        try {
+            DB::transaction(function () use ($facture, $data, $nouveauStatut, $ancienStatut) {
+                $facture->update([
+                    'mode_paiement_id'     => $data['mode_paiement_id'] ?? null,
+                    'date_document'        => $data['date_document'],
+                    'date_echeance'        => $data['date_echeance'] ?? null,
+                    'frais_port'           => $data['frais_port'] ?? 0,
+                    'ristourne_globale'    => $data['ristourne_globale'] ?? 0,
+                    'acompte_deduit'       => $data['acompte_deduit'] ?? 0,
+                    'retenue_garantie_pct' => $data['retenue_garantie_pct'] ?? 0,
+                    'delai_reglement'      => $data['delai_reglement'] ?? 30,
+                    'date_paiement'        => $data['date_paiement'] ?? null,
+                    'montant_paye'         => $data['montant_paye'] ?? 0,
+                    'notes'                => $data['notes'] ?? null,
+                ]);
+                $facture->lignes()->delete();
+                $this->documentService->enregistrerLignes($facture, $data['lignes']);
+                $this->documentService->recalculerMontants($facture);
+
+                if ($nouveauStatut !== $ancienStatut) {
+                    $stateClass = match ($nouveauStatut) {
+                        'en_attente' => EnAttente::class,
+                        'envoyee'    => Envoyee::class,
+                        'en_retard'  => EnRetard::class,
+                        'payee'      => Payee::class,
+                        'archive'    => FactureArchive::class,
+                        default      => null,
+                    };
+                    if ($stateClass) {
+                        $facture->statut->transitionTo($stateClass);
+                    }
+                }
+            });
+        } catch (TransitionNotFound $e) {
+            return redirect()->route('factures.edit', $facture)
+                ->with('error', "Transition de statut impossible : {$ancienStatut} → {$nouveauStatut}.");
+        }
 
         return redirect()->route('factures.show', $facture)->with('success', 'Facture mise à jour.');
     }

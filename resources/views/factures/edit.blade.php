@@ -21,7 +21,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
                     <select name="statut" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
                         @foreach(['en_attente' => 'En attente', 'envoyee' => 'Envoyée', 'en_retard' => 'En retard', 'archive' => 'Archivée'] as $val => $label)
-                            <option value="{{ $val }}" @selected(old('statut', $facture->statut) === $val)>{{ $label }}</option>
+                            <option value="{{ $val }}" @selected(old('statut', (string) $facture->statut) === $val)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>

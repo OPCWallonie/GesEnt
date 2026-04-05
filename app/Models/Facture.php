@@ -3,8 +3,11 @@
 namespace App\Models;
 
 use App\States\Facture\FactureStatut;
+use App\States\Facture\Payee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
+use Spatie\ModelStates\Exceptions\TransitionNotFound;
 use Spatie\ModelStates\HasStates;
 
 class Facture extends Model
@@ -107,8 +110,15 @@ class Facture extends Model
             'montant_total_paye' => $total,
             'montant_paye'       => $total,
             'date_paiement'      => $dernierPaiement?->date_paiement,
-            'statut'             => $total >= $this->montant_net_a_payer ? 'payee' : (string) $this->statut,
         ]);
+
+        if ($total >= $this->montant_net_a_payer && !$this->statut->is(Payee::class)) {
+            try {
+                $this->statut->transitionTo(Payee::class);
+            } catch (TransitionNotFound $e) {
+                Log::warning("Facture {$this->numero} : paiement complet mais transition vers payée impossible depuis {$this->statut}.");
+            }
+        }
     }
 
     public function enregistrerRelance(): void
