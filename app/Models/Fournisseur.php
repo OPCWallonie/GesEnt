@@ -13,7 +13,7 @@ class Fournisseur extends Model
         'nom', 'contact', 'email', 'telephone',
         'numero_tva', 'numero_entreprise',
         'adresse', 'code_postal', 'ville', 'pays',
-        'notes', 'actif',
+        'notes', 'actif', 'peppol_id',
     ];
 
     protected $casts = [

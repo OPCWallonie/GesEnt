@@ -16,7 +16,7 @@ class ParametresEntreprise extends Model
         'delai_reglement_defaut', 'validite_devis_defaut',
         'ai_provider', 'ai_api_key', 'ai_model', 'ai_url',
         'peppol_mode', 'peppol_provider', 'peppol_api_key', 'peppol_entity_id',
-        'peppol_id', 'peppol_environment',
+        'peppol_id', 'peppol_environment', 'peppol_webhook_token',
     ];
 
     protected $hidden = ['ai_api_key', 'peppol_api_key'];

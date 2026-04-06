@@ -21,10 +21,16 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OcrController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StatistiquesController;
+use App\Http\Controllers\PeppolWebhookController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect()->route('dashboard'));
+
+// Webhook Peppol — réception factures entrantes (public, sans CSRF, token custom)
+Route::post('/webhook/peppol', [PeppolWebhookController::class, 'handle'])
+    ->name('webhook.peppol')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 Route::middleware(['auth'])->group(function () {
 

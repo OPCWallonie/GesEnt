@@ -64,10 +64,11 @@ class FactureAchatController extends Controller
         $tva = $ht * ($data['taux_tva'] / 100);
 
         $facture = FactureAchat::create(array_merge($data, [
-            'numero'      => $this->numerotation->suivant('facture_achat'),
-            'created_by'  => auth()->id(),
-            'montant_tva' => round($tva, 2),
-            'montant_ttc' => round($ht + $tva, 2),
+            'numero'        => $this->numerotation->suivant('facture_achat'),
+            'created_by'    => auth()->id(),
+            'montant_tva'   => round($tva, 2),
+            'montant_ttc'   => round($ht + $tva, 2),
+            'peppol_source' => $request->boolean('from_ocr') ? 'ocr' : 'manuel',
         ]));
 
         return redirect()->route('factures-achat.show', $facture)

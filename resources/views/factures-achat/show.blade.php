@@ -21,6 +21,23 @@
         @endif
     </x-slot>
 
+    {{-- Encadré Peppol --}}
+    @if($facture->peppol_source === 'peppol')
+    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-4">
+        <div class="flex items-center gap-2 text-sm text-indigo-800">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span class="font-semibold">Reçue automatiquement via Peppol</span>
+            <span class="text-indigo-500 text-xs">{{ $facture->peppol_recu_at?->format('d/m/Y à H:i') }}</span>
+        </div>
+        <p class="text-xs text-indigo-600 mt-1">
+            Expéditeur Peppol : {{ $facture->peppol_sender_id ?? '—' }}
+            · Vérifiez la catégorie et le chantier lié avant de valider.
+        </p>
+    </div>
+    @endif
+
     {{-- Modal marquer payée --}}
     <div x-data="{ open: false }"
          @open-modal.window="if ($event.detail === 'marquer-payee') open = true"

@@ -67,9 +67,17 @@
                             <a href="{{ route('factures-achat.show', $fa) }}" class="font-mono font-medium text-gray-900 hover:text-blue-600">
                                 {{ $fa->numero }}
                             </a>
-                            @if($fa->reference_fournisseur)
-                                <div class="text-xs text-gray-400">{{ $fa->reference_fournisseur }}</div>
-                            @endif
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                @if($fa->reference_fournisseur)
+                                    <span class="text-xs text-gray-400">{{ $fa->reference_fournisseur }}</span>
+                                @endif
+                                @if($fa->peppol_source === 'peppol')
+                                    <span class="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded"
+                                          title="Reçue via Peppol le {{ $fa->peppol_recu_at?->format('d/m/Y H:i') }}">Peppol</span>
+                                @elseif($fa->peppol_source === 'ocr')
+                                    <span class="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">OCR</span>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-5 py-4 text-gray-700">
                             <a href="{{ route('fournisseurs.show', $fa->fournisseur) }}" class="hover:text-blue-600">{{ $fa->fournisseur->nom }}</a>

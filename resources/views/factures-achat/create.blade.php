@@ -46,6 +46,8 @@
 
     <form method="POST" action="{{ route('factures-achat.store') }}" class="space-y-6" id="form-facture-achat">
         @csrf
+        {{-- Marquage automatique source OCR --}}
+        <input type="hidden" name="from_ocr" id="from_ocr_flag" value="0">
         @php $facture = null; @endphp
         @include('factures-achat._form')
         <div class="flex justify-between">
@@ -89,6 +91,7 @@
 
                     this.remplir(json.data);
                     this.succes = true;
+                    document.getElementById('from_ocr_flag').value = '1';
 
                 } catch (e) {
                     this.erreur = "Impossible de contacter le serveur.";

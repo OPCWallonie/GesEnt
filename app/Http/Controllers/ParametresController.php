@@ -79,6 +79,11 @@ class ParametresController extends Controller
             unset($data['peppol_api_key']);
         }
 
+        // Générer un token webhook si le mode complet est activé et qu'il n'y en a pas encore
+        if (($data['peppol_mode'] ?? '') === 'complet' && !$parametres->peppol_webhook_token) {
+            $data['peppol_webhook_token'] = bin2hex(random_bytes(32));
+        }
+
         $parametres->update($data);
 
         return redirect()->route('parametres.edit')->with('success', 'Paramètres sauvegardés.');

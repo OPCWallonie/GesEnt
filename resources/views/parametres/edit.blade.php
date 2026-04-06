@@ -341,6 +341,32 @@
                     </div>
                 </div>
 
+                {{-- URL webhook pour le mode complet --}}
+                <div x-show="mode === 'complet'" x-cloak class="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                    <h3 class="text-sm font-semibold text-green-800">Configuration réception Peppol</h3>
+                    <p class="text-xs text-green-700">
+                        Configurez cette URL dans votre Access Point (Storecove, Billit…) comme webhook de réception.
+                        Sauvegardez d'abord pour générer votre token.
+                    </p>
+                    @if($parametres->peppol_webhook_token)
+                    <div class="flex items-center gap-2">
+                        <code class="flex-1 text-xs bg-white border border-green-300 rounded px-3 py-2 font-mono select-all break-all">
+                            {{ route('webhook.peppol') }}?token={{ $parametres->peppol_webhook_token }}
+                        </code>
+                        <button type="button"
+                                onclick="navigator.clipboard.writeText('{{ route('webhook.peppol') }}?token={{ $parametres->peppol_webhook_token }}').then(() => this.textContent = '✓').catch(() => {}); setTimeout(() => this.textContent = 'Copier', 2000)"
+                                class="px-3 py-2 bg-green-600 text-white text-xs rounded hover:bg-green-700 flex-shrink-0">
+                            Copier
+                        </button>
+                    </div>
+                    <p class="text-xs text-green-600">
+                        Chez Storecove : Dashboard → Webhooks → "Received Document Webhook" → collez l'URL ci-dessus.
+                    </p>
+                    @else
+                    <p class="text-xs text-green-600 italic">Sauvegardez les paramètres en mode "complet" pour générer l'URL webhook.</p>
+                    @endif
+                </div>
+
                 {{-- Infos providers --}}
                 <div class="grid grid-cols-1 gap-2">
                     <div x-show="provider === 'storecove'" class="text-xs bg-indigo-50 border border-indigo-200 rounded p-3 text-indigo-700">

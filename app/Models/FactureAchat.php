@@ -17,6 +17,7 @@ class FactureAchat extends Model
         'date_document', 'date_echeance',
         'montant_ht', 'taux_tva', 'montant_tva', 'montant_ttc',
         'statut', 'date_paiement', 'notes',
+        'peppol_id', 'peppol_sender_id', 'peppol_recu_at', 'peppol_source', 'peppol_raw_data',
     ];
 
     protected $casts = [
@@ -27,6 +28,8 @@ class FactureAchat extends Model
         'taux_tva'       => 'decimal:2',
         'montant_tva'    => 'decimal:2',
         'montant_ttc'    => 'decimal:2',
+        'peppol_recu_at' => 'datetime',
+        'peppol_raw_data' => 'array',
     ];
 
     public static array $categories = [
