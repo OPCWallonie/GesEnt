@@ -14,14 +14,16 @@ class Avoir extends Model
         'date_document', 'motif',
         'montant_ht', 'taux_tva', 'montant_tva', 'montant_ttc',
         'notes',
+        'peppol_reference', 'peppol_envoye_at',
     ];
 
     protected $casts = [
-        'date_document' => 'date',
-        'montant_ht'    => 'decimal:4',
-        'taux_tva'      => 'decimal:2',
-        'montant_tva'   => 'decimal:4',
-        'montant_ttc'   => 'decimal:4',
+        'date_document'  => 'date',
+        'montant_ht'     => 'decimal:4',
+        'taux_tva'       => 'decimal:2',
+        'montant_tva'    => 'decimal:4',
+        'montant_ttc'    => 'decimal:4',
+        'peppol_envoye_at' => 'datetime',
     ];
 
     public function facture()

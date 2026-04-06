@@ -6,6 +6,27 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export CSV
         </a>
+        @if(($peppolMode ?? 'desactive') !== 'desactive' && \App\Models\ParametresEntreprise::instance()->peppolActif())
+        @php
+            $nonEnvoyeesPeppol = \App\Models\Facture::whereNull('peppol_envoye_at')
+                ->whereIn('statut', ['en_attente', 'envoyee', 'en_retard'])
+                ->whereHas('client', fn($q) => $q->whereNotNull('numero_tva'))
+                ->count();
+        @endphp
+        @if($nonEnvoyeesPeppol > 0)
+        <form method="POST" action="{{ route('factures.envoyer-peppol-masse') }}"
+              onsubmit="return confirm('Envoyer {{ $nonEnvoyeesPeppol }} facture(s) via Peppol ? Cela peut prendre quelques secondes.')">
+            @csrf
+            <button type="submit"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Envoyer {{ $nonEnvoyeesPeppol }} facture(s) via Peppol
+            </button>
+        </form>
+        @endif
+        @endif
         <a href="{{ route('factures.create') }}"
            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>

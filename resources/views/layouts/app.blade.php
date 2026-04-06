@@ -113,6 +113,16 @@
                 Export comptable
             </a>
 
+            @if(($peppolMode ?? 'desactive') !== 'desactive')
+            <a href="{{ route('peppol.dashboard') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded-lg {{ request()->routeIs('peppol.*') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Peppol
+            </a>
+            @endif
+
             @role('admin')
             <a href="{{ route('users.index') }}"
                class="flex items-center gap-3 px-3 py-2 rounded-lg {{ request()->routeIs('users.*') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white' }}">

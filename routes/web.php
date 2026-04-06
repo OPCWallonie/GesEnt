@@ -21,6 +21,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OcrController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StatistiquesController;
+use App\Http\Controllers\PeppolDashboardController;
 use App\Http\Controllers\PeppolWebhookController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -66,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('factures/{facture}/pdf', [FactureController::class, 'pdf'])->name('factures.pdf');
     Route::post('factures/{facture}/envoyer', [FactureController::class, 'envoyer'])->name('factures.envoyer');
     Route::post('factures/{facture}/envoyer-peppol', [FactureController::class, 'envoyerPeppol'])->name('factures.envoyer-peppol');
+    Route::post('factures/envoyer-peppol-masse', [FactureController::class, 'envoyerPeppolEnMasse'])->name('factures.envoyer-peppol-masse');
     Route::patch('factures/{facture}/marquer-payee', [FactureController::class, 'marquerPayee'])->name('factures.marquer-payee');
     Route::patch('factures/{facture}/relancer', [FactureController::class, 'relancer'])->name('factures.relancer');
     Route::patch('factures/{facture}/liberer-retenue', [FactureController::class, 'libererRetenue'])->name('factures.liberer-retenue');
@@ -77,6 +79,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('avoirs/{avoir}', [AvoirController::class, 'show'])->name('avoirs.show');
     Route::delete('avoirs/{avoir}', [AvoirController::class, 'destroy'])->name('avoirs.destroy');
     Route::get('avoirs/{avoir}/pdf', [AvoirController::class, 'pdf'])->name('avoirs.pdf');
+    Route::post('avoirs/{avoir}/envoyer-peppol', [AvoirController::class, 'envoyerPeppol'])->name('avoirs.envoyer-peppol');
+
+    // Peppol dashboard & discovery
+    Route::get('/peppol', [PeppolDashboardController::class, 'index'])->name('peppol.dashboard');
+    Route::get('/api/peppol/discovery/{client}', function (\App\Models\Client $client, \App\Services\PeppolService $peppol) {
+        if (!$client->numero_tva) {
+            return response()->json(['available' => false, 'reason' => 'Pas de numéro de TVA']);
+        }
+        $available = $peppol->destinataireDisponible($client->numero_tva);
+        return response()->json(['available' => $available]);
+    })->name('api.peppol.discovery');
 
     // API autocomplete
     Route::get('/api/produits/search', [ProduitController::class, 'search'])->name('produits.search');

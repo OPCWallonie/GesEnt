@@ -6,6 +6,7 @@ use App\Models\Avoir;
 use App\Models\Facture;
 use App\Models\ParametresEntreprise;
 use App\Services\NumerotationService;
+use App\Services\PeppolService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -62,6 +63,21 @@ class AvoirController extends Controller
         $avoir->delete();
         return redirect()->route('factures.show', $avoir->facture_id)
             ->with('success', "Avoir {$avoir->numero} supprimé.");
+    }
+
+    public function envoyerPeppol(Avoir $avoir, PeppolService $peppol)
+    {
+        $resultat = $peppol->envoyerAvoir($avoir);
+
+        if ($resultat['success']) {
+            $avoir->update([
+                'peppol_reference' => $resultat['reference'],
+                'peppol_envoye_at' => now(),
+            ]);
+            return back()->with('success', $resultat['message']);
+        }
+
+        return back()->with('error', $resultat['message']);
     }
 
     public function pdf(Avoir $avoir)

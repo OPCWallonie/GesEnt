@@ -340,6 +340,52 @@ class FactureController extends Controller
         return back()->with('error', $resultat['message']);
     }
 
+    public function envoyerPeppolEnMasse(PeppolService $peppol)
+    {
+        $params = ParametresEntreprise::instance();
+        if (!$params->peppolActif()) {
+            return back()->with('error', 'Peppol non configuré.');
+        }
+
+        $factures = Facture::whereNull('peppol_envoye_at')
+            ->whereIn('statut', ['en_attente', 'envoyee', 'en_retard'])
+            ->whereHas('client', fn($q) => $q->whereNotNull('numero_tva'))
+            ->with('client')
+            ->get();
+
+        if ($factures->isEmpty()) {
+            return back()->with('success', 'Toutes les factures ont déjà été envoyées via Peppol.');
+        }
+
+        $envoyees = 0;
+        $erreurs  = 0;
+        $details  = [];
+
+        foreach ($factures as $facture) {
+            $resultat = $peppol->envoyerFacture($facture);
+
+            if ($resultat['success']) {
+                $facture->update([
+                    'peppol_reference' => $resultat['reference'],
+                    'peppol_envoye_at' => now(),
+                ]);
+                $envoyees++;
+            } else {
+                $erreurs++;
+                $details[] = "{$facture->numero} : {$resultat['message']}";
+            }
+
+            usleep(200000);
+        }
+
+        $message = "{$envoyees} facture(s) envoyée(s) via Peppol.";
+        if ($erreurs > 0) {
+            $message .= " {$erreurs} erreur(s) : " . implode(' | ', array_slice($details, 0, 3));
+        }
+
+        return back()->with($erreurs > 0 ? 'error' : 'success', $message);
+    }
+
     public function relancer(Facture $facture)
     {
         if ($facture->statut instanceof Payee) {

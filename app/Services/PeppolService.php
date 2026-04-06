@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Avoir;
 use App\Models\Facture;
 use App\Models\ParametresEntreprise;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -91,6 +92,45 @@ class PeppolService
         } catch (\Exception $e) {
             Log::error("Peppol send failed", [
                 'facture'  => $facture->numero,
+                'provider' => $provider,
+                'error'    => $e->getMessage(),
+            ]);
+            return ['success' => false, 'message' => 'Erreur Peppol : ' . $e->getMessage(), 'reference' => null];
+        }
+    }
+
+    /**
+     * Envoyer un avoir (note de crédit) via Peppol.
+     *
+     * @return array{success: bool, message: string, reference: ?string}
+     */
+    public function envoyerAvoir(Avoir $avoir): array
+    {
+        $params = ParametresEntreprise::instance();
+
+        if (!$params->peppolActif()) {
+            return ['success' => false, 'message' => 'Peppol non configuré.', 'reference' => null];
+        }
+
+        $provider = $params->peppol_provider;
+        $apiKey   = $params->peppol_api_key_decrypte;
+        $entityId = $params->peppol_entity_id;
+        $baseUrl  = self::URLS[$provider][$params->peppol_environment] ?? null;
+
+        if (!$baseUrl || !$apiKey || !$entityId) {
+            return ['success' => false, 'message' => 'Configuration Peppol incomplète.', 'reference' => null];
+        }
+
+        $avoir->load('client', 'facture', 'chantier');
+
+        try {
+            return match ($provider) {
+                'storecove' => $this->envoyerAvoirStorecove($avoir, $baseUrl, $apiKey, $entityId, $params),
+                default     => ['success' => false, 'message' => "Provider {$provider} : avoirs pas encore supportés.", 'reference' => null],
+            };
+        } catch (\Exception $e) {
+            Log::error("Peppol credit note send failed", [
+                'avoir'    => $avoir->numero,
                 'provider' => $provider,
                 'error'    => $e->getMessage(),
             ]);
@@ -197,6 +237,105 @@ class PeppolService
             return [
                 'success'   => true,
                 'message'   => "Facture {$facture->numero} envoyée via Peppol (Storecove).",
+                'reference' => (string) $ref,
+            ];
+        }
+
+        $erreur = $response->json('errors') ?? $response->body();
+        return [
+            'success'   => false,
+            'message'   => "Erreur Storecove ({$response->status()}) : " . (is_array($erreur) ? json_encode($erreur) : $erreur),
+            'reference' => null,
+        ];
+    }
+
+    private function envoyerAvoirStorecove(Avoir $avoir, string $baseUrl, string $apiKey, string $entityId, ParametresEntreprise $params): array
+    {
+        $client = $avoir->client;
+
+        $invoiceData = [
+            'invoiceNumber'       => $avoir->numero,
+            'issueDate'           => $avoir->date_document->format('Y-m-d'),
+            'invoiceCurrencyCode' => 'EUR',
+            'amountIncludingVat'  => -abs((float) $avoir->montant_ttc),
+            'taxSystem'           => 'tax_line_percentages',
+            'billingReference'    => $avoir->facture->numero,
+
+            'accountingSupplierParty' => [
+                'publicIdentifiers' => [
+                    ['scheme' => 'BE:EN', 'id' => $params->numero_tva ?? $params->peppol_id],
+                ],
+            ],
+
+            'accountingCustomerParty' => [
+                'party' => [
+                    'companyName' => $client->nom,
+                    'address'     => [
+                        'street1' => $client->adresse,
+                        'zip'     => $client->code_postal,
+                        'city'    => $client->ville,
+                        'country' => $this->codePaysBelgique($client->pays),
+                    ],
+                    'publicIdentifiers' => $client->numero_tva ? [
+                        ['scheme' => 'BE:EN', 'id' => $client->numero_tva],
+                    ] : [],
+                ],
+            ],
+
+            'invoiceLines' => [
+                [
+                    'lineId'             => '1',
+                    'description'        => $avoir->motif,
+                    'quantity'           => 1,
+                    'unitCode'           => 'C62',
+                    'amountExcludingVat' => -abs((float) $avoir->montant_ht),
+                    'itemPrice'          => abs((float) $avoir->montant_ht),
+                    'tax'                => [
+                        'percentage' => (float) $avoir->taux_tva,
+                        'country'    => 'BE',
+                    ],
+                ],
+            ],
+        ];
+
+        $parametres = $params;
+        $pdfOutput  = Pdf::loadView('pdf.avoir', compact('avoir', 'parametres'))
+            ->setPaper('a4', 'portrait')
+            ->output();
+
+        $payload = [
+            'legalEntityId' => (int) $entityId,
+            'invoice'       => $invoiceData,
+            'attachments'   => [
+                [
+                    'filename'     => "avoir-{$avoir->numero}.pdf",
+                    'document'     => base64_encode($pdfOutput),
+                    'mimeType'     => 'application/pdf',
+                    'primaryImage' => true,
+                ],
+            ],
+        ];
+
+        if ($client->numero_tva) {
+            $payload['invoiceRecipient'] = [
+                'publicIdentifiers' => [
+                    ['scheme' => 'BE:EN', 'id' => $client->numero_tva],
+                ],
+            ];
+        }
+        if ($client->email) {
+            $payload['invoiceRecipient']['emails'] = [$client->email];
+        }
+
+        $response = Http::withToken($apiKey)
+            ->timeout(30)
+            ->post("{$baseUrl}/document_submissions", $payload);
+
+        if ($response->successful()) {
+            $ref = $response->json('guid') ?? $response->json('id');
+            return [
+                'success'   => true,
+                'message'   => "Avoir {$avoir->numero} envoyé via Peppol.",
                 'reference' => (string) $ref,
             ];
         }

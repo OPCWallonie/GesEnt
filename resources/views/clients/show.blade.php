@@ -38,7 +38,36 @@
                         </div>
                     @endif
                     @if($client->numero_tva)
-                        <div><dt class="text-gray-400 text-xs">N° TVA</dt><dd class="font-mono text-gray-800">{{ $client->numero_tva }}</dd></div>
+                        <div>
+                            <dt class="text-gray-400 text-xs">N° TVA</dt>
+                            <dd class="font-mono text-gray-800">{{ $client->numero_tva }}</dd>
+                            @if(($peppolMode ?? 'desactive') !== 'desactive')
+                            <div x-data="{ peppolOk: null, loading: true }"
+                                 x-init="
+                                    fetch('{{ route('api.peppol.discovery', $client) }}')
+                                        .then(r => r.json())
+                                        .then(d => { peppolOk = d.available; loading = false; })
+                                        .catch(() => { loading = false; })
+                                 "
+                                 class="mt-1">
+                                <template x-if="loading">
+                                    <span class="text-xs text-gray-400">Vérification Peppol…</span>
+                                </template>
+                                <template x-if="!loading && peppolOk">
+                                    <span class="text-xs text-green-600 font-medium flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                        Joignable via Peppol
+                                    </span>
+                                </template>
+                                <template x-if="!loading && peppolOk === false">
+                                    <span class="text-xs text-amber-600 flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                        Non inscrit sur Peppol
+                                    </span>
+                                </template>
+                            </div>
+                            @endif
+                        </div>
                     @endif
                 </dl>
             </div>
