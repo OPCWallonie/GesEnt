@@ -14,11 +14,13 @@ class Client extends Model
         'telephone', 'fax', 'gsm', 'email', 'site_web',
         'numero_tva', 'numero_affiliation', 'code_client',
         'notes', 'actif', 'coefficient_marge',
+        'odoo_partner_id', 'odoo_synced_at',
     ];
 
     protected $casts = [
         'actif'             => 'boolean',
         'coefficient_marge' => 'decimal:2',
+        'odoo_synced_at'    => 'datetime',
     ];
 
     public function chantiers()

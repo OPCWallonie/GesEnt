@@ -18,6 +18,7 @@ class FactureAchat extends Model
         'montant_ht', 'taux_tva', 'montant_tva', 'montant_ttc',
         'statut', 'date_paiement', 'notes',
         'peppol_id', 'peppol_sender_id', 'peppol_recu_at', 'peppol_source', 'peppol_raw_data',
+        'odoo_move_id', 'odoo_synced_at',
     ];
 
     protected $casts = [
@@ -28,8 +29,9 @@ class FactureAchat extends Model
         'taux_tva'       => 'decimal:2',
         'montant_tva'    => 'decimal:2',
         'montant_ttc'    => 'decimal:2',
-        'peppol_recu_at' => 'datetime',
+        'peppol_recu_at'  => 'datetime',
         'peppol_raw_data' => 'array',
+        'odoo_synced_at'  => 'datetime',
     ];
 
     public static array $categories = [

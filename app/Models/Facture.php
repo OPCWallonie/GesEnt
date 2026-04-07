@@ -26,6 +26,7 @@ class Facture extends Model
         'nb_relances', 'derniere_relance_at', 'prochaine_relance_at', 'relance_auto',
         'numero_situation', 'pourcentage_avancement', 'pourcentage_cumule', 'montant_anterieur',
         'peppol_reference', 'peppol_envoye_at',
+        'odoo_move_id', 'odoo_synced_at',
     ];
 
     protected $casts = [
@@ -54,6 +55,7 @@ class Facture extends Model
         'pourcentage_cumule'           => 'decimal:2',
         'montant_anterieur'            => 'decimal:4',
         'peppol_envoye_at'             => 'datetime',
+        'odoo_synced_at'               => 'datetime',
     ];
 
     public function bonCommande()

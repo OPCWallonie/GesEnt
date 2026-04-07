@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ParametresEntreprise;
+use App\Services\OdooService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -46,6 +47,14 @@ class ParametresController extends Controller
             'peppol_entity_id'        => 'nullable|string|max:100',
             'peppol_id'               => 'nullable|string|max:50',
             'peppol_environment'      => 'nullable|in:sandbox,production',
+            // Odoo
+            'odoo_actif'              => 'nullable|boolean',
+            'odoo_url'                => 'nullable|url|max:255',
+            'odoo_database'           => 'nullable|string|max:100',
+            'odoo_username'           => 'nullable|string|max:100',
+            'odoo_api_key'            => 'nullable|string|max:500',
+            'odoo_mapping'            => 'nullable|array',
+            'peppol_gere_par'         => 'nullable|in:gesent,odoo',
         ]);
 
         $parametres = ParametresEntreprise::instance();
@@ -84,8 +93,27 @@ class ParametresController extends Controller
             $data['peppol_webhook_token'] = bin2hex(random_bytes(32));
         }
 
+        // Odoo : chiffrer la clé API si nouvelle valeur, conserver sinon
+        if (!empty($data['odoo_api_key'])) {
+            $data['odoo_api_key'] = encrypt($data['odoo_api_key']);
+        } else {
+            unset($data['odoo_api_key']);
+        }
+
+        // Odoo actif = case à cocher (absent du POST si décoché)
+        $data['odoo_actif'] = $request->boolean('odoo_actif');
+
+        // peppol_gere_par par défaut = gesent
+        $data['peppol_gere_par'] = $data['peppol_gere_par'] ?? 'gesent';
+
         $parametres->update($data);
 
         return redirect()->route('parametres.edit')->with('success', 'Paramètres sauvegardés.');
+    }
+
+    public function testerOdoo(OdooService $odoo)
+    {
+        $resultat = $odoo->testerConnexion();
+        return response()->json($resultat);
     }
 }

@@ -265,7 +265,7 @@
                                class="mt-0.5 text-green-600 focus:ring-green-500">
                         <div>
                             <span class="font-medium text-gray-900">Peppol complet (autonome)</span>
-                            <span class="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Lot 6B — bientôt disponible</span>
+                            <!-- <span class="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded"></span> -->
                             <p class="text-xs text-gray-500 mt-1">
                                 Gesent envoie ET reçoit via Peppol. Les factures fournisseurs arrivent
                                 automatiquement. Pas besoin de logiciel comptable pour l'envoi/réception.
@@ -383,6 +383,169 @@
                         Créez un compte sur <em>e-invoice.be</em>, récupérez votre clé API dans l'espace client.
                     </div>
                 </div>
+            </div>
+        </div>
+
+        {{-- Intégration Odoo --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4"
+             id="odoo"
+             x-data="{
+                 actif: {{ $parametres->odoo_actif ? 'true' : 'false' }},
+                 test: null,
+                 loading: false,
+                 async testerConnexion() {
+                     this.loading = true;
+                     this.test = null;
+                     try {
+                         const r = await fetch('{{ route('parametres.tester-odoo') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                 'Accept': 'application/json',
+                             }
+                         });
+                         this.test = await r.json();
+                     } catch (e) {
+                         this.test = { success: false, message: 'Impossible de contacter le serveur.' };
+                     } finally {
+                         this.loading = false;
+                     }
+                 }
+             }">
+            <div class="flex items-center justify-between border-b pb-2">
+                <h2 class="font-semibold text-gray-700">Intégration Odoo</h2>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="odoo_actif" value="1" x-model="actif"
+                           {{ $parametres->odoo_actif ? 'checked' : '' }}
+                           class="rounded border-gray-300 text-blue-600">
+                    <span class="text-sm text-gray-600">Activer la synchronisation Odoo</span>
+                </label>
+            </div>
+
+            <div class="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+                Synchronisation bidirectionnelle avec votre instance Odoo. Les factures de vente sont poussées vers
+                Odoo, les paiements et factures d'achat remontent dans Gesent. Option facultative — sans impact
+                sur le fonctionnement normal si désactivé.
+            </div>
+
+            <div x-show="actif" x-cloak class="space-y-4">
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">URL Odoo</label>
+                        <input type="url" name="odoo_url"
+                               value="{{ old('odoo_url', $parametres->odoo_url) }}"
+                               placeholder="https://monentreprise.odoo.com"
+                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        <p class="text-xs text-gray-400 mt-1">URL complète de votre instance Odoo</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Base de données</label>
+                        <input type="text" name="odoo_database"
+                               value="{{ old('odoo_database', $parametres->odoo_database) }}"
+                               placeholder="nom_de_la_base"
+                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        <p class="text-xs text-gray-400 mt-1">Visible dans Paramètres → Général → Base de données</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Login (email)</label>
+                        <input type="text" name="odoo_username"
+                               value="{{ old('odoo_username', $parametres->odoo_username) }}"
+                               placeholder="admin@monentreprise.be"
+                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Clé API Odoo</label>
+                        <input type="password" name="odoo_api_key"
+                               placeholder="{{ $parametres->odoo_api_key ? '(conservée — laisser vide pour ne pas changer)' : 'Clé API Odoo…' }}"
+                               autocomplete="new-password"
+                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        <p class="text-xs text-gray-400 mt-1">Odoo → Paramètres → Utilisateurs → votre profil → Clés API</p>
+                    </div>
+                </div>
+
+                {{-- Test de connexion --}}
+                <div class="flex items-center gap-3">
+                    <button type="button" @click="testerConnexion()"
+                            :disabled="loading"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-50">
+                        <svg x-show="loading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                        </svg>
+                        <span x-show="!loading">Tester la connexion</span>
+                        <span x-show="loading">Test en cours…</span>
+                    </button>
+                    <div x-show="test !== null" class="text-sm">
+                        <span x-show="test?.success" class="text-green-600 font-medium" x-text="test?.message"></span>
+                        <span x-show="!test?.success" class="text-red-600" x-text="test?.message"></span>
+                    </div>
+                </div>
+
+                {{-- Mapping comptable --}}
+                <div class="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <h3 class="text-sm font-semibold text-gray-700">Mapping comptable</h3>
+                    <p class="text-xs text-gray-500">Renseignez les codes de journaux et comptes de votre plan comptable Odoo.
+                       Ces valeurs seront utilisées pour créer les écritures dans Odoo.</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        @php
+                            $mapping = $parametres->odoo_mapping ?? [];
+                            $mappingFields = [
+                                'journal_vente'      => ['Journal ventes', 'ex: SAJ'],
+                                'journal_achat'      => ['Journal achats', 'ex: ACH'],
+                                'compte_client'      => ['Compte clients', 'ex: 400000'],
+                                'compte_fournisseur' => ['Compte fournisseurs', 'ex: 440000'],
+                                'compte_vente'       => ['Compte produits ventes', 'ex: 700000'],
+                                'compte_achat'       => ['Compte charges achats', 'ex: 600000'],
+                                'compte_tva_21'      => ['Compte TVA 21%', 'ex: 451000'],
+                                'compte_tva_6'       => ['Compte TVA 6%', 'ex: 451060'],
+                            ];
+                        @endphp
+                        @foreach($mappingFields as $key => [$label, $placeholder])
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">{{ $label }}</label>
+                            <input type="text" name="odoo_mapping[{{ $key }}]"
+                                   value="{{ old("odoo_mapping.$key", $mapping[$key] ?? '') }}"
+                                   placeholder="{{ $placeholder }}"
+                                   class="w-full rounded border-gray-300 text-xs shadow-sm">
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Peppol : qui envoie ? --}}
+                @if($parametres->peppolActif())
+                <div class="border border-amber-200 bg-amber-50 rounded-lg p-4 space-y-2">
+                    <h3 class="text-sm font-semibold text-amber-800">Peppol — qui envoie les factures ?</h3>
+                    <p class="text-xs text-amber-700">
+                        Vous avez Peppol activé dans Gesent ET Odoo connecté. Pour éviter les doublons,
+                        choisissez qui se charge de l'envoi Peppol.
+                    </p>
+                    <div class="flex gap-6 mt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="peppol_gere_par" value="gesent"
+                                   {{ old('peppol_gere_par', $parametres->peppol_gere_par ?? 'gesent') === 'gesent' ? 'checked' : '' }}
+                                   class="text-blue-600 border-gray-300">
+                            <div>
+                                <span class="text-sm font-medium text-gray-900">Gesent envoie via Peppol</span>
+                                <p class="text-xs text-gray-500">Gesent transmet les factures sur le réseau Peppol avant de les envoyer à Odoo.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="peppol_gere_par" value="odoo"
+                                   {{ old('peppol_gere_par', $parametres->peppol_gere_par ?? 'gesent') === 'odoo' ? 'checked' : '' }}
+                                   class="text-blue-600 border-gray-300">
+                            <div>
+                                <span class="text-sm font-medium text-gray-900">Odoo gère Peppol</span>
+                                <p class="text-xs text-gray-500">Gesent désactive son envoi Peppol — c'est Odoo qui s'en charge via son module e-invoicing.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                @else
+                    <input type="hidden" name="peppol_gere_par" value="gesent">
+                @endif
+
             </div>
         </div>
 

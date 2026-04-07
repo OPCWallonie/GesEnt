@@ -17,9 +17,16 @@ class ParametresEntreprise extends Model
         'ai_provider', 'ai_api_key', 'ai_model', 'ai_url',
         'peppol_mode', 'peppol_provider', 'peppol_api_key', 'peppol_entity_id',
         'peppol_id', 'peppol_environment', 'peppol_webhook_token',
+        'odoo_actif', 'odoo_url', 'odoo_database', 'odoo_username',
+        'odoo_api_key', 'odoo_mapping', 'peppol_gere_par',
     ];
 
-    protected $hidden = ['ai_api_key', 'peppol_api_key'];
+    protected $casts = [
+        'odoo_actif'   => 'boolean',
+        'odoo_mapping' => 'array',
+    ];
+
+    protected $hidden = ['ai_api_key', 'peppol_api_key', 'odoo_api_key'];
 
     public static function instance(): self
     {
@@ -61,5 +68,32 @@ class ParametresEntreprise extends Model
         return in_array($this->peppol_mode ?? 'desactive', ['envoi', 'complet'])
             && !empty($this->peppol_provider)
             && !empty($this->peppol_api_key);
+    }
+
+    // --- Odoo ---
+
+    public function getOdooApiKeyDecrypteAttribute(): ?string
+    {
+        if (!$this->odoo_api_key) return null;
+        try { return decrypt($this->odoo_api_key); } catch (\Exception) { return null; }
+    }
+
+    public function odooActif(): bool
+    {
+        return (bool) $this->odoo_actif
+            && !empty($this->odoo_url)
+            && !empty($this->odoo_database)
+            && !empty($this->odoo_username)
+            && !empty($this->odoo_api_key);
+    }
+
+    public function odooMapping(string $key, $default = null): mixed
+    {
+        return ($this->odoo_mapping ?? [])[$key] ?? $default;
+    }
+
+    public function peppolGereParOdoo(): bool
+    {
+        return $this->odooActif() && $this->peppol_gere_par === 'odoo';
     }
 }

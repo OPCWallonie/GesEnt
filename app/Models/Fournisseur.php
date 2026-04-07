@@ -14,10 +14,12 @@ class Fournisseur extends Model
         'numero_tva', 'numero_entreprise',
         'adresse', 'code_postal', 'ville', 'pays',
         'notes', 'actif', 'peppol_id',
+        'odoo_partner_id', 'odoo_synced_at',
     ];
 
     protected $casts = [
-        'actif' => 'boolean',
+        'actif'          => 'boolean',
+        'odoo_synced_at' => 'datetime',
     ];
 
     public function facturesAchat()

@@ -15,6 +15,7 @@ class Avoir extends Model
         'montant_ht', 'taux_tva', 'montant_tva', 'montant_ttc',
         'notes',
         'peppol_reference', 'peppol_envoye_at',
+        'odoo_move_id', 'odoo_synced_at',
     ];
 
     protected $casts = [
@@ -24,6 +25,7 @@ class Avoir extends Model
         'montant_tva'    => 'decimal:4',
         'montant_ttc'    => 'decimal:4',
         'peppol_envoye_at' => 'datetime',
+        'odoo_synced_at'   => 'datetime',
     ];
 
     public function facture()

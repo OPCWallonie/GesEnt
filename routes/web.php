@@ -135,6 +135,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/parametres', [ParametresController::class, 'edit'])->name('parametres.edit');
         Route::put('/parametres', [ParametresController::class, 'update'])->name('parametres.update');
+        Route::post('/parametres/tester-odoo', [ParametresController::class, 'testerOdoo'])->name('parametres.tester-odoo');
     });
 
     // Journal de chantier
