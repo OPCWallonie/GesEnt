@@ -25,3 +25,10 @@ Schedule::command('factures:relancer')->dailyAt('08:00');
 
 // Chaque lundi à 2h du matin : recalculer les scores de fréquence produits
 Schedule::command('produits:recalculer-scores')->weeklyOn(1, '02:00');
+
+// Odoo — toutes les 15 min : importer paiements et factures d'achat
+Schedule::command('odoo:sync-paiements')->everyFifteenMinutes();
+Schedule::command('odoo:sync-achats')->everyFifteenMinutes();
+
+// Odoo — toutes les heures : pousser les factures de vente non synchronisées
+Schedule::command('odoo:sync-factures')->hourly();
