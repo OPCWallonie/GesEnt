@@ -10,7 +10,7 @@ class LigneDocument extends Model
 
     protected $fillable = [
         'documentable_type', 'documentable_id',
-        'produit_id', 'ordre', 'est_section',
+        'produit_id', 'catalog_produit_id', 'ordre', 'est_section',
         'designation', 'detail', 'unite',
         'quantite', 'prix_unitaire',
         'remise_valeur', 'remise_type',

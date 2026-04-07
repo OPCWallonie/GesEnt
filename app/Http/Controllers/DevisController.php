@@ -11,6 +11,7 @@ use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Services\DocumentService;
 use App\Services\NumerotationService;
+use App\Services\ProduitUsageService;
 use App\States\Devis\Archive as DevisArchive;
 use App\States\Devis\Valide as DevisValide;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -23,6 +24,7 @@ class DevisController extends Controller
     public function __construct(
         private NumerotationService $numerotation,
         private DocumentService $documentService,
+        private ProduitUsageService $usageService,
     ) {}
 
     public function index(Request $request)
@@ -111,6 +113,7 @@ class DevisController extends Controller
 
             $this->documentService->enregistrerLignes($devis, $data['lignes']);
             $this->documentService->recalculerMontants($devis);
+            $this->usageService->enregistrerUtilisation($devis);
             return $devis;
         });
 
@@ -185,6 +188,7 @@ class DevisController extends Controller
             $devis->lignes()->delete();
             $this->documentService->enregistrerLignes($devis, $data['lignes']);
             $this->documentService->recalculerMontants($devis);
+            $this->usageService->enregistrerUtilisation($devis);
         });
 
         return redirect()->route('devis.show', $devis)->with('success', 'Devis mis à jour.');

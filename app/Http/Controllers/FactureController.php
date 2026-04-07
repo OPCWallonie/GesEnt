@@ -12,6 +12,7 @@ use App\Models\Paiement;
 use App\Services\DocumentService;
 use App\Services\NumerotationService;
 use App\Services\PeppolService;
+use App\Services\ProduitUsageService;
 use App\States\Facture\Archive as FactureArchive;
 use App\States\Facture\EnAttente;
 use App\States\Facture\EnRetard;
@@ -28,6 +29,7 @@ class FactureController extends Controller
     public function __construct(
         private NumerotationService $numerotation,
         private DocumentService $documentService,
+        private ProduitUsageService $usageService,
     ) {}
 
     public function index(Request $request)
@@ -126,6 +128,7 @@ class FactureController extends Controller
 
             $this->documentService->enregistrerLignes($facture, $data['lignes']);
             $this->documentService->recalculerMontants($facture);
+            $this->usageService->enregistrerUtilisation($facture);
 
             // Champs de situation (facturation partielle)
             if (!empty($data['numero_situation'])) {
@@ -214,6 +217,7 @@ class FactureController extends Controller
                 $facture->lignes()->delete();
                 $this->documentService->enregistrerLignes($facture, $data['lignes']);
                 $this->documentService->recalculerMontants($facture);
+                $this->usageService->enregistrerUtilisation($facture);
 
                 if ($nouveauStatut !== $ancienStatut) {
                     $stateClass = match ($nouveauStatut) {

@@ -2,8 +2,12 @@
 // Gesent2026 ProduitController
 namespace App\Http\Controllers;
 
+use App\Models\CatalogProduit;
 use App\Models\Produit;
+use App\Models\ProduitAssociation;
+use App\Models\ProduitUsageStat;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProduitController extends Controller
 {
@@ -194,16 +198,178 @@ class ProduitController extends Controller
     }
 
     /**
-     * API endpoint for autocomplete search.
+     * API endpoint for autocomplete search — triée par score d'usage.
      */
     public function search(Request $request)
     {
-        $results = Produit::actif()
-            ->where('designation', 'like', '%' . like_escape($request->string('q')->toString()) . '%')
-            ->orderBy('designation')
-            ->limit(10)
-            ->get(['id', 'designation', 'prix_unitaire', 'taux_tva', 'unite']);
+        $q = $request->string('q')->toString();
 
-        return response()->json($results);
+        $results = Produit::actif()
+            ->where('produits.designation', 'like', '%' . like_escape($q) . '%')
+            ->leftJoin('produit_usage_stats', 'produits.id', '=', 'produit_usage_stats.produit_id')
+            ->select('produits.id', 'produits.designation', 'produits.prix_unitaire', 'produits.taux_tva', 'produits.unite',
+                     DB::raw('COALESCE(produit_usage_stats.score, 0) as usage_score'))
+            ->orderByDesc('usage_score')
+            ->orderBy('produits.designation')
+            ->limit(10)
+            ->get();
+
+        return response()->json($results->map(fn($p) => [
+            'id'          => $p->id,
+            'designation' => $p->designation,
+            'prix'        => (float) $p->prix_unitaire,
+            'prix_unitaire'=> (float) $p->prix_unitaire,
+            'taux_tva'    => (float) $p->taux_tva,
+            'unite'       => $p->unite,
+            'score'       => (float) $p->usage_score,
+            'habituel'    => $p->usage_score > 5,
+            'source'      => 'interne',
+        ]));
+    }
+
+    /**
+     * Suggestions intelligentes basées sur les produits déjà dans le document.
+     */
+    public function suggestions(Request $request)
+    {
+        $produitsActuels = $request->input('produits', []);
+        $q               = trim($request->get('q', ''));
+
+        // Pas de contexte et pas de recherche → top produits habituels
+        if (empty($produitsActuels) && strlen($q) < 2) {
+            return $this->topProduits();
+        }
+
+        // Collecter les produits associés aux produits déjà présents
+        $associes = collect();
+        foreach ($produitsActuels as $key) {
+            foreach (ProduitAssociation::associesDe($key, 20) as $id) {
+                $associes->push($id);
+            }
+        }
+        $scoredAssocies = $associes->countBy()->sortDesc();
+
+        // Si recherche textuelle
+        if (strlen($q) >= 2) {
+            $like = '%' . like_escape($q) . '%';
+            $resultats = collect();
+
+            $interneIds = $scoredAssocies->keys()->filter(fn($k) => str_starts_with($k, 'p:'))
+                ->map(fn($k) => (int) substr($k, 2));
+            $catalogIds = $scoredAssocies->keys()->filter(fn($k) => str_starts_with($k, 'c:'))
+                ->map(fn($k) => (int) substr($k, 2));
+
+            if ($interneIds->isNotEmpty()) {
+                Produit::whereIn('id', $interneIds)->where('designation', 'like', $like)
+                    ->get()->each(function ($p) use (&$resultats, $scoredAssocies) {
+                        $resultats->push([
+                            'id' => $p->id, 'designation' => $p->designation,
+                            'prix' => (float) $p->prix_unitaire, 'prix_unitaire' => (float) $p->prix_unitaire,
+                            'taux_tva' => (float) $p->taux_tva, 'unite' => $p->unite,
+                            'score' => $scoredAssocies->get('p:' . $p->id, 0) * 100,
+                            'source' => 'interne', 'associe' => true,
+                        ]);
+                    });
+            }
+
+            if ($catalogIds->isNotEmpty()) {
+                CatalogProduit::whereIn('id', $catalogIds)->where('designation', 'like', $like)
+                    ->get()->each(function ($p) use (&$resultats, $scoredAssocies) {
+                        $resultats->push([
+                            'id' => $p->id, 'fournisseur' => $p->nom_fournisseur ?? $p->fournisseur,
+                            'reference' => $p->reference,
+                            'designation' => $p->designation . ($p->marque ? " ({$p->marque})" : ''),
+                            'unite' => $p->unite, 'prix' => (float) $p->prix_revente,
+                            'prix_base' => (float) $p->prix_catalogue, 'taux_tva' => (float) $p->taux_tva,
+                            'en_stock' => $p->en_stock,
+                            'score' => $scoredAssocies->get('c:' . $p->id, 0) * 100,
+                            'source' => 'catalogue', 'associe' => true,
+                        ]);
+                    });
+            }
+
+            // Compléter avec la recherche textuelle standard (produits non associés)
+            $dejaDans = $resultats->pluck('id')->toArray();
+            Produit::actif()->where('produits.designation', 'like', $like)
+                ->leftJoin('produit_usage_stats', 'produits.id', '=', 'produit_usage_stats.produit_id')
+                ->select('produits.id', 'produits.designation', 'produits.prix_unitaire',
+                         'produits.taux_tva', 'produits.unite',
+                         DB::raw('COALESCE(produit_usage_stats.score, 0) as usage_score'))
+                ->orderByDesc('usage_score')
+                ->limit(15)
+                ->get()
+                ->each(function ($p) use (&$resultats, $dejaDans) {
+                    if (in_array($p->id, $dejaDans)) return;
+                    $resultats->push([
+                        'id' => $p->id, 'designation' => $p->designation,
+                        'prix' => (float) $p->prix_unitaire, 'prix_unitaire' => (float) $p->prix_unitaire,
+                        'taux_tva' => (float) $p->taux_tva, 'unite' => $p->unite,
+                        'score' => (float) $p->usage_score,
+                        'habituel' => $p->usage_score > 5,
+                        'source' => 'interne',
+                    ]);
+                });
+
+            return response()->json($resultats->sortByDesc('score')->values()->take(15));
+        }
+
+        // Pas de recherche textuelle → top associés
+        $resultats = collect();
+        foreach ($scoredAssocies->take(10) as $key => $count) {
+            if (str_starts_with($key, 'p:')) {
+                $p = Produit::find((int) substr($key, 2));
+                if (!$p) continue;
+                $resultats->push([
+                    'id' => $p->id, 'designation' => $p->designation,
+                    'prix' => (float) $p->prix_unitaire, 'prix_unitaire' => (float) $p->prix_unitaire,
+                    'taux_tva' => (float) $p->taux_tva, 'unite' => $p->unite,
+                    'score' => $count * 100, 'source' => 'interne', 'associe' => true,
+                ]);
+            } elseif (str_starts_with($key, 'c:')) {
+                $p = CatalogProduit::find((int) substr($key, 2));
+                if (!$p) continue;
+                $resultats->push([
+                    'id' => $p->id, 'fournisseur' => $p->nom_fournisseur ?? $p->fournisseur,
+                    'reference' => $p->reference,
+                    'designation' => $p->designation . ($p->marque ? " ({$p->marque})" : ''),
+                    'unite' => $p->unite, 'prix' => (float) $p->prix_revente,
+                    'prix_base' => (float) $p->prix_catalogue, 'taux_tva' => (float) $p->taux_tva,
+                    'en_stock' => $p->en_stock,
+                    'score' => $count * 100, 'source' => 'catalogue', 'associe' => true,
+                ]);
+            }
+        }
+
+        return response()->json($resultats->values());
+    }
+
+    private function topProduits()
+    {
+        $stats    = ProduitUsageStat::orderByDesc('score')->take(10)->get();
+        $resultats = [];
+
+        foreach ($stats as $stat) {
+            if ($stat->produit_id && $stat->produit) {
+                $p = $stat->produit;
+                $resultats[] = [
+                    'id' => $p->id, 'designation' => $p->designation,
+                    'prix' => (float) $p->prix_unitaire, 'prix_unitaire' => (float) $p->prix_unitaire,
+                    'taux_tva' => (float) $p->taux_tva, 'unite' => $p->unite,
+                    'score' => (float) $stat->score, 'source' => 'interne', 'habituel' => true,
+                ];
+            } elseif ($stat->catalog_produit_id && $stat->catalogProduit) {
+                $p = $stat->catalogProduit;
+                $resultats[] = [
+                    'id' => $p->id, 'fournisseur' => $p->nom_fournisseur ?? $p->fournisseur,
+                    'reference' => $p->reference,
+                    'designation' => $p->designation . ($p->marque ? " ({$p->marque})" : ''),
+                    'unite' => $p->unite, 'prix' => (float) $p->prix_revente,
+                    'prix_base' => (float) $p->prix_catalogue, 'taux_tva' => (float) $p->taux_tva,
+                    'score' => (float) $stat->score, 'source' => 'catalogue', 'habituel' => true,
+                ];
+            }
+        }
+
+        return response()->json($resultats);
     }
 }

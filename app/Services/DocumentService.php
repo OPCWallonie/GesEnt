@@ -26,17 +26,19 @@ class DocumentService
             }
 
             $document->lignes()->create([
-                'ordre'         => $ordre,
-                'est_section'   => $estSection,
-                'designation'   => $ligneData['designation'],
-                'detail'        => $ligneData['detail'] ?? null,
-                'unite'         => $ligneData['unite'] ?? 'pièce',
-                'quantite'      => $ligneData['quantite'] ?? 1,
-                'prix_unitaire' => $ligneData['prix_unitaire'] ?? 0,
-                'remise_valeur' => $ligneData['remise_valeur'] ?? 0,
-                'remise_type'   => $ligneData['remise_type'] ?? 'montant',
-                'taux_tva'      => $ligneData['taux_tva'] ?? 21,
-                'montant_ht'    => $montantHt,
+                'ordre'             => $ordre,
+                'est_section'       => $estSection,
+                'produit_id'        => $ligneData['produit_id'] ?? null,
+                'catalog_produit_id'=> $ligneData['catalog_produit_id'] ?? null,
+                'designation'       => $ligneData['designation'],
+                'detail'            => $ligneData['detail'] ?? null,
+                'unite'             => $ligneData['unite'] ?? 'pièce',
+                'quantite'          => $ligneData['quantite'] ?? 1,
+                'prix_unitaire'     => $ligneData['prix_unitaire'] ?? 0,
+                'remise_valeur'     => $ligneData['remise_valeur'] ?? 0,
+                'remise_type'       => $ligneData['remise_type'] ?? 'montant',
+                'taux_tva'          => $ligneData['taux_tva'] ?? 21,
+                'montant_ht'        => $montantHt,
             ]);
         }
     }

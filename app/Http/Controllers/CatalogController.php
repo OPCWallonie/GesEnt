@@ -59,9 +59,12 @@ class CatalogController extends Controller
 
         $produits = CatalogProduit::search($q)
             ->when($fournisseur, fn($query) => $query->where('fournisseur', $fournisseur))
+            ->leftJoin('produit_usage_stats', 'catalog_produits.id', '=', 'produit_usage_stats.catalog_produit_id')
+            ->select('catalog_produits.*', \Illuminate\Support\Facades\DB::raw('COALESCE(produit_usage_stats.score, 0) as usage_score'))
+            ->orderByDesc('usage_score')
             ->orderByRaw('en_stock DESC')
             ->limit(15)
-            ->get(['id', 'fournisseur', 'reference', 'designation', 'unite', 'prix_revente', 'prix_catalogue', 'taux_tva', 'en_stock', 'marque']);
+            ->get();
 
         return response()->json($produits->map(fn($p) => [
             'id'          => $p->id,
@@ -73,6 +76,8 @@ class CatalogController extends Controller
             'prix_base'   => (float) $p->prix_catalogue,
             'taux_tva'    => (float) $p->taux_tva,
             'en_stock'    => $p->en_stock,
+            'score'       => (float) ($p->usage_score ?? 0),
+            'habituel'    => ($p->usage_score ?? 0) > 5,
         ]));
     }
 

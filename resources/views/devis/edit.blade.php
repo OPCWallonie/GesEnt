@@ -54,6 +54,24 @@
                     </div>
                 </div>
 
+                {{-- Bandeau Produits habituels (8D) --}}
+                <div x-data="produitsHabituels()" x-init="charger()" x-show="produits.length > 0" x-cloak
+                     class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold text-blue-800">Vos produits habituels</h3>
+                        <span class="text-xs text-blue-500">Cliquez pour ajouter directement</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <template x-for="p in produits" :key="(p.source || 'i') + p.id">
+                            <button @click="ajouterProduit(p)" type="button"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm text-gray-700 hover:bg-blue-100 hover:border-blue-300 transition-colors">
+                                <span x-text="p.designation" class="truncate max-w-48"></span>
+                                <span class="text-xs text-gray-400" x-text="(p.prix || p.prix_unitaire || 0).toFixed(2) + ' €'"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
                 {{-- Lignes du document --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h2 class="text-sm font-semibold text-gray-700 mb-4">Lignes du devis</h2>
@@ -170,4 +188,21 @@
             </div>
         </div>
     </form>
+
+<script>
+function produitsHabituels() {
+    return {
+        produits: [],
+        async charger() {
+            try {
+                const r = await fetch('{{ route("produits.suggestions") }}');
+                this.produits = await r.json();
+            } catch (e) {}
+        },
+        ajouterProduit(p) {
+            window.dispatchEvent(new CustomEvent('ajouter-produit', { detail: p }));
+        }
+    };
+}
+</script>
 </x-app-layout>

@@ -93,6 +93,7 @@ Route::middleware(['auth'])->group(function () {
 
     // API autocomplete
     Route::get('/api/produits/search', [ProduitController::class, 'search'])->name('produits.search');
+    Route::get('/api/produits/suggestions', [ProduitController::class, 'suggestions'])->name('produits.suggestions');
     Route::get('/api/catalog/search', [CatalogController::class, 'search'])->name('catalog.search');
     Route::get('/api/clients/{client}/chantiers', [ClientController::class, 'chantiers'])->name('clients.chantiers');
     Route::get('/api/chantiers/{chantier}/coefficient-marge', function (\App\Models\Chantier $chantier) {

@@ -10,6 +10,7 @@ use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Services\DocumentService;
 use App\Services\NumerotationService;
+use App\Services\ProduitUsageService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class BonCommandeController extends Controller
     public function __construct(
         private NumerotationService $numerotation,
         private DocumentService $documentService,
+        private ProduitUsageService $usageService,
     ) {}
 
     public function index(Request $request)
@@ -98,6 +100,7 @@ class BonCommandeController extends Controller
 
             $this->documentService->enregistrerLignes($bdc, $data['lignes']);
             $this->documentService->recalculerMontants($bdc);
+            $this->usageService->enregistrerUtilisation($bdc);
             return $bdc;
         });
 

@@ -22,3 +22,6 @@ Schedule::command('factures:detecter-retard')->dailyAt('07:00');
 
 // Tous les jours à 8h : envoie les relances email automatiques aux clients en retard
 Schedule::command('factures:relancer')->dailyAt('08:00');
+
+// Chaque lundi à 2h du matin : recalculer les scores de fréquence produits
+Schedule::command('produits:recalculer-scores')->weeklyOn(1, '02:00');

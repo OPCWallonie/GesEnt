@@ -8,16 +8,19 @@
 @props(['lignesInitiales' => collect(), 'tauxTva', 'tvaDefaut' => 21])
 
 <div x-data="lignesDocument({{ json_encode($lignesInitiales->map(fn($l) => [
-    'designation'   => $l->designation,
-    'detail'        => $l->detail ?? '',
-    'unite'         => $l->unite,
-    'quantite'      => $l->quantite,
-    'prix_unitaire' => $l->prix_unitaire,
-    'remise_valeur' => $l->remise_valeur,
-    'remise_type'   => $l->remise_type,
-    'taux_tva'      => $l->taux_tva,
-    'est_section'   => $l->est_section,
-    'montant_ht'    => $l->montant_ht,
+    'designation'        => $l->designation,
+    'detail'             => $l->detail ?? '',
+    'unite'              => $l->unite,
+    'quantite'           => $l->quantite,
+    'prix_unitaire'      => $l->prix_unitaire,
+    'remise_valeur'      => $l->remise_valeur,
+    'remise_type'        => $l->remise_type,
+    'taux_tva'           => $l->taux_tva,
+    'est_section'        => $l->est_section,
+    'montant_ht'         => $l->montant_ht,
+    'produit_id'         => $l->produit_id,
+    'catalog_produit_id' => $l->catalog_produit_id ?? null,
+    'produit_key'        => $l->produit_id ? 'p:' . $l->produit_id : ($l->catalog_produit_id ?? null ? 'c:' . ($l->catalog_produit_id ?? '') : ''),
 ])->values()) }}, {{ $tvaDefaut }})">
 
     {{-- En-tête tableau --}}
@@ -50,6 +53,8 @@
                     <input type="hidden" :name="`lignes[${index}][remise_valeur]`" value="0">
                     <input type="hidden" :name="`lignes[${index}][remise_type]`" value="montant">
                     <input type="hidden" :name="`lignes[${index}][taux_tva]`" value="{{ $tvaDefaut }}">
+                    <input type="hidden" :name="`lignes[${index}][produit_id]`" :value="ligne.produit_id || ''">
+                    <input type="hidden" :name="`lignes[${index}][catalog_produit_id]`" :value="ligne.catalog_produit_id || ''">
                     <button type="button" @click="supprimerLigne(index)" class="text-red-400 hover:text-red-600">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
@@ -60,24 +65,38 @@
             <template x-if="!ligne.est_section">
                 <div class="p-3 space-y-2">
                     <div class="grid grid-cols-12 gap-2 items-start">
-                        {{-- Désignation + autocomplete --}}
+                        {{-- Désignation + autocomplete intelligent --}}
                         <div class="col-span-12 md:col-span-4 relative" x-data="{ suggestions: [], loading: false }">
                             <input :name="`lignes[${index}][designation]`"
                                    x-model="ligne.designation"
-                                   @input.debounce.300ms="rechercherProduit($event.target.value, suggestions => { $data.suggestions = suggestions })"
+                                   @input.debounce.300ms="rechercherProduit($event.target.value, index, res => { $data.suggestions = res })"
+                                   @focus="if (ligne.designation.length === 0) rechercherProduit('', index, res => { $data.suggestions = res })"
+                                   @blur.debounce.200ms="suggestions = []"
                                    placeholder="Désignation du produit…"
                                    class="w-full text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 px-2 py-1.5"
                                    autocomplete="off">
                             <div x-show="suggestions.length > 0"
-                                 class="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg text-sm max-h-48 overflow-y-auto">
-                                <template x-for="s in suggestions">
+                                 class="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg text-sm max-h-64 overflow-y-auto">
+                                <template x-for="s in suggestions" :key="(s.source || 'i') + s.id">
                                     <div @click="selectionnerProduit(index, s); suggestions = []"
-                                         class="px-3 py-2 hover:bg-blue-50 cursor-pointer">
-                                        <div class="font-medium" x-text="s.designation"></div>
-                                        <div class="text-xs text-gray-400" x-text="`${s.prix_unitaire} € / ${s.unite} — TVA ${s.taux_tva}%`"></div>
+                                         class="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-medium truncate" x-text="s.designation"></div>
+                                            <div class="text-xs text-gray-400" x-text="(s.fournisseur ? s.fournisseur + (s.reference ? ' — ' + s.reference : '') + ' · ' : '') + (s.prix || s.prix_unitaire || 0).toFixed(2) + ' € / ' + (s.unite || 'pièce') + ' — TVA ' + s.taux_tva + '%'"></div>
+                                        </div>
+                                        <div class="flex items-center gap-1 flex-shrink-0">
+                                            <span x-show="s.habituel"
+                                                  class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Habituel</span>
+                                            <span x-show="s.associe && !s.habituel"
+                                                  class="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">Souvent avec</span>
+                                            <span x-show="s.en_stock"
+                                                  class="w-2 h-2 bg-green-400 rounded-full" title="En stock"></span>
+                                        </div>
                                     </div>
                                 </template>
                             </div>
+                            <input type="hidden" :name="`lignes[${index}][produit_id]`" :value="ligne.produit_id || ''">
+                            <input type="hidden" :name="`lignes[${index}][catalog_produit_id]`" :value="ligne.catalog_produit_id || ''">
                         </div>
 
                         {{-- Unité --}}
@@ -287,8 +306,11 @@
 function lignesDocument(lignesInitiales, tvaDefaut) {
     return {
         lignes: lignesInitiales.length > 0
-            ? lignesInitiales.map(l => ({...l, montant_ht: parseFloat(l.montant_ht) || 0}))
-            : [{ designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0 }],
+            ? lignesInitiales.map(l => ({...l, montant_ht: parseFloat(l.montant_ht) || 0,
+                produit_id: l.produit_id || null,
+                catalog_produit_id: l.catalog_produit_id || null,
+                produit_key: l.produit_key || '' }))
+            : [{ designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' }],
 
         // Catalogue fournisseurs
         catalogOpen: false,
@@ -325,12 +347,16 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
             l.montant_ht = Math.max(0, brut - remise);
         },
 
+        nouvelleLigneVide() {
+            return { designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' };
+        },
+
         ajouterLigne() {
-            this.lignes.push({ designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0 });
+            this.lignes.push(this.nouvelleLigneVide());
         },
 
         ajouterSection() {
-            this.lignes.push({ designation: '', detail: '', unite: '—', quantite: 0, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: true, montant_ht: 0 });
+            this.lignes.push({ designation: '', detail: '', unite: '—', quantite: 0, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: true, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' });
         },
 
         supprimerLigne(index) {
@@ -348,19 +374,48 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
             [this.lignes[index + 1], this.lignes[index]] = [this.lignes[index], this.lignes[index + 1]];
         },
 
-        async rechercherProduit(q, callback) {
-            if (q.length < 2) { callback([]); return; }
-            const r = await fetch(`/api/produits/search?q=${encodeURIComponent(q)}`);
-            callback(await r.json());
+        async rechercherProduit(q, index, callback) {
+            // Collecter les clés des produits déjà dans le document
+            const produitsActuels = this.lignes
+                .filter(l => l.produit_key)
+                .map(l => l.produit_key);
+
+            let url = '{{ route("produits.suggestions") }}';
+            const params = [];
+            if (q && q.length >= 2) params.push('q=' + encodeURIComponent(q));
+            produitsActuels.forEach(p => params.push('produits[]=' + encodeURIComponent(p)));
+            if (params.length) url += '?' + params.join('&');
+
+            try {
+                const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                callback(await r.json());
+            } catch (e) {
+                callback([]);
+            }
         },
 
         selectionnerProduit(index, produit) {
             const l = this.lignes[index];
-            l.designation   = produit.designation;
-            l.detail        = produit.description || '';
-            l.unite         = produit.unite;
-            l.prix_unitaire = parseFloat(produit.prix_unitaire) || 0;
-            l.taux_tva      = parseFloat(produit.taux_tva) || tvaDefaut;
+            const coeff = window.coefficientMargeActuel || 0;
+
+            l.designation        = produit.designation;
+            l.detail             = produit.description || (produit.reference ? `Réf. ${produit.reference}${produit.fournisseur ? ' — ' + produit.fournisseur : ''}` : '');
+            l.unite              = produit.unite || 'pièce';
+            l.taux_tva           = parseFloat(produit.taux_tva) || tvaDefaut;
+
+            if (produit.source === 'catalogue') {
+                const prixBase = parseFloat(produit.prix_base) || parseFloat(produit.prix) || 0;
+                l.prix_unitaire      = coeff > 0 && prixBase > 0 ? Math.round(prixBase * (1 + coeff / 100) * 100) / 100 : parseFloat(produit.prix) || 0;
+                l.catalog_produit_id = produit.id;
+                l.produit_id         = null;
+                l.produit_key        = 'c:' + produit.id;
+            } else {
+                l.prix_unitaire      = parseFloat(produit.prix_unitaire || produit.prix) || 0;
+                l.produit_id         = produit.id;
+                l.catalog_produit_id = null;
+                l.produit_key        = 'p:' + produit.id;
+            }
+
             this.calculerLigne(index);
         },
 
@@ -392,18 +447,50 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
                 : parseFloat(produit.prix) || 0;
 
             this.lignes.push({
-                designation:   produit.designation,
-                detail:        produit.reference ? `Réf. ${produit.reference} — ${produit.fournisseur}` : '',
-                unite:         produit.unite,
-                quantite:      1,
-                prix_unitaire: prix,
-                remise_valeur: 0,
-                remise_type:   'montant',
-                taux_tva:      parseFloat(produit.taux_tva) || tvaDefaut,
-                est_section:   false,
-                montant_ht:    prix,
+                designation:        produit.designation,
+                detail:             produit.reference ? `Réf. ${produit.reference} — ${produit.fournisseur}` : '',
+                unite:              produit.unite,
+                quantite:           1,
+                prix_unitaire:      prix,
+                remise_valeur:      0,
+                remise_type:        'montant',
+                taux_tva:           parseFloat(produit.taux_tva) || tvaDefaut,
+                est_section:        false,
+                montant_ht:         prix,
+                produit_id:         null,
+                catalog_produit_id: produit.id,
+                produit_key:        'c:' + produit.id,
             });
             this.catalogOpen = false;
+        },
+
+        init() {
+            // Écouter les suggestions cliquées depuis le bandeau "Produits habituels"
+            window.addEventListener('ajouter-produit', (e) => {
+                const p = e.detail;
+                const coeff = window.coefficientMargeActuel || 0;
+                const prixBase = parseFloat(p.prix_base) || 0;
+                const prix = p.source === 'catalogue' && coeff > 0 && prixBase > 0
+                    ? Math.round(prixBase * (1 + coeff / 100) * 100) / 100
+                    : parseFloat(p.prix || p.prix_unitaire) || 0;
+
+                this.lignes.push({
+                    designation:        p.designation,
+                    detail:             p.reference ? `Réf. ${p.reference}${p.fournisseur ? ' — ' + p.fournisseur : ''}` : '',
+                    unite:              p.unite || 'pièce',
+                    quantite:           1,
+                    prix_unitaire:      prix,
+                    remise_valeur:      0,
+                    remise_type:        'montant',
+                    taux_tva:           parseFloat(p.taux_tva) || tvaDefaut,
+                    est_section:        false,
+                    montant_ht:         prix,
+                    produit_id:         p.source === 'interne' ? p.id : null,
+                    catalog_produit_id: p.source === 'catalogue' ? p.id : null,
+                    produit_key:        (p.source === 'interne' ? 'p:' : 'c:') + p.id,
+                });
+                this.calculerLigne(this.lignes.length - 1);
+            });
         },
 
         formatMontant(v) {
