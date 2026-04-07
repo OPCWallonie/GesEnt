@@ -23,6 +23,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StatistiquesController;
 use App\Http\Controllers\PeppolDashboardController;
 use App\Http\Controllers\PeppolWebhookController;
+use App\Http\Controllers\KitController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,11 +48,17 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('produits', ProduitController::class);
     Route::post('produits/import', [ProduitController::class, 'import'])->name('produits.import');
 
+    // Kits / Modèles de lignes
+    Route::resource('kits', KitController::class);
+    Route::get('/api/kits', [KitController::class, 'apiList'])->name('kits.api-list');
+    Route::get('/api/kits/{kit}/lignes', [KitController::class, 'apiLignes'])->name('kits.api-lignes');
+
     // Documents — Devis
     Route::resource('devis', DevisController::class);
     Route::post('devis/{devis}/dupliquer', [DevisController::class, 'dupliquer'])->name('devis.dupliquer');
     Route::post('devis/{devis}/convertir-bdc', [DevisController::class, 'convertirEnBdc'])->name('devis.convertir-bdc');
     Route::post('devis/{devis}/envoyer', [DevisController::class, 'envoyer'])->name('devis.envoyer');
+    Route::post('devis/{devis}/sauvegarder-kit', [DevisController::class, 'sauvegarderCommeKit'])->name('devis.sauvegarder-kit');
     Route::get('devis/{devis}/pdf', [DevisController::class, 'pdf'])->name('devis.pdf');
 
     // Bons de commande

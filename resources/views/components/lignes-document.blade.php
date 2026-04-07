@@ -188,8 +188,61 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
             Ajouter une section
         </button>
+        <div x-data="kitInsertion()" class="relative ml-auto flex items-center gap-3">
+            <button type="button" @click="ouvrirModal()"
+                    class="inline-flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                Insérer un kit
+            </button>
+            <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+                <div class="absolute inset-0 bg-black/50" @click="modalOpen = false"></div>
+                <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 flex flex-col max-h-[70vh]" @click.stop>
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-base font-semibold text-gray-900">Insérer un kit</h3>
+                        <button @click="modalOpen = false" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="px-6 py-3 border-b border-gray-100">
+                        <input type="text" x-model="recherche" @input.debounce.300ms="chargerKits()"
+                               placeholder="Rechercher un kit…"
+                               class="w-full rounded-lg border-gray-300 text-sm">
+                    </div>
+                    <div class="flex-1 overflow-y-auto px-6 py-3">
+                        <template x-if="loading">
+                            <p class="text-center text-sm text-gray-400 py-6">Chargement…</p>
+                        </template>
+                        <template x-if="!loading && kits.length === 0">
+                            <div class="text-center py-6">
+                                <p class="text-sm text-gray-400">Aucun kit trouvé.</p>
+                                <a href="{{ route('kits.create') }}" class="text-sm text-blue-600 hover:underline mt-2 inline-block">Créer votre premier kit →</a>
+                            </div>
+                        </template>
+                        <template x-for="kit in kits" :key="kit.id">
+                            <div @click="insererKit(kit)"
+                                 class="flex items-center justify-between p-3 rounded-lg hover:bg-blue-50 cursor-pointer border border-transparent hover:border-blue-200 mb-2 transition-colors">
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium text-sm text-gray-800" x-text="kit.nom"></div>
+                                    <div class="text-xs text-gray-400 mt-0.5">
+                                        <span x-text="kit.nb_lignes + ' lignes'"></span>
+                                        <span x-show="kit.categorie" class="ml-2">· <span x-text="kit.categorie"></span></span>
+                                        <span x-show="kit.nb_utilisations > 0" class="ml-2">· utilisé <span x-text="kit.nb_utilisations"></span>×</span>
+                                    </div>
+                                    <div x-show="kit.description" class="text-xs text-gray-400 mt-1 truncate" x-text="kit.description"></div>
+                                </div>
+                                <div class="text-right ml-3 flex-shrink-0">
+                                    <div class="text-sm font-medium text-gray-700" x-text="(kit.estimation_ht || 0).toFixed(2) + ' € HT'"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
         <button type="button" @click="ouvrirCatalogue()"
-                class="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 ml-auto">
+                class="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             Tarifs fournisseurs
         </button>
@@ -465,6 +518,29 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
         },
 
         init() {
+            // Écouter les lignes insérées depuis un kit
+            window.addEventListener('ajouter-produit-kit', (e) => {
+                const l = e.detail;
+                this.lignes.push({
+                    designation:        l.designation,
+                    detail:             l.detail || '',
+                    unite:              l.unite || 'pièce',
+                    quantite:           l.quantite || 1,
+                    prix_unitaire:      l.prix_unitaire || 0,
+                    remise_valeur:      l.remise_valeur || 0,
+                    remise_type:        l.remise_type || 'montant',
+                    taux_tva:           l.taux_tva || tvaDefaut,
+                    est_section:        l.est_section || false,
+                    montant_ht:         l.montant_ht || 0,
+                    produit_id:         l.produit_id || null,
+                    catalog_produit_id: l.catalog_produit_id || null,
+                    produit_key:        l.produit_key || '',
+                });
+                if (!l.est_section) {
+                    this.calculerLigne(this.lignes.length - 1);
+                }
+            });
+
             // Écouter les suggestions cliquées depuis le bandeau "Produits habituels"
             window.addEventListener('ajouter-produit', (e) => {
                 const p = e.detail;
@@ -497,5 +573,62 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
             return new Intl.NumberFormat('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0) + ' €';
         },
     }
+}
+
+function kitInsertion() {
+    return {
+        modalOpen: false,
+        recherche: '',
+        kits: [],
+        loading: false,
+
+        ouvrirModal() {
+            this.modalOpen = true;
+            this.chargerKits();
+        },
+
+        async chargerKits() {
+            this.loading = true;
+            try {
+                let url = '{{ route("kits.api-list") }}';
+                if (this.recherche.length >= 2) {
+                    url += '?q=' + encodeURIComponent(this.recherche);
+                }
+                const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                this.kits = await r.json();
+            } catch (e) {
+                this.kits = [];
+            }
+            this.loading = false;
+        },
+
+        async insererKit(kit) {
+            try {
+                const r = await fetch('{{ url("/api/kits") }}/' + kit.id + '/lignes', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const lignes = await r.json();
+                const coeff = window.coefficientMargeActuel || 0;
+
+                lignes.forEach(ligne => {
+                    if (coeff > 0 && ligne.prix_unitaire > 0 && !ligne.est_section) {
+                        ligne.prix_unitaire = Math.round(ligne.prix_unitaire * (1 + coeff / 100) * 100) / 100;
+                    }
+                    if (!ligne.est_section) {
+                        const brut = ligne.prix_unitaire * ligne.quantite;
+                        const remise = ligne.remise_type === 'pourcentage'
+                            ? brut * (ligne.remise_valeur / 100)
+                            : ligne.remise_valeur;
+                        ligne.montant_ht = Math.max(0, brut - remise);
+                    }
+                    window.dispatchEvent(new CustomEvent('ajouter-produit-kit', { detail: ligne }));
+                });
+
+                this.modalOpen = false;
+            } catch (e) {
+                console.error('Erreur insertion kit:', e);
+            }
+        },
+    };
 }
 </script>

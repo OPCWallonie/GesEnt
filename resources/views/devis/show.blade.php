@@ -34,6 +34,52 @@
                     Dupliquer
                 </button>
             </form>
+            {{-- Sauvegarder comme kit --}}
+            <div x-data="{ open: false }">
+                <button type="button" @click="open = true"
+                        class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                    Sauvegarder comme kit
+                </button>
+                <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div @click.outside="open = false" class="bg-white rounded-xl shadow-xl p-6 w-96 space-y-4">
+                        <h3 class="font-semibold text-gray-800">Créer un kit depuis ce devis</h3>
+                        <p class="text-sm text-gray-500">Les {{ $devis->lignes->count() }} lignes de ce devis seront sauvegardées comme modèle réutilisable.</p>
+                        <form method="POST" action="{{ route('devis.sauvegarder-kit', $devis) }}">
+                            @csrf
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom du kit *</label>
+                                    <input type="text" name="nom" required placeholder="Ex: Salle de bain standard"
+                                           class="w-full rounded-lg border-gray-300 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+                                    <input type="text" name="categorie" placeholder="Ex: Sanitaire, Chauffage, Toiture…"
+                                           class="w-full rounded-lg border-gray-300 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                    <textarea name="description" rows="2" placeholder="Courte description du contenu…"
+                                              class="w-full rounded-lg border-gray-300 text-sm"></textarea>
+                                </div>
+                                <div class="flex gap-3 pt-2">
+                                    <button type="button" @click="open = false"
+                                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                                        Annuler
+                                    </button>
+                                    <button type="submit"
+                                            class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                        Créer le kit
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
             {{-- Bouton Envoyer par email --}}
             <div x-data="{ open: false }">
                 <button @click="open = true"

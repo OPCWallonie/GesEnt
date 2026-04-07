@@ -288,4 +288,41 @@ class DevisController extends Controller
         return $pdf->stream("devis-{$devis->numero}.pdf");
     }
 
+    public function sauvegarderCommeKit(Request $request, Devis $devis)
+    {
+        $data = $request->validate([
+            'nom'         => 'required|string|max:150',
+            'description' => 'nullable|string|max:500',
+            'categorie'   => 'nullable|string|max:80',
+        ]);
+
+        $devis->load('lignes');
+
+        $kit = \App\Models\Kit::create([
+            'nom'         => $data['nom'],
+            'description' => $data['description'] ?? null,
+            'categorie'   => $data['categorie'] ?? null,
+            'created_by'  => auth()->id(),
+        ]);
+
+        foreach ($devis->lignes as $ligne) {
+            $kit->lignes()->create([
+                'ordre'              => $ligne->ordre,
+                'est_section'        => $ligne->est_section,
+                'produit_id'         => $ligne->produit_id,
+                'catalog_produit_id' => $ligne->catalog_produit_id,
+                'designation'        => $ligne->designation,
+                'detail'             => $ligne->detail,
+                'unite'              => $ligne->unite,
+                'quantite'           => $ligne->quantite,
+                'prix_unitaire'      => $ligne->prix_unitaire,
+                'remise_valeur'      => $ligne->remise_valeur,
+                'remise_type'        => $ligne->remise_type,
+                'taux_tva'           => $ligne->taux_tva,
+            ]);
+        }
+
+        return back()->with('success', "Kit « {$kit->nom} » créé avec {$kit->lignes->count()} lignes depuis ce devis.");
+    }
+
 }
