@@ -6,13 +6,17 @@ use App\Models\Avoir;
 use App\Models\Facture;
 use App\Models\ParametresEntreprise;
 use App\Services\NumerotationService;
+use App\Services\OdooSyncService;
 use App\Services\PeppolService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class AvoirController extends Controller
 {
-    public function __construct(private NumerotationService $numerotation) {}
+    public function __construct(
+        private NumerotationService $numerotation,
+        private OdooSyncService $odooSync,
+    ) {}
 
     public function create(Facture $facture)
     {
@@ -46,6 +50,10 @@ class AvoirController extends Controller
             'montant_ttc'   => $data['montant_ht'] + $tva,
             'notes'         => $data['notes'] ?? null,
         ]);
+
+        if (ParametresEntreprise::instance()->odooActif()) {
+            $this->odooSync->syncAvoir($avoir);
+        }
 
         return redirect()->route('avoirs.show', $avoir)
             ->with('success', "Avoir {$avoir->numero} créé.");

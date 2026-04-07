@@ -397,12 +397,19 @@
                      this.loading = true;
                      this.test = null;
                      try {
-                         const r = await fetch('{{ route('parametres.tester-odoo') }}', {
+                         const r = await fetch('{{ route('odoo.test') }}', {
                              method: 'POST',
                              headers: {
+                                 'Content-Type': 'application/json',
                                  'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
                                  'Accept': 'application/json',
-                             }
+                             },
+                             body: JSON.stringify({
+                                 url:      document.querySelector('[name=odoo_url]')?.value,
+                                 database: document.querySelector('[name=odoo_database]')?.value,
+                                 username: document.querySelector('[name=odoo_username]')?.value,
+                                 api_key:  document.querySelector('[name=odoo_api_key]')?.value,
+                             }),
                          });
                          this.test = await r.json();
                      } catch (e) {

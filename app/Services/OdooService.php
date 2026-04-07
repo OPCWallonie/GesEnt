@@ -30,6 +30,15 @@ class OdooService
         return (bool) ($this->url && $this->db && $this->username && $this->apiKey);
     }
 
+    public function reconfigurer(string $url, string $db, string $username, string $apiKey): void
+    {
+        $this->url      = rtrim($url, '/');
+        $this->db       = $db;
+        $this->username = $username;
+        $this->apiKey   = $apiKey;
+        $this->uid      = null;
+    }
+
     // ---------------------------------------------------------------
     // Authentification JSON-RPC
     // ---------------------------------------------------------------

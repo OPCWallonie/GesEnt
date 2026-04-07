@@ -79,6 +79,24 @@
                 </span>
             @endif
         @endif
+        {{-- Odoo --}}
+        @if(\App\Models\ParametresEntreprise::instance()->odooActif())
+            @if($facture->odoo_move_id)
+                <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-50 border border-purple-200 text-purple-700 text-xs rounded-lg">
+                    <span class="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    Odoo #{{ $facture->odoo_move_id }}
+                    <span class="text-purple-400">{{ $facture->odoo_synced_at?->diffForHumans() }}</span>
+                </span>
+            @else
+                <form method="POST" action="{{ route('factures.sync-odoo', $facture) }}">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center gap-2 px-3 py-2 border border-purple-300 text-purple-700 text-sm rounded-lg hover:bg-purple-50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Synchroniser vers Odoo
+                    </button>
+                </form>
+            @endif
+        @endif
         {{-- Avoir --}}
         @if((string) $facture->statut !== 'archive')
             <a href="{{ route('avoirs.create', $facture) }}"

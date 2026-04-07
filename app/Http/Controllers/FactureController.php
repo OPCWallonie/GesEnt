@@ -11,6 +11,7 @@ use App\Models\TauxTva;
 use App\Models\Paiement;
 use App\Services\DocumentService;
 use App\Services\NumerotationService;
+use App\Services\OdooSyncService;
 use App\Services\PeppolService;
 use App\Services\ProduitUsageService;
 use App\States\Facture\Archive as FactureArchive;
@@ -30,6 +31,7 @@ class FactureController extends Controller
         private NumerotationService $numerotation,
         private DocumentService $documentService,
         private ProduitUsageService $usageService,
+        private OdooSyncService $odooSync,
     ) {}
 
     public function index(Request $request)
@@ -142,6 +144,10 @@ class FactureController extends Controller
 
             return $facture;
         });
+
+        if (ParametresEntreprise::instance()->odooActif()) {
+            $this->odooSync->syncFacture($facture);
+        }
 
         return redirect()->route('factures.show', $facture)
             ->with('success', "Facture {$facture->numero} créée.");
@@ -318,6 +324,11 @@ class FactureController extends Controller
             $resultats[] = 'Email échoué : ' . $e->getMessage();
         }
 
+        // Sync Odoo si configuré (l'envoi email marque la facture comme envoyée)
+        if (ParametresEntreprise::instance()->odooActif()) {
+            $this->odooSync->syncFacture($facture);
+        }
+
         $message  = implode(' — ', $resultats);
         $isError  = str_contains($message, 'échoué') && !str_contains($message, 'OK');
 
@@ -425,6 +436,12 @@ class FactureController extends Controller
             "Retenue de garantie de {$facture->numero} libérée — " .
             number_format($facture->retenue_garantie_montant, 2, ',', ' ') . " € à encaisser."
         );
+    }
+
+    public function syncOdoo(Facture $facture)
+    {
+        $result = $this->odooSync->syncFacture($facture);
+        return back()->with($result['success'] ? 'success' : 'error', $result['message']);
     }
 
     public function pdf(Facture $facture)

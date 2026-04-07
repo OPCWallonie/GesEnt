@@ -71,6 +71,15 @@ class PeppolService
             return ['success' => false, 'message' => 'Peppol non configuré.', 'reference' => null];
         }
 
+        // Si Peppol est délégué à Odoo, ne pas envoyer depuis Gesent
+        if ($params->peppolGereParOdoo() && $facture->odoo_move_id) {
+            return [
+                'success'   => false,
+                'message'   => 'Envoi Peppol géré par Odoo pour cette facture.',
+                'reference' => null,
+            ];
+        }
+
         $provider    = $params->peppol_provider;
         $apiKey      = $params->peppol_api_key_decrypte;
         $entityId    = $params->peppol_entity_id;

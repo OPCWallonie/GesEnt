@@ -65,6 +65,7 @@ Route::middleware(['auth'])->group(function () {
     // Factures
     Route::resource('factures', FactureController::class);
     Route::get('factures/{facture}/pdf', [FactureController::class, 'pdf'])->name('factures.pdf');
+    Route::post('factures/{facture}/sync-odoo', [FactureController::class, 'syncOdoo'])->name('factures.sync-odoo');
     Route::post('factures/{facture}/envoyer', [FactureController::class, 'envoyer'])->name('factures.envoyer');
     Route::post('factures/{facture}/envoyer-peppol', [FactureController::class, 'envoyerPeppol'])->name('factures.envoyer-peppol');
     Route::post('factures/envoyer-peppol-masse', [FactureController::class, 'envoyerPeppolEnMasse'])->name('factures.envoyer-peppol-masse');
@@ -136,6 +137,20 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/parametres', [ParametresController::class, 'edit'])->name('parametres.edit');
         Route::put('/parametres', [ParametresController::class, 'update'])->name('parametres.update');
         Route::post('/parametres/tester-odoo', [ParametresController::class, 'testerOdoo'])->name('parametres.tester-odoo');
+        // Test live avec les valeurs du formulaire (avant sauvegarde)
+        Route::post('/odoo/test', function (Request $request, \App\Services\OdooService $odoo) {
+            $saved   = \App\Models\ParametresEntreprise::instance();
+            $apiKey  = $request->filled('api_key')
+                ? $request->input('api_key')
+                : ($saved->odoo_api_key_decrypte ?? '');
+            $odoo->reconfigurer(
+                $request->input('url', ''),
+                $request->input('database', ''),
+                $request->input('username', ''),
+                $apiKey,
+            );
+            return response()->json($odoo->testerConnexion());
+        })->name('odoo.test');
     });
 
     // Journal de chantier

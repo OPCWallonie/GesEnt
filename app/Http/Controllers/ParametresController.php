@@ -54,6 +54,7 @@ class ParametresController extends Controller
             'odoo_username'           => 'nullable|string|max:100',
             'odoo_api_key'            => 'nullable|string|max:500',
             'odoo_mapping'            => 'nullable|array',
+            'odoo_mapping.*'          => 'nullable|string|max:20',
             'peppol_gere_par'         => 'nullable|in:gesent,odoo',
         ]);
 
