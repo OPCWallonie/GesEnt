@@ -24,6 +24,7 @@ use App\Http\Controllers\StatistiquesController;
 use App\Http\Controllers\PeppolDashboardController;
 use App\Http\Controllers\PeppolWebhookController;
 use App\Http\Controllers\KitController;
+use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -176,6 +177,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/export-comptable', [ExportComptableController::class, 'index'])->name('export-comptable.index');
         Route::post('/export-comptable', [ExportComptableController::class, 'export'])->name('export-comptable.export');
     });
+
+    // 2FA — disponible pour tous les rôles (hors middleware 2fa car la vérification doit passer)
+    Route::get('/2fa/setup', [TwoFactorController::class, 'setup'])->name('2fa.setup');
+    Route::post('/2fa/enable', [TwoFactorController::class, 'enable'])->name('2fa.enable');
+    Route::post('/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+    Route::get('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify')->withoutMiddleware(\App\Http\Middleware\TwoFactorMiddleware::class);
+    Route::post('/2fa/verify', [TwoFactorController::class, 'verifyCheck'])->name('2fa.verify.check')->withoutMiddleware(\App\Http\Middleware\TwoFactorMiddleware::class);
 
     // Profil utilisateur (tous les rôles)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

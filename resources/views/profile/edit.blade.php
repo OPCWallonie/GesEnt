@@ -101,6 +101,46 @@
             </dl>
         </div>
 
+        {{-- Authentification à deux facteurs --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="font-semibold text-gray-700 border-b pb-2 mb-4">Sécurité — Authentification à deux facteurs</h2>
+
+            @if(auth()->user()->two_factor_enabled)
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                    <span class="text-sm text-green-700 font-medium">2FA activé</span>
+                    <span class="text-xs text-gray-400">depuis {{ auth()->user()->two_factor_confirmed_at?->format('d/m/Y') }}</span>
+                </div>
+                <form method="POST" action="{{ route('2fa.disable') }}">
+                    @csrf
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe actuel (pour confirmer)</label>
+                            <input type="password" name="password" required class="w-full rounded-lg border-gray-300 text-sm">
+                            @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">
+                            Désactiver la 2FA
+                        </button>
+                    </div>
+                </form>
+            @else
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="w-3 h-3 bg-amber-400 rounded-full"></span>
+                    <span class="text-sm text-amber-700 font-medium">2FA non activé</span>
+                </div>
+                <p class="text-sm text-gray-500 mb-4">
+                    Protégez votre compte avec une application d'authentification
+                    (Google Authenticator, Authy…).
+                </p>
+                <a href="{{ route('2fa.setup') }}"
+                   class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 inline-flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Configurer la 2FA
+                </a>
+            @endif
+        </div>
+
         {{-- Supprimer le compte --}}
         <div class="bg-red-50 border border-red-200 rounded-xl p-6" x-data="{ open: false }">
             <h2 class="text-base font-semibold text-red-800 mb-2">Zone dangereuse</h2>

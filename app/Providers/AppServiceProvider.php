@@ -12,6 +12,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Forcer HTTPS en production
+        if (config('app.env') === 'production') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // Partage $peppolMode avec toutes les vues (lecture unique via static)
         View::composer('*', function ($view) {
             static $peppolMode = null;
