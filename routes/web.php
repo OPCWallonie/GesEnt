@@ -55,7 +55,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/kits/{kit}/lignes', [KitController::class, 'apiLignes'])->name('kits.api-lignes');
 
     // Documents — Devis
-    Route::resource('devis', DevisController::class);
+    Route::resource('devis', DevisController::class)->parameters(['devis' => 'devis']);
     Route::post('devis/{devis}/dupliquer', [DevisController::class, 'dupliquer'])->name('devis.dupliquer');
     Route::post('devis/{devis}/convertir-bdc', [DevisController::class, 'convertirEnBdc'])->name('devis.convertir-bdc');
     Route::post('devis/{devis}/envoyer', [DevisController::class, 'envoyer'])->name('devis.envoyer');
@@ -63,12 +63,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('devis/{devis}/pdf', [DevisController::class, 'pdf'])->name('devis.pdf');
 
     // Bons de commande
-    Route::resource('bons-commande', BonCommandeController::class);
+    Route::resource('bons-commande', BonCommandeController::class)->parameters(['bons-commande' => 'bonCommande']);
     Route::post('bons-commande/{bonCommande}/facturer', [BonCommandeController::class, 'facturer'])->name('bons-commande.facturer');
     Route::get('bons-commande/{bonCommande}/pdf', [BonCommandeController::class, 'pdf'])->name('bons-commande.pdf');
 
     // Avenants (sous-ressource de bons-commande)
-    Route::resource('bons-commande.avenants', AvenantController::class)->shallow()->except(['index']);
+    Route::resource('bons-commande.avenants', AvenantController::class)
+        ->parameters(['bons-commande' => 'bonCommande'])
+        ->shallow()
+        ->except(['index']);
 
     // Factures
     Route::resource('factures', FactureController::class);
@@ -123,7 +126,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Fournisseurs & Factures d'achats
     Route::resource('fournisseurs', FournisseurController::class);
-    Route::resource('factures-achat', FactureAchatController::class);
+    Route::resource('factures-achat', FactureAchatController::class)->parameters(['factures-achat' => 'factureAchat']);
     Route::patch('factures-achat/{factureAchat}/marquer-payee', [FactureAchatController::class, 'marquerPayee'])->name('factures-achat.marquer-payee');
 
     // Statistiques & Exports — comptable + admin
