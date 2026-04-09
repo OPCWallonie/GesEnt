@@ -518,27 +518,38 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
         },
 
         init() {
-            // Écouter les lignes insérées depuis un kit
-            window.addEventListener('ajouter-produit-kit', (e) => {
-                const l = e.detail;
-                this.lignes.push({
-                    designation:        l.designation,
-                    detail:             l.detail || '',
-                    unite:              l.unite || 'pièce',
-                    quantite:           l.quantite || 1,
-                    prix_unitaire:      l.prix_unitaire || 0,
-                    remise_valeur:      l.remise_valeur || 0,
-                    remise_type:        l.remise_type || 'montant',
-                    taux_tva:           l.taux_tva || tvaDefaut,
-                    est_section:        l.est_section || false,
-                    montant_ht:         l.montant_ht || 0,
-                    produit_id:         l.produit_id || null,
-                    catalog_produit_id: l.catalog_produit_id || null,
-                    produit_key:        l.produit_key || '',
-                });
-                if (!l.est_section) {
-                    this.calculerLigne(this.lignes.length - 1);
+            // Écouter un kit complet (toutes ses lignes en une seule fois)
+            window.addEventListener('inserer-kit', (e) => {
+                const kitLignes = e.detail.lignes;
+
+                // Supprimer la ligne vide initiale si le document n'a qu'une seule ligne vide
+                if (this.lignes.length === 1) {
+                    const l = this.lignes[0];
+                    if (!l.est_section && !l.designation && !l.prix_unitaire) {
+                        this.lignes.splice(0, 1);
+                    }
                 }
+
+                kitLignes.forEach(l => {
+                    this.lignes.push({
+                        designation:        l.designation,
+                        detail:             l.detail || '',
+                        unite:              l.unite || (l.est_section ? '—' : 'pièce'),
+                        quantite:           l.est_section ? 0 : (parseFloat(l.quantite) || 1),
+                        prix_unitaire:      l.est_section ? 0 : (parseFloat(l.prix_unitaire) || 0),
+                        remise_valeur:      l.est_section ? 0 : (parseFloat(l.remise_valeur) || 0),
+                        remise_type:        l.remise_type || 'montant',
+                        taux_tva:           parseFloat(l.taux_tva) || tvaDefaut,
+                        est_section:        !!l.est_section,
+                        montant_ht:         l.est_section ? 0 : (parseFloat(l.montant_ht) || 0),
+                        produit_id:         l.produit_id || null,
+                        catalog_produit_id: l.catalog_produit_id || null,
+                        produit_key:        l.produit_key || '',
+                    });
+                    if (!l.est_section) {
+                        this.calculerLigne(this.lignes.length - 1);
+                    }
+                });
             });
 
             // Écouter les suggestions cliquées depuis le bandeau "Produits habituels"
@@ -610,20 +621,22 @@ function kitInsertion() {
                 const lignes = await r.json();
                 const coeff = window.coefficientMargeActuel || 0;
 
-                lignes.forEach(ligne => {
-                    if (coeff > 0 && ligne.prix_unitaire > 0 && !ligne.est_section) {
-                        ligne.prix_unitaire = Math.round(ligne.prix_unitaire * (1 + coeff / 100) * 100) / 100;
+                const lignesPreparees = lignes.map(ligne => {
+                    const l = { ...ligne };
+                    if (coeff > 0 && l.prix_unitaire > 0 && !l.est_section) {
+                        l.prix_unitaire = Math.round(l.prix_unitaire * (1 + coeff / 100) * 100) / 100;
                     }
-                    if (!ligne.est_section) {
-                        const brut = ligne.prix_unitaire * ligne.quantite;
-                        const remise = ligne.remise_type === 'pourcentage'
-                            ? brut * (ligne.remise_valeur / 100)
-                            : ligne.remise_valeur;
-                        ligne.montant_ht = Math.max(0, brut - remise);
+                    if (!l.est_section) {
+                        const brut = l.prix_unitaire * l.quantite;
+                        const remise = l.remise_type === 'pourcentage'
+                            ? brut * (l.remise_valeur / 100)
+                            : l.remise_valeur;
+                        l.montant_ht = Math.max(0, brut - remise);
                     }
-                    window.dispatchEvent(new CustomEvent('ajouter-produit-kit', { detail: ligne }));
+                    return l;
                 });
 
+                window.dispatchEvent(new CustomEvent('inserer-kit', { detail: { lignes: lignesPreparees } }));
                 this.modalOpen = false;
             } catch (e) {
                 console.error('Erreur insertion kit:', e);
