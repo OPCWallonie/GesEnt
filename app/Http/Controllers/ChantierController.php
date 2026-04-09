@@ -57,6 +57,26 @@ class ChantierController extends Controller
             ->with('success', "Chantier « {$chantier->nom} » créé.");
     }
 
+    public function quickCreate(Request $request, Client $client)
+    {
+        $data = $request->validate([
+            'nom'             => 'required|string|max:150',
+            'adresse_chantier'=> 'nullable|string|max:150',
+            'ville'           => 'nullable|string|max:80',
+        ]);
+
+        $chantier = Chantier::create(array_merge($data, [
+            'client_id' => $client->id,
+            'statut'    => 'actif',
+        ]));
+
+        return response()->json([
+            'id'               => $chantier->id,
+            'nom'              => $chantier->nom,
+            'coefficient_marge' => $chantier->coefficientMargeEffectif(),
+        ]);
+    }
+
     public function show(Chantier $chantier)
     {
         $chantier->load('client', 'journal.user');

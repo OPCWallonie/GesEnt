@@ -120,6 +120,20 @@ class ClientController extends Controller
             ->with('success', "Client « {$client->nom} » supprimé.");
     }
 
+    public function quickCreate(Request $request)
+    {
+        $data = $request->validate([
+            'nom'       => 'required|string|max:100',
+            'email'     => 'nullable|email|max:120',
+            'telephone' => 'nullable|string|max:30',
+            'ville'     => 'nullable|string|max:80',
+        ]);
+
+        $client = Client::create(array_merge($data, ['actif' => true]));
+
+        return response()->json(['id' => $client->id, 'nom' => $client->nom]);
+    }
+
     public function chantiers(Client $client)
     {
         return response()->json(

@@ -103,11 +103,13 @@ Route::middleware(['auth'])->group(function () {
         return response()->json(['available' => $available]);
     })->name('api.peppol.discovery');
 
-    // API autocomplete
+    // API autocomplete + création à la volée
     Route::get('/api/produits/search', [ProduitController::class, 'search'])->name('produits.search');
     Route::get('/api/produits/suggestions', [ProduitController::class, 'suggestions'])->name('produits.suggestions');
     Route::get('/api/catalog/search', [CatalogController::class, 'search'])->name('catalog.search');
     Route::get('/api/clients/{client}/chantiers', [ClientController::class, 'chantiers'])->name('clients.chantiers');
+    Route::post('/api/clients/quick-create', [ClientController::class, 'quickCreate'])->name('clients.quick-create');
+    Route::post('/api/clients/{client}/chantiers/quick-create', [ChantierController::class, 'quickCreate'])->name('chantiers.quick-create');
     Route::get('/api/chantiers/{chantier}/coefficient-marge', function (\App\Models\Chantier $chantier) {
         $chantier->load('client');
         return response()->json(['coefficient_marge' => $chantier->coefficientMargeEffectif()]);
