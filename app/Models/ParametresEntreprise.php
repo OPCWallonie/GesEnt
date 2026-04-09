@@ -19,11 +19,13 @@ class ParametresEntreprise extends Model
         'peppol_id', 'peppol_environment', 'peppol_webhook_token',
         'odoo_actif', 'odoo_url', 'odoo_database', 'odoo_username',
         'odoo_api_key', 'odoo_mapping', 'peppol_gere_par',
+        'deux_facteurs_obligatoires',
     ];
 
     protected $casts = [
-        'odoo_actif'   => 'boolean',
-        'odoo_mapping' => 'array',
+        'odoo_actif'                  => 'boolean',
+        'odoo_mapping'                => 'array',
+        'deux_facteurs_obligatoires'  => 'boolean',
     ];
 
     protected $hidden = ['ai_api_key', 'peppol_api_key', 'odoo_api_key'];

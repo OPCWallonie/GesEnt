@@ -556,6 +556,23 @@
             </div>
         </div>
 
+        {{-- Sécurité --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+            <h2 class="font-semibold text-gray-700 border-b pb-2">Sécurité</h2>
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" name="deux_facteurs_obligatoires" value="1"
+                       class="mt-0.5 rounded border-gray-300 text-blue-600"
+                       {{ old('deux_facteurs_obligatoires', $parametres->deux_facteurs_obligatoires) ? 'checked' : '' }}>
+                <div>
+                    <span class="text-sm font-medium text-gray-900">Rendre la 2FA obligatoire</span>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                        Oblige tous les utilisateurs à configurer l'authentification à deux facteurs
+                        avant d'accéder à l'application.
+                    </p>
+                </div>
+            </label>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" class="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
                 Sauvegarder

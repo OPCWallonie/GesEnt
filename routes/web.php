@@ -183,12 +183,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/export-comptable', [ExportComptableController::class, 'export'])->name('export-comptable.export');
     });
 
-    // 2FA — disponible pour tous les rôles (hors middleware 2fa car la vérification doit passer)
+    // 2FA — disponible pour tous les rôles
     Route::get('/2fa/setup', [TwoFactorController::class, 'setup'])->name('2fa.setup');
     Route::post('/2fa/enable', [TwoFactorController::class, 'enable'])->name('2fa.enable');
     Route::post('/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+    Route::get('/2fa/recovery-codes', [TwoFactorController::class, 'showRecoveryCodes'])->name('2fa.recovery-codes');
     Route::get('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify')->withoutMiddleware(\App\Http\Middleware\TwoFactorMiddleware::class);
     Route::post('/2fa/verify', [TwoFactorController::class, 'verifyCheck'])->name('2fa.verify.check')->withoutMiddleware(\App\Http\Middleware\TwoFactorMiddleware::class);
+    Route::post('/2fa/email-code', [TwoFactorController::class, 'sendEmailCode'])->name('2fa.email-code')->withoutMiddleware(\App\Http\Middleware\TwoFactorMiddleware::class);
 
     // Profil utilisateur (tous les rôles)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -55,7 +55,9 @@ class ParametresController extends Controller
             'odoo_api_key'            => 'nullable|string|max:500',
             'odoo_mapping'            => 'nullable|array',
             'odoo_mapping.*'          => 'nullable|string|max:20',
-            'peppol_gere_par'         => 'nullable|in:gesent,odoo',
+            'peppol_gere_par'             => 'nullable|in:gesent,odoo',
+            // Sécurité
+            'deux_facteurs_obligatoires'  => 'nullable|boolean',
         ]);
 
         $parametres = ParametresEntreprise::instance();
@@ -101,8 +103,9 @@ class ParametresController extends Controller
             unset($data['odoo_api_key']);
         }
 
-        // Odoo actif = case à cocher (absent du POST si décoché)
-        $data['odoo_actif'] = $request->boolean('odoo_actif');
+        // Cases à cocher (absentes du POST si décochées)
+        $data['odoo_actif']                   = $request->boolean('odoo_actif');
+        $data['deux_facteurs_obligatoires']   = $request->boolean('deux_facteurs_obligatoires');
 
         // peppol_gere_par par défaut = gesent
         $data['peppol_gere_par'] = $data['peppol_gere_par'] ?? 'gesent';
