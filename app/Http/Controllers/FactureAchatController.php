@@ -75,15 +75,15 @@ class FactureAchatController extends Controller
             ->with('success', "Facture achat {$facture->numero} enregistrée.");
     }
 
-    public function show(FactureAchat $facturesAchat)
+    public function show(FactureAchat $factureAchat)
     {
-        $facturesAchat->load('fournisseur', 'chantier', 'bonCommande');
-        return view('factures-achat.show', ['facture' => $facturesAchat]);
+        $factureAchat->load('fournisseur', 'chantier', 'bonCommande');
+        return view('factures-achat.show', ['facture' => $factureAchat]);
     }
 
-    public function edit(FactureAchat $facturesAchat)
+    public function edit(FactureAchat $factureAchat)
     {
-        $facture      = $facturesAchat;
+        $facture      = $factureAchat;
         $fournisseurs = Fournisseur::actif()->orderBy('nom')->get();
         $chantiers    = Chantier::with('client')->orderByDesc('id')->get();
         $bonsCommande = BonCommande::with('client')->orderByDesc('id')->take(50)->get();
@@ -91,7 +91,7 @@ class FactureAchatController extends Controller
         return view('factures-achat.edit', compact('facture', 'fournisseurs', 'chantiers', 'bonsCommande'));
     }
 
-    public function update(Request $request, FactureAchat $facturesAchat)
+    public function update(Request $request, FactureAchat $factureAchat)
     {
         $data = $request->validate([
             'fournisseur_id'         => 'required|exists:fournisseurs,id',
@@ -111,26 +111,26 @@ class FactureAchatController extends Controller
         $ht  = (float) $data['montant_ht'];
         $tva = $ht * ($data['taux_tva'] / 100);
 
-        $facturesAchat->update(array_merge($data, [
+        $factureAchat->update(array_merge($data, [
             'montant_tva' => round($tva, 2),
             'montant_ttc' => round($ht + $tva, 2),
         ]));
 
-        return redirect()->route('factures-achat.show', $facturesAchat)
+        return redirect()->route('factures-achat.show', $factureAchat)
             ->with('success', 'Facture achat mise à jour.');
     }
 
-    public function destroy(FactureAchat $facturesAchat)
+    public function destroy(FactureAchat $factureAchat)
     {
-        $facturesAchat->delete();
+        $factureAchat->delete();
         return redirect()->route('factures-achat.index')->with('success', 'Facture achat supprimée.');
     }
 
-    public function marquerPayee(Request $request, FactureAchat $facturesAchat)
+    public function marquerPayee(Request $request, FactureAchat $factureAchat)
     {
         $data = $request->validate(['date_paiement' => 'required|date']);
-        $facturesAchat->update(['statut' => 'payee', 'date_paiement' => $data['date_paiement']]);
-        return redirect()->route('factures-achat.show', $facturesAchat)
+        $factureAchat->update(['statut' => 'payee', 'date_paiement' => $data['date_paiement']]);
+        return redirect()->route('factures-achat.show', $factureAchat)
             ->with('success', 'Facture marquée comme payée.');
     }
 }

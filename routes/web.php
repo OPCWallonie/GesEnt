@@ -124,7 +124,7 @@ Route::middleware(['auth'])->group(function () {
     // Fournisseurs & Factures d'achats
     Route::resource('fournisseurs', FournisseurController::class);
     Route::resource('factures-achat', FactureAchatController::class);
-    Route::patch('factures-achat/{facturesAchat}/marquer-payee', [FactureAchatController::class, 'marquerPayee'])->name('factures-achat.marquer-payee');
+    Route::patch('factures-achat/{factureAchat}/marquer-payee', [FactureAchatController::class, 'marquerPayee'])->name('factures-achat.marquer-payee');
 
     // Statistiques & Exports — comptable + admin
     Route::middleware(['role:admin|comptable'])->group(function () {

@@ -108,36 +108,36 @@ class BonCommandeController extends Controller
             ->with('success', "Bon de commande {$bdc->numero} créé.");
     }
 
-    public function show(BonCommande $bonsCommande)
+    public function show(BonCommande $bonCommande)
     {
-        $bonsCommande->load('client', 'chantier', 'modePaiement', 'lignes', 'avenants.lignes', 'factures', 'devis');
+        $bonCommande->load('client', 'chantier', 'modePaiement', 'lignes', 'avenants.lignes', 'factures', 'devis');
         $parametres = ParametresEntreprise::instance();
-        $totaux     = $bonsCommande->montantTotalAvecAvenants();
+        $totaux     = $bonCommande->montantTotalAvecAvenants();
 
         return view('bons-commande.show', [
-            'bdc'        => $bonsCommande,
+            'bdc'        => $bonCommande,
             'parametres' => $parametres,
             'totaux'     => $totaux,
         ]);
     }
 
-    public function edit(BonCommande $bonsCommande)
+    public function edit(BonCommande $bonCommande)
     {
-        if ($bonsCommande->factures->isNotEmpty()) {
-            return redirect()->route('bons-commande.show', $bonsCommande)
+        if ($bonCommande->factures->isNotEmpty()) {
+            return redirect()->route('bons-commande.show', $bonCommande)
                 ->with('error', 'Ce BDC est déjà facturé.');
         }
 
-        $bonsCommande->load('lignes');
+        $bonCommande->load('lignes');
         $clients       = Client::where('actif', true)->orderBy('nom')->get(['id', 'nom']);
         $modesPaiement = ModePaiement::actif()->orderBy('nom')->get();
         $tauxTva       = TauxTva::orderBy('taux')->get();
-        $chantiers     = $bonsCommande->client->chantiers()->where('statut', 'actif')->get(['id', 'nom']);
+        $chantiers     = $bonCommande->client->chantiers()->where('statut', 'actif')->get(['id', 'nom']);
 
-        return view('bons-commande.edit', ['bdc' => $bonsCommande, 'clients' => $clients, 'modesPaiement' => $modesPaiement, 'tauxTva' => $tauxTva, 'chantiers' => $chantiers]);
+        return view('bons-commande.edit', ['bdc' => $bonCommande, 'clients' => $clients, 'modesPaiement' => $modesPaiement, 'tauxTva' => $tauxTva, 'chantiers' => $chantiers]);
     }
 
-    public function update(Request $request, BonCommande $bonsCommande)
+    public function update(Request $request, BonCommande $bonCommande)
     {
         $data = $request->validate([
             'client_id'              => 'required|exists:clients,id',
@@ -164,8 +164,8 @@ class BonCommandeController extends Controller
             'lignes.*.est_section'   => 'nullable',
         ]);
 
-        DB::transaction(function () use ($bonsCommande, $data) {
-            $bonsCommande->update([
+        DB::transaction(function () use ($bonCommande, $data) {
+            $bonCommande->update([
                 'client_id'          => $data['client_id'],
                 'chantier_id'        => $data['chantier_id'] ?? null,
                 'mode_paiement_id'   => $data['mode_paiement_id'] ?? null,
@@ -179,53 +179,53 @@ class BonCommandeController extends Controller
                 'delai_reglement'    => $data['delai_reglement'] ?? 30,
                 'notes'              => $data['notes'] ?? null,
             ]);
-            $bonsCommande->lignes()->delete();
-            $this->documentService->enregistrerLignes($bonsCommande, $data['lignes']);
-            $this->documentService->recalculerMontants($bonsCommande);
+            $bonCommande->lignes()->delete();
+            $this->documentService->enregistrerLignes($bonCommande, $data['lignes']);
+            $this->documentService->recalculerMontants($bonCommande);
         });
 
-        return redirect()->route('bons-commande.show', $bonsCommande)->with('success', 'BDC mis à jour.');
+        return redirect()->route('bons-commande.show', $bonCommande)->with('success', 'BDC mis à jour.');
     }
 
-    public function destroy(BonCommande $bonsCommande)
+    public function destroy(BonCommande $bonCommande)
     {
-        if ($bonsCommande->factures->isNotEmpty()) {
+        if ($bonCommande->factures->isNotEmpty()) {
             return back()->with('error', 'Impossible de supprimer un BDC facturé.');
         }
-        DB::transaction(function () use ($bonsCommande) {
-            foreach ($bonsCommande->avenants as $avenant) {
+        DB::transaction(function () use ($bonCommande) {
+            foreach ($bonCommande->avenants as $avenant) {
                 $avenant->lignes()->delete();
                 $avenant->delete();
             }
-            $bonsCommande->lignes()->delete();
-            $bonsCommande->delete();
+            $bonCommande->lignes()->delete();
+            $bonCommande->delete();
         });
-        return redirect()->route('bons-commande.index')->with('success', "BDC {$bonsCommande->numero} supprimé.");
+        return redirect()->route('bons-commande.index')->with('success', "BDC {$bonCommande->numero} supprimé.");
     }
 
-    public function facturer(BonCommande $bonsCommande)
+    public function facturer(BonCommande $bonCommande)
     {
-        if (! $bonsCommande->peutEtreFacture()) {
+        if (! $bonCommande->peutEtreFacture()) {
             return back()->with('error', 'Le BDC doit être validé, ses avenants aussi, et il doit rester du montant à facturer.');
         }
 
         return redirect()->route('factures.create', [
-            'bon_commande_id' => $bonsCommande->id,
-            'situation'       => $bonsCommande->prochainNumeroSituation(),
+            'bon_commande_id' => $bonCommande->id,
+            'situation'       => $bonCommande->prochainNumeroSituation(),
         ]);
     }
 
-    public function pdf(BonCommande $bonsCommande)
+    public function pdf(BonCommande $bonCommande)
     {
-        $bonsCommande->load('client', 'chantier', 'modePaiement', 'lignes', 'avenants.lignes');
+        $bonCommande->load('client', 'chantier', 'modePaiement', 'lignes', 'avenants.lignes');
         $parametres = ParametresEntreprise::instance();
-        $totaux     = $bonsCommande->montantTotalAvecAvenants();
-        $totauxTva  = $this->documentService->calculerTotauxTva($bonsCommande->toutesLesLignes());
+        $totaux     = $bonCommande->montantTotalAvecAvenants();
+        $totauxTva  = $this->documentService->calculerTotauxTva($bonCommande->toutesLesLignes());
 
-        $pdf = Pdf::loadView('pdf.bon-commande', compact('bonsCommande', 'parametres', 'totaux', 'totauxTva'))
+        $pdf = Pdf::loadView('pdf.bon-commande', compact('bonCommande', 'parametres', 'totaux', 'totauxTva'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->stream("bdc-{$bonsCommande->numero}.pdf");
+        return $pdf->stream("bdc-{$bonCommande->numero}.pdf");
     }
 
 }

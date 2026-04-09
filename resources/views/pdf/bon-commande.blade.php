@@ -17,28 +17,28 @@
         <td>
             <h1>BON DE COMMANDE</h1>
             <p class="doc-ref" style="margin-top: 4px;">
-                <strong>{{ $bonsCommande->numero }}</strong>
+                <strong>{{ $bonCommande->numero }}</strong>
                 &nbsp;&nbsp;|&nbsp;&nbsp;
-                Date : {{ $bonsCommande->date_document->format('d/m/Y') }}
-                @if($bonsCommande->date_debut_travaux)
-                    &nbsp;&nbsp;|&nbsp;&nbsp; Début travaux : {{ $bonsCommande->date_debut_travaux->format('d/m/Y') }}
+                Date : {{ $bonCommande->date_document->format('d/m/Y') }}
+                @if($bonCommande->date_debut_travaux)
+                    &nbsp;&nbsp;|&nbsp;&nbsp; Début travaux : {{ $bonCommande->date_debut_travaux->format('d/m/Y') }}
                 @endif
-                @if($bonsCommande->chantier)
-                    <br>Chantier : {{ $bonsCommande->chantier->nom }}
+                @if($bonCommande->chantier)
+                    <br>Chantier : {{ $bonCommande->chantier->nom }}
                 @endif
             </p>
         </td>
     </tr>
 </table>
 
-@php $document = $bonsCommande; @endphp
+@php $document = $bonCommande; @endphp
 @include('pdf.partials.entete')
 
 {{-- Lignes BDC --}}
-@include('pdf.partials.lignes', ['lignes' => $bonsCommande->lignes])
+@include('pdf.partials.lignes', ['lignes' => $bonCommande->lignes])
 
 {{-- Avenants --}}
-@foreach($bonsCommande->avenants as $avenant)
+@foreach($bonCommande->avenants as $avenant)
     @if($avenant->lignes->count() > 0)
         <div style="margin-top: 12px; padding: 5px 0; border-top: 1px dashed #93c5fd;">
             <p style="font-size: 10px; font-weight: bold; color: #1e40af;">

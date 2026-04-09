@@ -114,28 +114,30 @@ class DemoSeeder extends Seeder
         ];
 
         // --- PRODUITS INTERNES ---
-        $produits = collect([
-            ['designation' => "Main d'œuvre maçonnerie", 'unite' => 'h', 'prix_unitaire' => 45, 'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
-            ['designation' => "Main d'œuvre plomberie", 'unite' => 'h', 'prix_unitaire' => 50, 'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
-            ['designation' => "Main d'œuvre électricité", 'unite' => 'h', 'prix_unitaire' => 48, 'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
-            ['designation' => "Main d'œuvre carrelage", 'unite' => 'h', 'prix_unitaire' => 42, 'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
-            ['designation' => "Main d'œuvre peinture", 'unite' => 'h', 'prix_unitaire' => 38, 'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
-            ['designation' => 'Brique Wienerberger Terca', 'unite' => 'pièce', 'prix_unitaire' => 0.85, 'taux_tva' => 21, 'categorie' => 'Maçonnerie'],
-            ['designation' => 'Ciment Portland CEM I 52.5', 'unite' => 'kg', 'prix_unitaire' => 0.18, 'taux_tva' => 21, 'categorie' => 'Maçonnerie'],
-            ['designation' => 'Bloc béton 39x19x14', 'unite' => 'pièce', 'prix_unitaire' => 1.45, 'taux_tva' => 21, 'categorie' => 'Maçonnerie'],
-            ['designation' => 'Plaque de plâtre Gyproc 12.5mm', 'unite' => 'm²', 'prix_unitaire' => 6.50, 'taux_tva' => 21, 'categorie' => 'Parachèvement'],
-            ['designation' => 'Isolation PUR 10cm', 'unite' => 'm²', 'prix_unitaire' => 28, 'taux_tva' => 6, 'categorie' => 'Isolation'],
-            ['designation' => 'Tuile Koramic Actua 10', 'unite' => 'pièce', 'prix_unitaire' => 1.20, 'taux_tva' => 21, 'categorie' => 'Toiture'],
-            ['designation' => 'Chaudière Vaillant ecoTEC plus', 'unite' => 'pièce', 'prix_unitaire' => 2850, 'taux_tva' => 6, 'categorie' => 'Chauffage'],
-            ['designation' => 'Thermostat Netatmo', 'unite' => 'pièce', 'prix_unitaire' => 179, 'taux_tva' => 21, 'categorie' => 'Chauffage'],
-            ['designation' => 'Tube cuivre 22mm (barre 5m)', 'unite' => 'pièce', 'prix_unitaire' => 45, 'taux_tva' => 21, 'categorie' => 'Plomberie'],
-            ['designation' => 'Robinet Grohe Eurosmart', 'unite' => 'pièce', 'prix_unitaire' => 89, 'taux_tva' => 21, 'categorie' => 'Sanitaire'],
-            ['designation' => 'WC suspendu Geberit', 'unite' => 'pièce', 'prix_unitaire' => 320, 'taux_tva' => 21, 'categorie' => 'Sanitaire'],
-            ['designation' => 'Déplacement / installation chantier', 'unite' => 'forfait', 'prix_unitaire' => 150, 'taux_tva' => 21, 'categorie' => 'Frais'],
-            ['designation' => 'Évacuation déchets (container)', 'unite' => 'pièce', 'prix_unitaire' => 450, 'taux_tva' => 21, 'categorie' => 'Frais'],
-        ])->map(fn($data) => Produit::create(array_merge($data, [
-            'reference' => 'INT-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
-        ])));
+        $produitsData = [
+            ['reference' => 'INT-001', 'designation' => "Main d'œuvre maçonnerie",          'unite' => 'h',      'prix_unitaire' => 45,   'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
+            ['reference' => 'INT-002', 'designation' => "Main d'œuvre plomberie",            'unite' => 'h',      'prix_unitaire' => 50,   'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
+            ['reference' => 'INT-003', 'designation' => "Main d'œuvre électricité",          'unite' => 'h',      'prix_unitaire' => 48,   'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
+            ['reference' => 'INT-004', 'designation' => "Main d'œuvre carrelage",            'unite' => 'h',      'prix_unitaire' => 42,   'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
+            ['reference' => 'INT-005', 'designation' => "Main d'œuvre peinture",             'unite' => 'h',      'prix_unitaire' => 38,   'taux_tva' => 21, 'categorie' => "Main d'œuvre"],
+            ['reference' => 'INT-006', 'designation' => 'Brique Wienerberger Terca',          'unite' => 'pièce',  'prix_unitaire' => 0.85, 'taux_tva' => 21, 'categorie' => 'Maçonnerie'],
+            ['reference' => 'INT-007', 'designation' => 'Ciment Portland CEM I 52.5',         'unite' => 'kg',     'prix_unitaire' => 0.18, 'taux_tva' => 21, 'categorie' => 'Maçonnerie'],
+            ['reference' => 'INT-008', 'designation' => 'Bloc béton 39x19x14',                'unite' => 'pièce',  'prix_unitaire' => 1.45, 'taux_tva' => 21, 'categorie' => 'Maçonnerie'],
+            ['reference' => 'INT-009', 'designation' => 'Plaque de plâtre Gyproc 12.5mm',     'unite' => 'm²',     'prix_unitaire' => 6.50, 'taux_tva' => 21, 'categorie' => 'Parachèvement'],
+            ['reference' => 'INT-010', 'designation' => 'Isolation PUR 10cm',                  'unite' => 'm²',     'prix_unitaire' => 28,   'taux_tva' => 6,  'categorie' => 'Isolation'],
+            ['reference' => 'INT-011', 'designation' => 'Tuile Koramic Actua 10',              'unite' => 'pièce',  'prix_unitaire' => 1.20, 'taux_tva' => 21, 'categorie' => 'Toiture'],
+            ['reference' => 'INT-012', 'designation' => 'Chaudière Vaillant ecoTEC plus',      'unite' => 'pièce',  'prix_unitaire' => 2850, 'taux_tva' => 6,  'categorie' => 'Chauffage'],
+            ['reference' => 'INT-013', 'designation' => 'Thermostat Netatmo',                  'unite' => 'pièce',  'prix_unitaire' => 179,  'taux_tva' => 21, 'categorie' => 'Chauffage'],
+            ['reference' => 'INT-014', 'designation' => 'Tube cuivre 22mm (barre 5m)',         'unite' => 'pièce',  'prix_unitaire' => 45,   'taux_tva' => 21, 'categorie' => 'Plomberie'],
+            ['reference' => 'INT-015', 'designation' => 'Robinet Grohe Eurosmart',             'unite' => 'pièce',  'prix_unitaire' => 89,   'taux_tva' => 21, 'categorie' => 'Sanitaire'],
+            ['reference' => 'INT-016', 'designation' => 'WC suspendu Geberit',                 'unite' => 'pièce',  'prix_unitaire' => 320,  'taux_tva' => 21, 'categorie' => 'Sanitaire'],
+            ['reference' => 'INT-017', 'designation' => 'Déplacement / installation chantier', 'unite' => 'forfait','prix_unitaire' => 150,  'taux_tva' => 21, 'categorie' => 'Frais'],
+            ['reference' => 'INT-018', 'designation' => 'Évacuation déchets (container)',      'unite' => 'pièce',  'prix_unitaire' => 450,  'taux_tva' => 21, 'categorie' => 'Frais'],
+        ];
+        $produits = collect($produitsData)->map(fn($data) => Produit::firstOrCreate(
+            ['reference' => $data['reference']],
+            $data
+        ));
 
         // --- DEVIS ---
         $devis1 = $this->creerDevis($clients[0], $chantiers[0], 'valide', now()->subMonths(3), [
