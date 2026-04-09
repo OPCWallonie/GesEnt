@@ -204,7 +204,7 @@
                             })
                             .then(r => r.json())
                             .then(data => { this.results = data; this.open = data.length > 0; this.loading = false; });
-                        }, 280);
+                        }, 300);
                     },
                     go(url) { window.location.href = url; this.open = false; this.q = ''; }
                 }" class="relative hidden md:block">
