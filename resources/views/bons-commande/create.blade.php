@@ -26,6 +26,7 @@
                 window.dispatchEvent(new CustomEvent('combobox-update-create-url', {
                     detail: { field: 'chantier_id', createUrl: '/api/clients/' + e.detail.id + '/chantiers/quick-create' }
                 }));
+                window.dispatchEvent(new CustomEvent('combobox-trigger-search', { detail: { field: 'chantier_id' } }));
             }
         });
         window.addEventListener('combobox-cleared', function(e) {

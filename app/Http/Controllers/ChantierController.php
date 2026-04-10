@@ -62,16 +62,19 @@ class ChantierController extends Controller
     {
         $q        = $request->get('q', '');
         $clientId = $request->get('client_id');
+        $all      = $request->boolean('all');
+        $limit    = $all ? 50 : 15;
         return response()->json(
             Chantier::query()
                 ->when($clientId, fn($query) => $query->where('client_id', $clientId))
                 ->when($q, fn($query) => $query->where('nom', 'like', '%' . like_escape($q) . '%'))
-                ->orderBy('nom')
-                ->limit(15)
+                ->when(!$q, fn($query) => $query->orderByDesc('updated_at'))
+                ->when($q,  fn($query) => $query->orderBy('nom'))
+                ->limit($limit)
                 ->get(['id', 'nom', 'coefficient_marge', 'client_id'])
                 ->map(fn($c) => [
-                    'id'               => $c->id,
-                    'nom'              => $c->nom,
+                    'id'                => $c->id,
+                    'nom'               => $c->nom,
                     'coefficient_marge' => (float) $c->coefficient_marge,
                 ])
         );

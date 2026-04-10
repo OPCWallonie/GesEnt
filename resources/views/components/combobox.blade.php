@@ -49,8 +49,8 @@
     <div class="relative flex items-center">
         <input type="text"
                x-model="query"
-               @input.debounce.250ms="search()"
-               @focus="if(query.length >= 1) search()"
+               @input.debounce.250ms="allLoaded = false; search()"
+               @focus="search()"
                @keydown.arrow-down.prevent="highlightNext()"
                @keydown.arrow-up.prevent="highlightPrev()"
                @keydown.enter.prevent="selectHighlighted()"
@@ -106,6 +106,14 @@
         <div x-show="results.length === 0 && !allowCreate && !loading"
              class="px-3 py-2 text-gray-400 text-xs italic">
             Aucun résultat
+        </div>
+
+        {{-- "Voir tout" button (hidden once all are shown) --}}
+        <div x-show="!allLoaded && results.length > 0"
+             x-cloak
+             @click.stop="loadAll()"
+             class="px-3 py-1.5 text-center text-xs text-gray-400 hover:text-gray-600 cursor-pointer border-t border-gray-100 hover:bg-gray-50">
+            ···
         </div>
 
         {{-- Create option --}}
@@ -178,6 +186,7 @@ if (typeof comboboxWidget === 'undefined') {
             showDropdown:   false,
             loading:        false,
             highlighted:    -1,
+            allLoaded:      false,
             allowCreate:    config.allowCreate  || false,
             createLabel:    config.createLabel  || 'Créer',
             createUrl:      config.createUrl    || null,
@@ -204,15 +213,22 @@ if (typeof comboboxWidget === 'undefined') {
                         this.select({ id: e.detail.id, nom: e.detail.nom });
                     }
                 });
+                window.addEventListener('combobox-trigger-search', (e) => {
+                    if (e.detail.field === this.fieldName) {
+                        this.search();
+                    }
+                });
             },
 
-            async search() {
-                if (this.query.length < 1) { this.results = []; this.showDropdown = false; return; }
+            async search(allResults) {
+                this.allLoaded = !!allResults;
                 this.loading = true;
                 this.showDropdown = true;
                 try {
                     const sep = this.endpoint.includes('?') ? '&' : '?';
-                    const r = await fetch(this.endpoint + sep + 'q=' + encodeURIComponent(this.query), {
+                    const url = this.endpoint + sep + 'q=' + encodeURIComponent(this.query)
+                              + (allResults ? '&all=1' : '');
+                    const r = await fetch(url, {
                         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                     });
                     this.results = await r.json();
@@ -221,6 +237,10 @@ if (typeof comboboxWidget === 'undefined') {
                 }
                 this.loading = false;
                 this.highlighted = -1;
+            },
+
+            loadAll() {
+                this.search(true);
             },
 
             select(item) {

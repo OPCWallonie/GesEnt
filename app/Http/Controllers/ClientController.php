@@ -122,13 +122,16 @@ class ClientController extends Controller
 
     public function apiSearch(Request $request)
     {
-        $q = $request->get('q', '');
+        $q     = $request->get('q', '');
+        $all   = $request->boolean('all');
+        $limit = $all ? 50 : 15;
         return response()->json(
             Client::query()
                 ->when($q, fn($query) => $query->where('nom', 'like', '%' . like_escape($q) . '%')
                     ->orWhere('code_client', 'like', '%' . like_escape($q) . '%'))
-                ->orderBy('nom')
-                ->limit(15)
+                ->when(!$q, fn($query) => $query->orderByDesc('updated_at'))
+                ->when($q,  fn($query) => $query->orderBy('nom'))
+                ->limit($limit)
                 ->get(['id', 'nom'])
         );
     }

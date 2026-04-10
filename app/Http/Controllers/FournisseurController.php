@@ -94,13 +94,16 @@ class FournisseurController extends Controller
 
     public function apiSearch(Request $request)
     {
-        $q = $request->get('q', '');
+        $q     = $request->get('q', '');
+        $all   = $request->boolean('all');
+        $limit = $all ? 50 : 15;
         return response()->json(
             Fournisseur::query()
                 ->when($q, fn($query) => $query->where('nom', 'like', '%' . like_escape($q) . '%'))
                 ->where('actif', true)
-                ->orderBy('nom')
-                ->limit(15)
+                ->when(!$q, fn($query) => $query->orderByDesc('updated_at'))
+                ->when($q,  fn($query) => $query->orderBy('nom'))
+                ->limit($limit)
                 ->get(['id', 'nom'])
         );
     }
