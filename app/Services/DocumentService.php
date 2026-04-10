@@ -81,15 +81,20 @@ class DocumentService
 
     /**
      * Calculer les totaux TVA ventilés par taux (pour l'affichage).
-     * Retourne [taux => montant_tva] ex: ['21.00' => 1234.56, '6.00' => 78.90]
+     * Retourne [taux => ['ht' => float, 'tva' => float]]
+     * ex: ['21.00' => ['ht' => 1000.00, 'tva' => 210.00], '6.00' => ['ht' => 500.00, 'tva' => 30.00]]
      */
     public function calculerTotauxTva(Collection $lignes): array
     {
         $totaux = [];
         foreach ($lignes->where('est_section', false) as $ligne) {
-            $taux          = number_format((float)$ligne->taux_tva, 2);
-            $totaux[$taux] = ($totaux[$taux] ?? 0) + ((float)$ligne->montant_ht * ((float)$ligne->taux_tva / 100));
+            $taux = number_format((float) $ligne->taux_tva, 2);
+            $ht   = (float) $ligne->montant_ht;
+            $totaux[$taux] ??= ['ht' => 0.0, 'tva' => 0.0];
+            $totaux[$taux]['ht']  += $ht;
+            $totaux[$taux]['tva'] += $ht * ((float) $ligne->taux_tva / 100);
         }
+        ksort($totaux);
         return $totaux;
     }
 }

@@ -2,7 +2,7 @@
     Totaux PDF communs.
     Variables attendues :
     - $document : Devis|BonCommande|Facture
-    - $totauxTva : array [taux => montant_tva]
+    - $totauxTva : array [taux => ['ht' => float, 'tva' => float]]
     - $labelAcompte (optionnel) : string
 --}}
 <table width="100%" style="margin-top: 15px;">
@@ -21,7 +21,7 @@
                 @foreach($totauxTva as $taux => $montant)
                     <tr>
                         <td style="padding: 3px 6px; color: #6b7280;">TVA {{ number_format((float)$taux, 0) }}%</td>
-                        <td align="right" style="padding: 3px 6px; color: #6b7280;">{{ number_format($montant, 2, ',', ' ') }} €</td>
+                        <td align="right" style="padding: 3px 6px; color: #6b7280;">{{ number_format($montant['tva'], 2, ',', ' ') }} €</td>
                     </tr>
                 @endforeach
                 @if($document->frais_port > 0)

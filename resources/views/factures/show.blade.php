@@ -259,7 +259,7 @@
                 <dl class="space-y-1.5 text-sm">
                     <div class="flex justify-between text-gray-600"><dt>Total HT</dt><dd class="font-medium">{{ number_format($facture->montant_ht, 2, ',', ' ') }} €</dd></div>
                     @foreach($totauxTva as $taux => $montant)
-                        <div class="flex justify-between text-gray-400 text-xs"><dt>TVA {{ number_format((float)$taux, 0) }}%</dt><dd>{{ number_format($montant, 2, ',', ' ') }} €</dd></div>
+                        <div class="flex justify-between text-gray-400 text-xs"><dt>TVA {{ number_format((float)$taux, 0) }}%</dt><dd>{{ number_format($montant['tva'], 2, ',', ' ') }} €</dd></div>
                     @endforeach
                     <div class="flex justify-between text-gray-600"><dt>Total TTC</dt><dd class="font-medium">{{ number_format($facture->montant_ttc, 2, ',', ' ') }} €</dd></div>
                     @if($facture->acompte_deduit > 0)

@@ -63,7 +63,7 @@
                 @foreach($totauxTva as $taux => $montant)
                     <tr>
                         <td style="padding: 3px 6px; color: #6b7280;">TVA {{ number_format((float)$taux, 0) }}%</td>
-                        <td align="right" style="padding: 3px 6px; color: #6b7280;">{{ number_format($montant, 2, ',', ' ') }} €</td>
+                        <td align="right" style="padding: 3px 6px; color: #6b7280;">{{ number_format($montant['tva'], 2, ',', ' ') }} €</td>
                     </tr>
                 @endforeach
                 <tr style="background-color: #1e3a5f; color: white;">
