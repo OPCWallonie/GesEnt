@@ -241,6 +241,26 @@
                                 <dd class="text-xs text-gray-500">{{ $facture->prochaine_relance_at->format('d/m/Y') }}</dd>
                             </div>
                         @endif
+                        @if($scenarios->isNotEmpty())
+                        <div class="pt-1">
+                            <dt class="text-gray-400 text-xs mb-1">Scénario de relance</dt>
+                            <dd>
+                                <form method="POST" action="{{ route('factures.scenario-relance', $facture) }}">
+                                    @csrf @method('PATCH')
+                                    <select name="relance_scenario_id" onchange="this.form.submit()"
+                                            class="w-full rounded border-gray-300 text-xs py-1">
+                                        <option value="">— Par défaut —</option>
+                                        @foreach($scenarios as $sc)
+                                            <option value="{{ $sc->id }}"
+                                                {{ $facture->relance_scenario_id == $sc->id ? 'selected' : '' }}>
+                                                {{ $sc->nom }}{{ $sc->est_defaut ? ' ★' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                            </dd>
+                        </div>
+                        @endif
                     @endif
                     @if($facture->date_paiement)
                         <div class="flex justify-between"><dt class="text-gray-400">Payée le</dt><dd class="text-green-600 font-medium">{{ $facture->date_paiement->format('d/m/Y') }}</dd></div>
@@ -434,6 +454,66 @@
                 </div>
             @endif
         </div>
+
+        {{-- Timeline de relance --}}
+        @php
+            $scenarioActif = $facture->relanceScenario ?? \App\Models\RelanceScenario::parDefaut();
+            $joursRetard   = $facture->date_echeance && $facture->estEnRetard()
+                ? (int) $facture->date_echeance->diffInDays(now())
+                : null;
+        @endphp
+        @if($scenarioActif && !in_array((string) $facture->statut, ['payee', 'archive']))
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-semibold text-gray-700 text-sm">
+                    Scénario : {{ $scenarioActif->nom }}
+                    @if($scenarioActif->est_defaut && !$facture->relance_scenario_id)
+                        <span class="text-xs text-gray-400">(défaut)</span>
+                    @endif
+                </h3>
+                @if($joursRetard !== null)
+                    <span class="text-xs text-red-600 font-medium">{{ $joursRetard }}j de retard</span>
+                @endif
+            </div>
+            <div class="space-y-2">
+                @foreach($scenarioActif->etapes->where('actif', true)->sortBy('delai_jours') as $i => $etape)
+                    @php
+                        $envoye   = $i < $facture->nb_relances;
+                        $prochaine = $i === $facture->nb_relances;
+                        $eligible  = $prochaine && $joursRetard !== null && $joursRetard >= $etape->delai_jours;
+                    @endphp
+                    <div class="flex items-start gap-3 py-1.5 {{ $envoye ? 'opacity-50' : '' }}">
+                        <div class="mt-0.5 shrink-0">
+                            @if($envoye)
+                                <span class="inline-flex w-5 h-5 rounded-full bg-green-100 text-green-600 items-center justify-center text-xs">✓</span>
+                            @elseif($eligible)
+                                <span class="inline-flex w-5 h-5 rounded-full bg-amber-100 text-amber-600 items-center justify-center text-xs font-bold animate-pulse">!</span>
+                            @else
+                                <span class="inline-flex w-5 h-5 rounded-full bg-gray-100 text-gray-400 items-center justify-center text-xs">{{ $i + 1 }}</span>
+                            @endif
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-xs font-medium {{ $eligible ? 'text-amber-700' : 'text-gray-700' }}">
+                                    J+{{ $etape->delai_jours }} — {{ ucfirst($etape->ton) }}
+                                </span>
+                                <span class="text-xs px-1.5 py-0.5 rounded {{ $etape->canal === 'mail' ? 'bg-blue-50 text-blue-600' : ($etape->canal === 'courrier' ? 'bg-purple-50 text-purple-600' : 'bg-indigo-50 text-indigo-600') }}">
+                                    {{ $etape->canal === 'mail' ? 'Email' : ($etape->canal === 'courrier' ? 'Courrier' : 'Email + Courrier') }}
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-400 truncate">{{ $etape->sujet }}</p>
+                        </div>
+                        @if($etape->avecCourrier())
+                        <a href="{{ route('factures.relance-pdf', [$facture, $etape]) }}" target="_blank"
+                           class="shrink-0 text-xs text-gray-400 hover:text-indigo-600 px-2 py-0.5 border border-gray-200 rounded hover:border-indigo-300">
+                            PDF
+                        </a>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
 
         {{-- Historique des envois email --}}
         @if($facture->emailEnvois->isNotEmpty())

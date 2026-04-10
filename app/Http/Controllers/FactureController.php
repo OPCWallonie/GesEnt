@@ -158,12 +158,13 @@ class FactureController extends Controller
 
     public function show(Facture $facture)
     {
-        $facture->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande', 'avoirs', 'paiements', 'emailEnvois.sender');
+        $facture->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande', 'avoirs', 'paiements', 'emailEnvois.sender', 'relanceScenario.etapes');
         $parametres         = ParametresEntreprise::instance();
         $totauxTva          = $this->documentService->calculerTotauxTva($facture->lignes);
         $messageEmailDefaut = MailTemplateService::resoudre('facture', $facture);
+        $scenarios          = \App\Models\RelanceScenario::orderByDesc('est_defaut')->orderBy('nom')->get();
 
-        return view('factures.show', compact('facture', 'parametres', 'totauxTva', 'messageEmailDefaut'));
+        return view('factures.show', compact('facture', 'parametres', 'totauxTva', 'messageEmailDefaut', 'scenarios'));
     }
 
     public function edit(Facture $facture)
@@ -451,6 +452,17 @@ class FactureController extends Controller
         return back()->with('success', $message);
     }
 
+    public function changerScenarioRelance(Request $request, Facture $facture)
+    {
+        $request->validate([
+            'relance_scenario_id' => 'nullable|exists:relance_scenarios,id',
+        ]);
+
+        $facture->update(['relance_scenario_id' => $request->input('relance_scenario_id') ?: null]);
+
+        return back()->with('success', 'Scénario de relance mis à jour.');
+    }
+
     public function libererRetenue(Facture $facture)
     {
         if ($facture->retenue_garantie_pct <= 0) {
@@ -484,6 +496,17 @@ class FactureController extends Controller
             ->setPaper('a4', 'portrait');
 
         return $pdf->stream("facture-{$facture->numero}.pdf");
+    }
+
+    public function relancePdf(Facture $facture, \App\Models\RelanceEtape $etape)
+    {
+        $facture->load('client', 'chantier', 'modePaiement', 'lignes');
+        $parametres = ParametresEntreprise::instance();
+
+        $pdf = Pdf::loadView('pdf.courrier-relance', compact('facture', 'parametres', 'etape'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream("relance-{$facture->numero}.pdf");
     }
 
 }

@@ -23,7 +23,7 @@ class Facture extends Model
         'retenue_garantie_pct', 'retenue_garantie_montant', 'retenue_garantie_liberee_at',
         'montant_net_a_payer', 'delai_reglement',
         'date_paiement', 'montant_paye', 'montant_total_paye', 'notes',
-        'nb_relances', 'derniere_relance_at', 'prochaine_relance_at', 'relance_auto',
+        'nb_relances', 'derniere_relance_at', 'prochaine_relance_at', 'relance_auto', 'relance_scenario_id',
         'numero_situation', 'pourcentage_avancement', 'pourcentage_cumule', 'montant_anterieur',
         'peppol_reference', 'peppol_envoye_at',
         'odoo_move_id', 'odoo_synced_at',
@@ -147,6 +147,27 @@ class Facture extends Model
     public function emailEnvois()
     {
         return $this->morphMany(EmailEnvoi::class, 'document')->orderByDesc('envoye_at');
+    }
+
+    public function relanceScenario()
+    {
+        return $this->belongsTo(RelanceScenario::class);
+    }
+
+    /**
+     * Prochaine étape de relance à envoyer selon le scénario actif.
+     */
+    public function prochaineEtapeRelance(): ?RelanceEtape
+    {
+        $scenario = $this->relanceScenario ?? RelanceScenario::parDefaut();
+        if (!$scenario) {
+            return null;
+        }
+
+        return $scenario->etapes
+            ->where('actif', true)
+            ->values()
+            ->get($this->nb_relances); // index = nb already sent
     }
 
     public function totalAvoirs(): float

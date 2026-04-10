@@ -4,7 +4,9 @@ namespace App\Mail;
 
 use App\Models\Facture;
 use App\Models\ParametresEntreprise;
+use App\Models\RelanceEtape;
 use App\Services\DocumentService;
+use App\Services\MailTemplateService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -18,44 +20,59 @@ class RelanceFacture extends Mailable
     use Queueable, SerializesModels;
 
     public string $signature;
+    public ParametresEntreprise $parametres;
+    public string $corpsEmail;
 
     public function __construct(
         public Facture $facture,
-        public int $niveauRelance, // 1, 2, 3+
+        public RelanceEtape $etape,
     ) {
-        $this->signature = ParametresEntreprise::instance()->mail_signature ?? '';
+        $p = ParametresEntreprise::instance();
+        $this->parametres = $p;
+        $this->signature  = $p->mail_signature ?? '';
+        $this->corpsEmail = MailTemplateService::resoudreEtape($etape, $facture, 'corps_email');
     }
 
     public function envelope(): Envelope
     {
-        $sujet = match (true) {
-            $this->niveauRelance === 1 => "Rappel — Facture {$this->facture->numero}",
-            $this->niveauRelance === 2 => "2ème rappel — Facture {$this->facture->numero} en retard",
-            default                    => "URGENT — Facture {$this->facture->numero} impayée",
-        };
-
-        return new Envelope(subject: $sujet);
+        return new Envelope(
+            subject: MailTemplateService::resoudreEtape($this->etape, $this->facture, 'sujet'),
+        );
     }
 
     public function content(): Content
     {
-        return new Content(view: 'emails.relance-facture');
+        return new Content(view: 'emails.relance');
     }
 
     public function attachments(): array
     {
         $facture    = $this->facture->loadMissing('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande');
-        $parametres = ParametresEntreprise::instance();
+        $parametres = $this->parametres;
         $totauxTva  = app(DocumentService::class)->calculerTotauxTva($facture->lignes);
+        $attachments = [];
 
-        $pdf = Pdf::loadView('pdf.facture', compact('facture', 'parametres', 'totauxTva'))
+        // Toujours joindre la facture PDF
+        $pdfFacture = Pdf::loadView('pdf.facture', compact('facture', 'parametres', 'totauxTva'))
             ->setPaper('a4', 'portrait');
 
-        return [
-            Attachment::fromData(
-                fn() => $pdf->output(),
-                "facture-{$this->facture->numero}.pdf"
-            )->withMime('application/pdf'),
-        ];
+        $attachments[] = Attachment::fromData(
+            fn() => $pdfFacture->output(),
+            "facture-{$this->facture->numero}.pdf"
+        )->withMime('application/pdf');
+
+        // Joindre le courrier de relance si le canal l'exige
+        if ($this->etape->avecCourrier()) {
+            $etape = $this->etape;
+            $pdfCourrier = Pdf::loadView('pdf.courrier-relance', compact('facture', 'parametres', 'etape'))
+                ->setPaper('a4', 'portrait');
+
+            $attachments[] = Attachment::fromData(
+                fn() => $pdfCourrier->output(),
+                "relance-{$this->facture->numero}.pdf"
+            )->withMime('application/pdf');
+        }
+
+        return $attachments;
     }
 }

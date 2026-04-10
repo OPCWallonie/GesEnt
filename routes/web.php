@@ -24,6 +24,7 @@ use App\Http\Controllers\StatistiquesController;
 use App\Http\Controllers\PeppolDashboardController;
 use App\Http\Controllers\PeppolWebhookController;
 use App\Http\Controllers\KitController;
+use App\Http\Controllers\RelanceScenariosController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -77,6 +78,7 @@ Route::middleware(['auth'])->group(function () {
     // Factures
     Route::resource('factures', FactureController::class);
     Route::get('factures/{facture}/pdf', [FactureController::class, 'pdf'])->name('factures.pdf');
+    Route::get('factures/{facture}/relance-pdf/{etape}', [FactureController::class, 'relancePdf'])->name('factures.relance-pdf');
     Route::post('factures/{facture}/sync-odoo', [FactureController::class, 'syncOdoo'])->name('factures.sync-odoo');
     Route::post('factures/{facture}/envoyer', [FactureController::class, 'envoyer'])->name('factures.envoyer');
     Route::post('factures/{facture}/envoyer-peppol', [FactureController::class, 'envoyerPeppol'])->name('factures.envoyer-peppol');
@@ -85,6 +87,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('factures/{facture}/relancer', [FactureController::class, 'relancer'])->name('factures.relancer');
     Route::patch('factures/{facture}/liberer-retenue', [FactureController::class, 'libererRetenue'])->name('factures.liberer-retenue');
     Route::patch('factures/{facture}/toggle-relance-auto', [FactureController::class, 'toggleRelanceAuto'])->name('factures.toggle-relance-auto');
+    Route::patch('factures/{facture}/scenario-relance', [FactureController::class, 'changerScenarioRelance'])->name('factures.scenario-relance');
 
     // Avoirs
     Route::get('factures/{facture}/avoirs/create', [AvoirController::class, 'create'])->name('avoirs.create');
@@ -143,6 +146,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/export/factures-achat',     [ExportController::class, 'facturesAchat'])->name('export.factures-achat');
         Route::get('/export/devis',              [ExportController::class, 'devis'])->name('export.devis');
         Route::get('/export/factures-pdf-zip',   [ExportController::class, 'facturesPdfZip'])->name('export.factures-pdf-zip');
+    });
+
+    // Scénarios de relance — admin uniquement
+    Route::middleware(['role:admin'])->group(function () {
+        Route::resource('relance-scenarios', RelanceScenariosController::class)
+            ->parameters(['relance-scenarios' => 'relanceScenario']);
+        Route::post('relance-scenarios/{relanceScenario}/definir-defaut', [RelanceScenariosController::class, 'definirDefaut'])
+            ->name('relance-scenarios.definir-defaut');
+        Route::get('relance-scenarios/{relanceScenario}/apercu/{etape}', [RelanceScenariosController::class, 'apercu'])
+            ->name('relance-scenarios.apercu');
     });
 
     // Gestion des utilisateurs — admin uniquement

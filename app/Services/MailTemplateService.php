@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Facture;
 use App\Models\ParametresEntreprise;
+use App\Models\RelanceEtape;
 
 class MailTemplateService
 {
@@ -32,6 +34,38 @@ class MailTemplateService
             '{entreprise}' => $p->nom ?? '',
             '{echeance}'   => isset($document->date_echeance) ? ($document->date_echeance?->format('d/m/Y') ?? '') : '',
             '{validite}'   => isset($document->date_validite) ? ($document->date_validite?->format('d/m/Y') ?? '') : '',
+        ];
+
+        return str_replace(array_keys($vars), array_values($vars), $template);
+    }
+
+    /**
+     * Resolve sujet or corps_email for a relance etape, substituting all variables.
+     *
+     * @param  'sujet'|'corps_email'  $champ
+     */
+    public static function resoudreEtape(RelanceEtape $etape, Facture $facture, string $champ = 'corps_email'): string
+    {
+        $p          = ParametresEntreprise::instance();
+        $template   = $etape->$champ ?? '';
+        $joursRetard = $facture->date_echeance
+            ? max(0, (int) $facture->date_echeance->diffInDays(now()))
+            : 0;
+
+        $soldeDu = number_format((float) ($facture->montant_net_a_payer ?? $facture->montant_ttc), 2, ',', ' ') . ' €';
+
+        $vars = [
+            '{client}'         => $facture->client?->nom ?? '',
+            '{numero}'         => $facture->numero ?? '',
+            '{montant}'        => $soldeDu,
+            '{solde_du}'       => $soldeDu,
+            '{entreprise}'     => $p->nom ?? '',
+            '{jours_retard}'   => (string) $joursRetard,
+            '{date_facture}'   => $facture->date_echeance?->format('d/m/Y') ?? '',
+            '{date_rappel}'    => now()->format('d/m/Y'),
+            '{chantier}'       => $facture->chantier?->nom ?? '',
+            '{nb_relance}'     => (string) ($facture->nb_relances + 1),
+            '{delai_paiement}' => (string) ($facture->delai_reglement ?? 30),
         ];
 
         return str_replace(array_keys($vars), array_values($vars), $template);
