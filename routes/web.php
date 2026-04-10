@@ -142,6 +142,9 @@ Route::middleware(['auth'])->group(function () {
     // Statistiques & Exports — comptable + admin
     Route::middleware(['role:admin|comptable'])->group(function () {
         Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');
+        Route::get('/statistiques/balance-agee', [StatistiquesController::class, 'balanceAgee'])->name('statistiques.balance-agee');
+        Route::get('/statistiques/tresorerie', [StatistiquesController::class, 'tresorerie'])->name('statistiques.tresorerie');
+        Route::get('/statistiques/chantiers', [StatistiquesController::class, 'chantiersRentabilite'])->name('statistiques.chantiers');
         Route::get('/export/factures',           [ExportController::class, 'factures'])->name('export.factures');
         Route::get('/export/factures-achat',     [ExportController::class, 'facturesAchat'])->name('export.factures-achat');
         Route::get('/export/devis',              [ExportController::class, 'devis'])->name('export.devis');

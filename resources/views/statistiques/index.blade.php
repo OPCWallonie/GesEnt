@@ -11,32 +11,47 @@
         </form>
     </x-slot>
 
-    {{-- KPIs --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    @include('statistiques.partials.nav')
+
+    {{-- KPIs principaux avec variation N-1 --}}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        @php
+            $variationVentes = $ventesN1 > 0 ? (($totalVentes - $ventesN1) / $ventesN1) * 100 : null;
+            $variationAchats = $achatsN1 > 0 ? (($totalAchats - $achatsN1) / $achatsN1) * 100 : null;
+            $variationEncaisse = $encaisseN1 > 0 ? (($totalEncaisse - $encaisseN1) / $encaisseN1) * 100 : null;
+            $margeN = $totalVentes - $totalAchats;
+            $tauxMargeN = $totalVentes > 0 ? ($margeN / $totalVentes) * 100 : 0;
+            $variationMarge = $margeN1 != 0 ? (($margeN - $margeN1) / abs($margeN1)) * 100 : null;
+        @endphp
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div class="text-xs text-gray-400 uppercase font-medium mb-1">CA facturé {{ $annee }}</div>
             <div class="text-2xl font-bold text-gray-800">{{ number_format($totalVentes, 0, ',', ' ') }} €</div>
             <div class="text-xs text-gray-400 mt-1">TTC toutes factures</div>
+            @include('statistiques.partials._variation', ['variation' => $variationVentes, 'reference' => $ventesN1, 'anneeN1' => $annee - 1])
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div class="text-xs text-gray-400 uppercase font-medium mb-1">Encaissé {{ $annee }}</div>
             <div class="text-2xl font-bold text-green-700">{{ number_format($totalEncaisse, 0, ',', ' ') }} €</div>
             <div class="text-xs text-gray-400 mt-1">Paiements reçus</div>
+            @include('statistiques.partials._variation', ['variation' => $variationEncaisse, 'reference' => $encaisseN1, 'anneeN1' => $annee - 1])
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div class="text-xs text-gray-400 uppercase font-medium mb-1">Achats {{ $annee }}</div>
             <div class="text-2xl font-bold text-orange-600">{{ number_format($totalAchats, 0, ',', ' ') }} €</div>
             <div class="text-xs text-gray-400 mt-1">Factures fournisseurs</div>
+            @include('statistiques.partials._variation', ['variation' => $variationAchats, 'reference' => $achatsN1, 'anneeN1' => $annee - 1, 'inverser' => true])
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div class="text-xs text-gray-400 uppercase font-medium mb-1">Marge brute {{ $annee }}</div>
-            @php $marge = $totalVentes - $totalAchats; $tauxMarge = $totalVentes > 0 ? ($marge / $totalVentes) * 100 : 0; @endphp
-            <div class="text-2xl font-bold {{ $marge >= 0 ? 'text-blue-700' : 'text-red-600' }}">{{ number_format($marge, 0, ',', ' ') }} €</div>
-            <div class="text-xs text-gray-400 mt-1">{{ number_format($tauxMarge, 1) }}% du CA</div>
+            <div class="text-2xl font-bold {{ $margeN >= 0 ? 'text-blue-700' : 'text-red-600' }}">{{ number_format($margeN, 0, ',', ' ') }} €</div>
+            <div class="text-xs text-gray-400 mt-1">{{ number_format($tauxMargeN, 1) }}% du CA</div>
+            @include('statistiques.partials._variation', ['variation' => $variationMarge, 'reference' => $margeN1, 'anneeN1' => $annee - 1])
         </div>
     </div>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    {{-- KPIs secondaires --}}
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div class="text-xs text-gray-400 uppercase font-medium mb-1">Devis émis</div>
             <div class="text-3xl font-bold text-gray-800">{{ $nbDevis }}</div>
@@ -55,13 +70,65 @@
             <div class="text-3xl font-bold {{ $totalEnRetard > 0 ? 'text-red-600' : 'text-gray-400' }}">{{ number_format($totalEnRetard, 0, ',', ' ') }} €</div>
             <div class="text-xs text-gray-400 mt-1">{{ $facturesEnRetard->count() }} facture(s)</div>
         </div>
+        {{-- DSO --}}
+        <div class="bg-white rounded-xl shadow-sm border {{ $dso > 60 ? 'border-red-200' : ($dso > 45 ? 'border-orange-200' : 'border-green-200') }} p-5">
+            <div class="text-xs text-gray-400 uppercase font-medium mb-1">DSO</div>
+            <div class="text-3xl font-bold {{ $dso > 60 ? 'text-red-600' : ($dso > 45 ? 'text-orange-600' : 'text-green-700') }}">
+                {{ $dso }}j
+            </div>
+            <div class="text-xs text-gray-400 mt-1">
+                @if($dsoReel)Délai réel : {{ $dsoReel }}j@else Délai moyen théorique @endif
+            </div>
+        </div>
     </div>
 
-    {{-- Graphique CA --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <h3 class="font-semibold text-gray-700 mb-4">Ventes vs Achats {{ $annee }} (TTC)</h3>
+    {{-- Graphique CA avec toggle N-1 --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6"
+         x-data="{ showN1: false }">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-700">Ventes vs Achats {{ $annee }} (TTC)</h3>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" x-model="showN1" @change="toggleN1()" class="rounded border-gray-300 text-blue-600">
+                <span class="text-gray-600">Comparer avec {{ $annee - 1 }}</span>
+            </label>
+        </div>
         <canvas id="chartCA" height="80"></canvas>
     </div>
+
+    {{-- Funnel de conversion --}}
+    @if($devisEmis > 0)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 class="font-semibold text-gray-700 mb-5">Funnel de conversion {{ $annee }}</h3>
+        @php
+            $funnelSteps = [
+                ['label' => 'Devis émis',   'count' => $devisEmis,       'montant' => $montantDevis,    'color' => 'bg-blue-500'],
+                ['label' => 'Devis validés', 'count' => $devisAcceptes,  'montant' => $montantAcceptes, 'color' => 'bg-indigo-500'],
+                ['label' => 'BDC signés',    'count' => $bdcGeneres,     'montant' => $montantBdc,      'color' => 'bg-purple-500'],
+                ['label' => 'Facturés',      'count' => $facturesEmises, 'montant' => $montantFacture,  'color' => 'bg-violet-500'],
+                ['label' => 'Encaissés',     'count' => $facturesPayees, 'montant' => $montantEncaisse, 'color' => 'bg-green-500'],
+            ];
+        @endphp
+        <div class="flex items-end gap-1">
+            @foreach($funnelSteps as $step)
+            @php $pct = $devisEmis > 0 ? round(($step['count'] / $devisEmis) * 100) : 0; @endphp
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+                <div class="text-xs font-medium text-gray-600 text-center">{{ $step['label'] }}</div>
+                <div class="w-full {{ $step['color'] }} rounded-t transition-all flex items-end justify-center"
+                     style="height: {{ max(20, $pct * 1.5) }}px;">
+                    <span class="text-white text-xs font-bold pb-1">{{ $step['count'] }}</span>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs font-bold text-gray-700">{{ $pct }}%</div>
+                    <div class="text-xs text-gray-400">{{ number_format($step['montant'], 0, ',', ' ') }} €</div>
+                </div>
+            </div>
+            @if(!$loop->last)
+                <div class="mb-8 text-gray-300 text-lg">→</div>
+            @endif
+            @endforeach
+        </div>
+    </div>
+    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {{-- Top clients --}}
@@ -173,8 +240,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script>
+    const caVentes   = @json($caVentes);
+    const caVentesN1 = @json($caVentesN1);
+    const anneeN1    = {{ $annee - 1 }};
+
     const ctx = document.getElementById('chartCA').getContext('2d');
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: @json($moisLabels),
@@ -229,5 +300,26 @@
             }
         }
     });
+
+    function toggleN1() {
+        const existing = chart.data.datasets.findIndex(d => d.label.includes(anneeN1));
+        if (existing >= 0) {
+            chart.data.datasets.splice(existing, 1);
+        } else {
+            chart.data.datasets.push({
+                label: 'Ventes ' + anneeN1,
+                data: caVentesN1,
+                type: 'line',
+                borderColor: 'rgba(99, 102, 241, 0.8)',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 3,
+                tension: 0.3,
+                fill: false,
+            });
+        }
+        chart.update();
+    }
     </script>
 </x-app-layout>
