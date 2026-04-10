@@ -18,19 +18,21 @@ class BonCommandeEnvoye extends Mailable
     use Queueable, SerializesModels;
 
     public string $signature;
+    public ParametresEntreprise $parametres;
 
     public function __construct(
         public BonCommande $bonCommande,
         public string $messagePersonnalise = '',
     ) {
-        $this->signature = ParametresEntreprise::instance()->mail_signature ?? '';
+        $p = ParametresEntreprise::instance();
+        $this->parametres = $p;
+        $this->signature  = $p->mail_signature ?? '';
     }
 
     public function envelope(): Envelope
     {
-        $parametres = ParametresEntreprise::instance();
         return new Envelope(
-            subject: "Bon de commande {$this->bonCommande->numero} — {$parametres->nom}",
+            subject: "Bon de commande {$this->bonCommande->numero} — {$this->parametres->nom}",
         );
     }
 
@@ -42,12 +44,11 @@ class BonCommandeEnvoye extends Mailable
     public function attachments(): array
     {
         $this->bonCommande->loadMissing('client', 'chantier', 'modePaiement', 'lignes');
-        $parametres = ParametresEntreprise::instance();
-        $totauxTva  = app(DocumentService::class)->calculerTotauxTva($this->bonCommande->lignes);
+        $totauxTva = app(DocumentService::class)->calculerTotauxTva($this->bonCommande->lignes);
 
         $pdf = Pdf::loadView('pdf.bon-commande', [
             'bonCommande' => $this->bonCommande,
-            'parametres'  => $parametres,
+            'parametres'  => $this->parametres,
             'totauxTva'   => $totauxTva,
         ])->setPaper('a4', 'portrait');
 

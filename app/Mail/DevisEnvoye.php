@@ -19,19 +19,21 @@ class DevisEnvoye extends Mailable
     use Queueable, SerializesModels;
 
     public string $signature;
+    public ParametresEntreprise $parametres;
 
     public function __construct(
         public Devis $devis,
         public string $messagePersonnalise = '',
     ) {
-        $this->signature = ParametresEntreprise::instance()->mail_signature ?? '';
+        $p = ParametresEntreprise::instance();
+        $this->parametres = $p;
+        $this->signature  = $p->mail_signature ?? '';
     }
 
     public function envelope(): Envelope
     {
-        $parametres = ParametresEntreprise::instance();
         return new Envelope(
-            subject: "Devis {$this->devis->numero} — {$parametres->nom}",
+            subject: "Devis {$this->devis->numero} — {$this->parametres->nom}",
         );
     }
 
@@ -43,12 +45,11 @@ class DevisEnvoye extends Mailable
     public function attachments(): array
     {
         $this->devis->loadMissing('client', 'chantier', 'modePaiement', 'lignes');
-        $parametres = ParametresEntreprise::instance();
-        $totauxTva  = app(DocumentService::class)->calculerTotauxTva($this->devis->lignes);
+        $totauxTva = app(DocumentService::class)->calculerTotauxTva($this->devis->lignes);
 
         $pdf = Pdf::loadView('pdf.devis', [
             'devis'      => $this->devis,
-            'parametres' => $parametres,
+            'parametres' => $this->parametres,
             'totauxTva'  => $totauxTva,
         ])->setPaper('a4', 'portrait');
 

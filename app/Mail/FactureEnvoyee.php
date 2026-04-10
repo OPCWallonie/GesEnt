@@ -18,19 +18,21 @@ class FactureEnvoyee extends Mailable
     use Queueable, SerializesModels;
 
     public string $signature;
+    public ParametresEntreprise $parametres;
 
     public function __construct(
         public Facture $facture,
         public string $messagePersonnalise = '',
     ) {
-        $this->signature = ParametresEntreprise::instance()->mail_signature ?? '';
+        $p = ParametresEntreprise::instance();
+        $this->parametres = $p;
+        $this->signature  = $p->mail_signature ?? '';
     }
 
     public function envelope(): Envelope
     {
-        $parametres = ParametresEntreprise::instance();
         return new Envelope(
-            subject: "Facture {$this->facture->numero} — {$parametres->nom}",
+            subject: "Facture {$this->facture->numero} — {$this->parametres->nom}",
         );
     }
 
@@ -42,12 +44,11 @@ class FactureEnvoyee extends Mailable
     public function attachments(): array
     {
         $this->facture->loadMissing('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande');
-        $parametres = ParametresEntreprise::instance();
-        $totauxTva  = app(DocumentService::class)->calculerTotauxTva($this->facture->lignes);
+        $totauxTva = app(DocumentService::class)->calculerTotauxTva($this->facture->lignes);
 
         $pdf = Pdf::loadView('pdf.facture', [
             'facture'    => $this->facture,
-            'parametres' => $parametres,
+            'parametres' => $this->parametres,
             'totauxTva'  => $totauxTva,
         ])->setPaper('a4', 'portrait');
 
