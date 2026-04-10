@@ -251,7 +251,7 @@
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Récapitulatif</h3>
 
                 <dl class="space-y-2 text-sm">
-                    @foreach($devis->totauxParTva() as $taux => $montants)
+                    @foreach($totauxTva as $taux => $montants)
                         <div class="flex justify-between text-gray-600">
                             <dt>Base HT {{ $taux }} %</dt>
                             <dd>{{ number_format($montants['ht'], 2, ',', ' ') }} €</dd>

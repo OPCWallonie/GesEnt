@@ -4,7 +4,7 @@ namespace App\Mail;
 
 use App\Models\Devis;
 use App\Models\ParametresEntreprise;
-use App\Http\Controllers\DevisController;
+use App\Services\DocumentService;
 use App\Services\MailConfigService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
@@ -44,7 +44,7 @@ class DevisEnvoye extends Mailable
     {
         $this->devis->loadMissing('client', 'chantier', 'modePaiement', 'lignes');
         $parametres = ParametresEntreprise::instance();
-        $totauxTva  = DevisController::calculerTotauxTva($this->devis->lignes);
+        $totauxTva  = app(DocumentService::class)->calculerTotauxTva($this->devis->lignes);
 
         $pdf = Pdf::loadView('pdf.devis', [
             'devis'      => $this->devis,
