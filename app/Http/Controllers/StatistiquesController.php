@@ -225,27 +225,34 @@ class StatistiquesController extends Controller
 
     public function chantiersRentabilite()
     {
+        $annee = now()->year;
+
         $chantiers = Chantier::where('statut', '!=', 'archive')
             ->with('client')
             ->get()
-            ->map(function ($c) {
-                $ventes = $c->totalVentes();
-                $achats = $c->totalAchats();
-                $marge  = $ventes - $achats;
+            ->map(function ($c) use ($annee) {
+                $ventes  = $c->totalVentes();
+                $achats  = $c->totalAchats();
+                $marge   = $ventes - $achats;
+                $coutMo  = $c->coutMainOeuvre($annee);
+                $margeRee = $marge - $coutMo;
                 return [
-                    'chantier'    => $c,
-                    'ventes'      => $ventes,
-                    'achats'      => $achats,
-                    'marge'       => $marge,
-                    'taux_marge'  => $ventes > 0 ? ($marge / $ventes) * 100 : null,
-                    'avancement'  => $c->avancement ?? 0,
-                    'nb_factures' => $c->factures()->count(),
+                    'chantier'          => $c,
+                    'ventes'            => $ventes,
+                    'achats'            => $achats,
+                    'marge'             => $marge,
+                    'taux_marge'        => $ventes > 0 ? ($marge / $ventes) * 100 : null,
+                    'cout_mo'           => $coutMo,
+                    'marge_reelle'      => $margeRee,
+                    'taux_marge_reelle' => $ventes > 0 ? ($margeRee / $ventes) * 100 : null,
+                    'avancement'        => $c->avancement ?? 0,
+                    'nb_factures'       => $c->factures()->count(),
                 ];
             })
             ->filter(fn($c) => $c['ventes'] > 0 || $c['achats'] > 0)
             ->sortByDesc('marge')
             ->values();
 
-        return view('statistiques.chantiers-rentabilite', compact('chantiers'));
+        return view('statistiques.chantiers-rentabilite', compact('chantiers', 'annee'));
     }
 }

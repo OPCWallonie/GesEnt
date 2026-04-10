@@ -7,6 +7,8 @@ use App\Models\Chantier;
 use App\Models\Devis;
 use App\Models\Facture;
 use App\Models\FactureAchat;
+use App\Models\Ouvrier;
+use App\Models\Pointage;
 use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
@@ -74,10 +76,18 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
+        // MO : stats semaine courante
+        $lundi     = $maintenant->copy()->startOfWeek();
+        $vendredi  = $lundi->copy()->addDays(4);
+        $moSemaine = Pointage::whereBetween('date', [$lundi, $vendredi])->sum('cout_total');
+        $nbOuvriersActifs     = Ouvrier::where('actif', true)->count();
+        $nbOuvriersPlanifies  = Pointage::whereBetween('date', [$lundi, $vendredi])
+            ->distinct('ouvrier_id')->count('ouvrier_id');
+
         return view('dashboard.index', compact(
             'stats', 'facturesEnRetard', 'derniersDevis',
             'dernieresFactures', 'devisExpirantBientot', 'achatsEnRetard',
-            'chantiersActifs'
+            'chantiersActifs', 'moSemaine', 'nbOuvriersActifs', 'nbOuvriersPlanifies'
         ));
     }
 }

@@ -85,6 +85,33 @@
         </div>
     </div>
 
+    {{-- Card MO semaine --}}
+    @if($nbOuvriersActifs > 0)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-4 flex items-center gap-6">
+        <div class="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+        </div>
+        <div class="flex-1">
+            <div class="text-xs text-gray-400 uppercase font-medium mb-0.5">Main d'œuvre — semaine en cours</div>
+            <div class="text-xl font-bold text-gray-800">
+                {{ $nbOuvriersPlanifies }} / {{ $nbOuvriersActifs }} ouvriers planifiés
+                <span class="text-base font-medium text-orange-600 ml-3">{{ number_format($moSemaine, 0, ',', ' ') }} €</span>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ route('pointages.index') }}" class="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition">
+                Planning
+            </a>
+            <a href="{{ route('ouvriers.index') }}" class="text-sm text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition">
+                Ouvriers
+            </a>
+        </div>
+    </div>
+    @endif
+
     {{-- Compteurs activité --}}
     <div class="grid grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">

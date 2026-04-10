@@ -178,6 +178,52 @@
                 @endif
             </div>
 
+            {{-- Main d'œuvre --}}
+            @if($coutMo > 0 || $pointagesParOuvrier->isNotEmpty())
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-gray-700 text-sm">Main d'œuvre {{ $annee }}</h3>
+                    <a href="{{ route('pointages.par-chantier', ['annee' => $annee]) }}" class="text-xs text-blue-500 hover:text-blue-700">
+                        Détail →
+                    </a>
+                </div>
+                <dl class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Coût MO</dt>
+                        <dd class="font-medium text-orange-600">{{ number_format($coutMo, 0, ',', ' ') }} €</dd>
+                    </div>
+                    <div class="flex justify-between border-t border-gray-100 pt-2">
+                        <dt class="font-semibold text-gray-700">Marge réelle</dt>
+                        <dd class="font-bold {{ $margeReelle >= 0 ? 'text-green-700' : 'text-red-600' }}">
+                            {{ number_format($margeReelle, 0, ',', ' ') }} €
+                        </dd>
+                    </div>
+                    @if($tauxMargeReelle !== null)
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Taux réel</dt>
+                        <dd class="font-medium {{ $tauxMargeReelle >= 25 ? 'text-green-600' : ($tauxMargeReelle >= 10 ? 'text-orange-600' : 'text-red-600') }}">
+                            {{ number_format($tauxMargeReelle, 1) }}%
+                        </dd>
+                    </div>
+                    @endif
+                </dl>
+
+                @if($pointagesParOuvrier->isNotEmpty())
+                <div class="mt-3 space-y-1">
+                    @foreach($pointagesParOuvrier as $ligne)
+                    <div class="flex items-center justify-between text-xs text-gray-600 py-0.5">
+                        <span class="font-medium">{{ $ligne['ouvrier']->nom_complet }}</span>
+                        <span class="text-gray-400">
+                            {{ number_format($ligne['heures'] + $ligne['heures_sup'], 1) }}h ·
+                            <span class="text-orange-500">{{ number_format($ligne['cout_total'], 0, ',', ' ') }} €</span>
+                        </span>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+            @endif
+
             {{-- Description --}}
             @if($chantier->description)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">

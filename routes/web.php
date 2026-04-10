@@ -23,7 +23,10 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StatistiquesController;
 use App\Http\Controllers\PeppolDashboardController;
 use App\Http\Controllers\PeppolWebhookController;
+use App\Http\Controllers\AbsenceController;
 use App\Http\Controllers\KitController;
+use App\Http\Controllers\OuvrierController;
+use App\Http\Controllers\PointageController;
 use App\Http\Controllers\RelanceScenariosController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
@@ -187,6 +190,15 @@ Route::middleware(['auth'])->group(function () {
             return response()->json($odoo->testerConnexion());
         })->name('odoo.test');
     });
+
+    // Module RH / Main d'œuvre
+    Route::resource('ouvriers', OuvrierController::class);
+    Route::get('/api/ouvriers/search', [OuvrierController::class, 'apiSearch'])->name('ouvriers.api-search');
+    Route::get('/pointages', [PointageController::class, 'index'])->name('pointages.index');
+    Route::post('/pointages', [PointageController::class, 'store'])->name('pointages.store');
+    Route::delete('/pointages/{pointage}', [PointageController::class, 'destroy'])->name('pointages.destroy');
+    Route::get('/pointages/par-chantier', [PointageController::class, 'parChantier'])->name('pointages.par-chantier');
+    Route::resource('absences', AbsenceController::class)->except(['show']);
 
     // Journal de chantier
     Route::post('chantiers/{chantier}/journal', [JournalChantierController::class, 'store'])->name('chantiers.journal.store');

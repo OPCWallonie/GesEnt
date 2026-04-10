@@ -86,4 +86,30 @@ class Chantier extends Model
     {
         return $this->hasMany(JournalChantier::class)->orderByDesc('created_at');
     }
+
+    // ─── Main d'œuvre ─────────────────────────────────────────────
+    public function pointages()
+    {
+        return $this->hasMany(Pointage::class);
+    }
+
+    public function coutMainOeuvre(?int $annee = null): float
+    {
+        $query = $this->pointages();
+        if ($annee) {
+            $query->whereYear('date', $annee);
+        }
+        return (float) $query->sum('cout_total');
+    }
+
+    public function margeReelle(?int $annee = null): float
+    {
+        return $this->totalVentes() - $this->totalAchats() - $this->coutMainOeuvre($annee);
+    }
+
+    public function tauxMargeReelle(?int $annee = null): ?float
+    {
+        $ventes = $this->totalVentes();
+        return $ventes > 0 ? ($this->margeReelle($annee) / $ventes) * 100 : null;
+    }
 }

@@ -164,10 +164,31 @@ class ChantierController extends Controller
             }
         }
 
+        // Main d'œuvre
+        $annee          = now()->year;
+        $coutMo         = $chantier->coutMainOeuvre($annee);
+        $margeReelle    = $chantier->margeReelle($annee);
+        $tauxMargeReelle = $chantier->tauxMargeReelle($annee);
+
+        $pointagesParOuvrier = $chantier->pointages()
+            ->with('ouvrier')
+            ->whereYear('date', $annee)
+            ->get()
+            ->groupBy('ouvrier_id')
+            ->map(fn($rows) => [
+                'ouvrier'    => $rows->first()->ouvrier,
+                'heures'     => $rows->sum('heures'),
+                'heures_sup' => $rows->sum('heures_sup'),
+                'cout_total' => $rows->sum('cout_total'),
+            ])
+            ->sortByDesc('cout_total')
+            ->values();
+
         return view('chantiers.show', compact(
             'chantier', 'devis', 'bonsCommande', 'factures', 'facturesAchat',
             'moisLabels', 'ventesParMois', 'achatsParMois', 'margeCumulee',
-            'pctFacture', 'pctPaye'
+            'pctFacture', 'pctPaye',
+            'coutMo', 'margeReelle', 'tauxMargeReelle', 'pointagesParOuvrier', 'annee'
         ));
     }
 
