@@ -6,6 +6,40 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             PDF
         </a>
+        {{-- Envoyer par email --}}
+        <div x-data="{ open: false }">
+            <button @click="open = true"
+                    class="inline-flex items-center gap-2 px-3 py-2 border border-indigo-300 text-indigo-600 text-sm rounded-lg hover:bg-indigo-50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                Envoyer
+            </button>
+            <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div @click.outside="open = false" class="bg-white rounded-xl shadow-xl p-6 w-[480px] space-y-4">
+                    <h3 class="font-semibold text-gray-800">Envoyer le bon de commande par email</h3>
+                    <form method="POST" action="{{ route('bons-commande.envoyer', $bdc) }}" class="space-y-3">
+                        @csrf
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Destinataire *</label>
+                            <input type="email" name="email" required
+                                   value="{{ $bdc->client->email ?? '' }}"
+                                   class="w-full rounded-lg border-gray-300 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Message (optionnel)</label>
+                            <textarea name="message" rows="5"
+                                      class="w-full rounded-lg border-gray-300 text-sm">{{ $messageEmailDefaut ?? '' }}</textarea>
+                        </div>
+                        <p class="text-xs text-gray-400">Le PDF du bon de commande sera joint automatiquement.</p>
+                        <div class="flex gap-3 pt-1">
+                            <button type="button" @click="open = false"
+                                    class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">Annuler</button>
+                            <button type="submit"
+                                    class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Envoyer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         @if($bdc->factures->isEmpty())
             <a href="{{ route('bons-commande.edit', $bdc) }}"
                class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
@@ -211,6 +245,38 @@
                     <h3 class="text-sm font-semibold text-yellow-800 mb-1">Notes</h3>
                     <p class="text-sm text-yellow-900 whitespace-pre-wrap">{{ $bdc->notes }}</p>
                 </div>
+            @endif
+
+            {{-- Historique des envois email --}}
+            @if($bdc->emailEnvois->isNotEmpty())
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <h3 class="font-semibold text-gray-700 mb-3 text-sm">Historique des envois email</h3>
+                <div class="space-y-2">
+                    @foreach($bdc->emailEnvois as $envoi)
+                    <div class="flex items-start gap-3 text-sm py-2 border-b border-gray-100 last:border-0">
+                        <div class="mt-0.5">
+                            @if($envoi->statut === 'envoye')
+                                <span class="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                            @else
+                                <span class="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                            @endif
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-gray-800">{{ $envoi->destinataire }}</p>
+                            @if($envoi->statut === 'erreur')
+                                <p class="text-xs text-red-600 mt-0.5">{{ $envoi->erreur }}</p>
+                            @endif
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p class="text-xs text-gray-400">{{ $envoi->envoye_at->format('d/m/Y H:i') }}</p>
+                            @if($envoi->sender)
+                                <p class="text-xs text-gray-400">{{ $envoi->sender->name }}</p>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
             @endif
         </div>
     </div>

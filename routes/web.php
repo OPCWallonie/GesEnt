@@ -66,6 +66,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('bons-commande', BonCommandeController::class)->parameters(['bons-commande' => 'bonCommande']);
     Route::post('bons-commande/{bonCommande}/facturer', [BonCommandeController::class, 'facturer'])->name('bons-commande.facturer');
     Route::get('bons-commande/{bonCommande}/pdf', [BonCommandeController::class, 'pdf'])->name('bons-commande.pdf');
+    Route::post('bons-commande/{bonCommande}/envoyer', [BonCommandeController::class, 'envoyer'])->name('bons-commande.envoyer');
 
     // Avenants (sous-ressource de bons-commande)
     Route::resource('bons-commande.avenants', AvenantController::class)

@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\BonCommandeEnvoye;
 use App\Models\BonCommande;
 use App\Models\Client;
 use App\Models\Devis;
+use App\Models\EmailEnvoi;
 use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Services\DocumentService;
+use App\Services\MailConfigService;
+use App\Services\MailTemplateService;
 use App\Services\NumerotationService;
 use App\Services\ProduitUsageService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class BonCommandeController extends Controller
 {
@@ -110,15 +115,61 @@ class BonCommandeController extends Controller
 
     public function show(BonCommande $bonCommande)
     {
-        $bonCommande->load('client', 'chantier', 'modePaiement', 'lignes', 'avenants.lignes', 'factures', 'devis');
-        $parametres = ParametresEntreprise::instance();
-        $totaux     = $bonCommande->montantTotalAvecAvenants();
+        $bonCommande->load('client', 'chantier', 'modePaiement', 'lignes', 'avenants.lignes', 'factures', 'devis', 'emailEnvois.sender');
+        $parametres         = ParametresEntreprise::instance();
+        $totaux             = $bonCommande->montantTotalAvecAvenants();
+        $messageEmailDefaut = MailTemplateService::resoudre('bdc', $bonCommande);
 
         return view('bons-commande.show', [
-            'bdc'        => $bonCommande,
-            'parametres' => $parametres,
-            'totaux'     => $totaux,
+            'bdc'                => $bonCommande,
+            'parametres'         => $parametres,
+            'totaux'             => $totaux,
+            'messageEmailDefaut' => $messageEmailDefaut,
         ]);
+    }
+
+    public function envoyer(Request $request, BonCommande $bonCommande)
+    {
+        $data = $request->validate([
+            'email'   => 'required|email',
+            'message' => 'nullable|string|max:5000',
+        ]);
+
+        MailConfigService::configure();
+
+        $parametres = ParametresEntreprise::instance();
+        $sujet      = "Bon de commande {$bonCommande->numero} — {$parametres->nom}";
+
+        try {
+            Mail::to($data['email'])->send(new BonCommandeEnvoye($bonCommande, $data['message'] ?? ''));
+
+            EmailEnvoi::create([
+                'document_type' => BonCommande::class,
+                'document_id'   => $bonCommande->id,
+                'sent_by'       => auth()->id(),
+                'destinataire'  => $data['email'],
+                'sujet'         => $sujet,
+                'message'       => $data['message'] ?? null,
+                'statut'        => 'envoye',
+                'envoye_at'     => now(),
+            ]);
+
+            return back()->with('success', "Bon de commande {$bonCommande->numero} envoyé à {$data['email']}.");
+        } catch (\Exception $e) {
+            EmailEnvoi::create([
+                'document_type' => BonCommande::class,
+                'document_id'   => $bonCommande->id,
+                'sent_by'       => auth()->id(),
+                'destinataire'  => $data['email'],
+                'sujet'         => $sujet,
+                'message'       => $data['message'] ?? null,
+                'statut'        => 'erreur',
+                'erreur'        => $e->getMessage(),
+                'envoye_at'     => now(),
+            ]);
+
+            return back()->with('error', "Erreur d'envoi : " . $e->getMessage());
+        }
     }
 
     public function edit(BonCommande $bonCommande)
