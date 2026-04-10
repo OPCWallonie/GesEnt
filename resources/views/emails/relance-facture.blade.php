@@ -39,8 +39,12 @@
 
     <p>Veuillez trouver ci-joint un exemplaire de la facture.</p>
 
-    <p>
-        Cordialement,<br>
-        <strong>{{ $parametres->nom_entreprise ?? $parametres->nom ?? 'L\'entreprise' }}</strong>
-    </p>
+    @if($signature)
+        <div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin:20px 0;white-space:pre-line;">{{ $signature }}</div>
+    @else
+        <p>
+            Cordialement,<br>
+            <strong>{{ $parametres->nom_entreprise ?? $parametres->nom ?? 'L\'entreprise' }}</strong>
+        </p>
+    @endif
 </div>

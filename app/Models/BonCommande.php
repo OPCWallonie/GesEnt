@@ -76,6 +76,11 @@ class BonCommande extends Model
         return $this->morphMany(LigneDocument::class, 'documentable')->orderBy('ordre');
     }
 
+    public function emailEnvois()
+    {
+        return $this->morphMany(EmailEnvoi::class, 'document')->orderByDesc('envoye_at');
+    }
+
     // Toutes les lignes : BDC + avenants regroupés pour facturation
     public function toutesLesLignes()
     {

@@ -3,9 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Mail\RelanceFacture;
+use App\Models\EmailEnvoi;
 use App\Models\Facture;
 use App\Models\User;
 use App\Notifications\FactureEnRetard;
+use App\Services\MailConfigService;
 use App\States\Facture\EnRetard;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -68,8 +70,27 @@ class RelancerFactures extends Command
                 continue;
             }
 
+            MailConfigService::configure();
+
+            $sujet = match (true) {
+                $niveauRelance === 1 => "Rappel — Facture {$facture->numero}",
+                $niveauRelance === 2 => "2ème rappel — Facture {$facture->numero} en retard",
+                default              => "URGENT — Facture {$facture->numero} impayée",
+            };
+
             try {
                 Mail::to($email)->send(new RelanceFacture($facture, min($niveauRelance, 3)));
+
+                EmailEnvoi::create([
+                    'document_type' => Facture::class,
+                    'document_id'   => $facture->id,
+                    'sent_by'       => null,
+                    'destinataire'  => $email,
+                    'sujet'         => $sujet,
+                    'message'       => null,
+                    'statut'        => 'envoye',
+                    'envoye_at'     => now(),
+                ]);
 
                 $facture->update([
                     'nb_relances'          => $niveauRelance,
@@ -102,6 +123,18 @@ class RelancerFactures extends Command
                     'facture' => $facture->numero,
                     'email'   => $email,
                     'error'   => $e->getMessage(),
+                ]);
+
+                EmailEnvoi::create([
+                    'document_type' => Facture::class,
+                    'document_id'   => $facture->id,
+                    'sent_by'       => null,
+                    'destinataire'  => $email,
+                    'sujet'         => $sujet,
+                    'message'       => null,
+                    'statut'        => 'erreur',
+                    'erreur'        => $e->getMessage(),
+                    'envoye_at'     => now(),
                 ]);
             }
         }

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ParametresEntreprise;
+use App\Services\MailConfigService;
 use App\Services\OdooService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class ParametresController extends Controller
@@ -58,6 +60,19 @@ class ParametresController extends Controller
             'peppol_gere_par'             => 'nullable|in:gesent,odoo',
             // Sécurité
             'deux_facteurs_obligatoires'  => 'nullable|boolean',
+            // Email / SMTP
+            'mail_host'              => 'nullable|string|max:255',
+            'mail_port'              => 'nullable|integer|min:1|max:65535',
+            'mail_encryption'        => 'nullable|in:ssl,tls,starttls,',
+            'mail_username'          => 'nullable|string|max:255',
+            'mail_password'          => 'nullable|string|max:500',
+            'mail_from_address'      => 'nullable|email|max:255',
+            'mail_from_name'         => 'nullable|string|max:100',
+            'mail_signature'         => 'nullable|string',
+            'mail_template_devis'    => 'nullable|string',
+            'mail_template_facture'  => 'nullable|string',
+            'mail_template_bdc'      => 'nullable|string',
+            'mail_template_relance'  => 'nullable|string',
         ]);
 
         $parametres = ParametresEntreprise::instance();
@@ -110,6 +125,16 @@ class ParametresController extends Controller
         // peppol_gere_par par défaut = gesent
         $data['peppol_gere_par'] = $data['peppol_gere_par'] ?? 'gesent';
 
+        // Mail password: keep existing if field left empty
+        if (empty($data['mail_password'])) {
+            unset($data['mail_password']);
+        }
+
+        // mail_encryption: empty string → null
+        if (isset($data['mail_encryption']) && $data['mail_encryption'] === '') {
+            $data['mail_encryption'] = null;
+        }
+
         $parametres->update($data);
 
         return redirect()->route('parametres.edit')->with('success', 'Paramètres sauvegardés.');
@@ -119,5 +144,24 @@ class ParametresController extends Controller
     {
         $resultat = $odoo->testerConnexion();
         return response()->json($resultat);
+    }
+
+    public function testerEmail(Request $request)
+    {
+        $data = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        MailConfigService::configure();
+
+        try {
+            Mail::raw('Ceci est un email de test envoyé depuis GesEnt. La configuration SMTP fonctionne correctement.', function ($message) use ($data) {
+                $message->to($data['email'])->subject('Test SMTP — GesEnt');
+            });
+
+            return response()->json(['success' => true, 'message' => 'Email de test envoyé à ' . $data['email']]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
     }
 }

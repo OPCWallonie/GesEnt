@@ -17,10 +17,14 @@ class RelanceFacture extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $signature;
+
     public function __construct(
         public Facture $facture,
         public int $niveauRelance, // 1, 2, 3+
-    ) {}
+    ) {
+        $this->signature = ParametresEntreprise::instance()->mail_signature ?? '';
+    }
 
     public function envelope(): Envelope
     {

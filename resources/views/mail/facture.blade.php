@@ -78,8 +78,12 @@
             </p>
         @endif
 
-        <p>Pour toute question, n'hésitez pas à nous contacter.</p>
-        <p>Cordialement,<br><strong>{{ $parametres->nom ?? config('app.name') }}</strong></p>
+        @if($signature)
+            <div class="message-box" style="margin-top:24px;">{!! nl2br(e($signature)) !!}</div>
+        @else
+            <p>Pour toute question, n'hésitez pas à nous contacter.</p>
+            <p>Cordialement,<br><strong>{{ $parametres->nom ?? config('app.name') }}</strong></p>
+        @endif
     </div>
     <div class="footer">
         @if($parametres->telephone) Tél : {{ $parametres->telephone }} — @endif

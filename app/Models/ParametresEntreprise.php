@@ -20,12 +20,16 @@ class ParametresEntreprise extends Model
         'odoo_actif', 'odoo_url', 'odoo_database', 'odoo_username',
         'odoo_api_key', 'odoo_mapping', 'peppol_gere_par',
         'deux_facteurs_obligatoires',
+        'mail_host', 'mail_port', 'mail_encryption', 'mail_username', 'mail_password',
+        'mail_from_address', 'mail_from_name', 'mail_signature',
+        'mail_template_devis', 'mail_template_facture', 'mail_template_bdc', 'mail_template_relance',
     ];
 
     protected $casts = [
         'odoo_actif'                  => 'boolean',
         'odoo_mapping'                => 'array',
         'deux_facteurs_obligatoires'  => 'boolean',
+        'mail_password'               => 'encrypted',
     ];
 
     protected $hidden = ['ai_api_key', 'peppol_api_key', 'odoo_api_key'];

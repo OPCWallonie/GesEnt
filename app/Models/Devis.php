@@ -62,6 +62,11 @@ class Devis extends Model
         return $this->hasOne(BonCommande::class);
     }
 
+    public function emailEnvois()
+    {
+        return $this->morphMany(EmailEnvoi::class, 'document')->orderByDesc('envoye_at');
+    }
+
     public function estExpire(): bool
     {
         return $this->date_validite

@@ -35,8 +35,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Message (optionnel)</label>
-                            <textarea name="message" rows="4" class="w-full rounded-lg border-gray-300 text-sm"
-                                      placeholder="Bonjour, veuillez trouver ci-joint notre facture…"></textarea>
+                            <textarea name="message" rows="5" class="w-full rounded-lg border-gray-300 text-sm">{{ $messageEmailDefaut ?? '' }}</textarea>
                         </div>
                         <p class="text-xs text-gray-400">Le PDF de la facture sera joint automatiquement.</p>
                         <div class="flex gap-3 pt-1">
@@ -435,5 +434,41 @@
                 </div>
             @endif
         </div>
+
+        {{-- Historique des envois email --}}
+        @if($facture->emailEnvois->isNotEmpty())
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h3 class="font-semibold text-gray-700 mb-3 text-sm">Historique des envois email</h3>
+            <div class="space-y-2">
+                @foreach($facture->emailEnvois as $envoi)
+                <div class="flex items-start gap-3 text-sm py-2 border-b border-gray-100 last:border-0">
+                    <div class="mt-0.5">
+                        @if($envoi->statut === 'envoye')
+                            <span class="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                        @else
+                            <span class="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                        @endif
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-gray-800">{{ $envoi->destinataire }}</p>
+                        <p class="text-xs text-gray-500 truncate">{{ $envoi->sujet }}</p>
+                        @if($envoi->statut === 'erreur')
+                            <p class="text-xs text-red-600 mt-0.5">{{ $envoi->erreur }}</p>
+                        @endif
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-xs text-gray-400">{{ $envoi->envoye_at->format('d/m/Y H:i') }}</p>
+                        @if($envoi->sender)
+                            <p class="text-xs text-gray-400">{{ $envoi->sender->name }}</p>
+                        @else
+                            <p class="text-xs text-gray-400">Auto</p>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
     </div>
 </x-app-layout>

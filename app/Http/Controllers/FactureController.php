@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Mail\FactureEnvoyee;
 use App\Models\BonCommande;
+use App\Models\EmailEnvoi;
 use App\Models\Facture;
 use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Models\Paiement;
 use App\Services\DocumentService;
+use App\Services\MailConfigService;
+use App\Services\MailTemplateService;
 use App\Services\NumerotationService;
 use App\Services\OdooSyncService;
 use App\Services\PeppolService;
@@ -155,11 +158,12 @@ class FactureController extends Controller
 
     public function show(Facture $facture)
     {
-        $facture->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande', 'avoirs', 'paiements');
-        $parametres = ParametresEntreprise::instance();
-        $totauxTva  = $this->documentService->calculerTotauxTva($facture->lignes);
+        $facture->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande', 'avoirs', 'paiements', 'emailEnvois.sender');
+        $parametres         = ParametresEntreprise::instance();
+        $totauxTva          = $this->documentService->calculerTotauxTva($facture->lignes);
+        $messageEmailDefaut = MailTemplateService::resoudre('facture', $facture);
 
-        return view('factures.show', compact('facture', 'parametres', 'totauxTva'));
+        return view('factures.show', compact('facture', 'parametres', 'totauxTva', 'messageEmailDefaut'));
     }
 
     public function edit(Facture $facture)
@@ -292,11 +296,14 @@ class FactureController extends Controller
     {
         $data = $request->validate([
             'email'   => 'required|email',
-            'message' => 'nullable|string|max:2000',
+            'message' => 'nullable|string|max:5000',
         ]);
 
-        $params   = ParametresEntreprise::instance();
+        MailConfigService::configure();
+
+        $params    = ParametresEntreprise::instance();
         $resultats = [];
+        $sujet     = "Facture {$facture->numero} — {$params->nom}";
 
         // 1. Envoi Peppol si activé et pas encore envoyé
         if ($params->peppolActif() && !$facture->peppol_envoye_at) {
@@ -317,11 +324,34 @@ class FactureController extends Controller
             Mail::to($data['email'])->send(new FactureEnvoyee($facture, $data['message'] ?? ''));
             $resultats[] = "PDF envoyé à {$data['email']}";
 
+            EmailEnvoi::create([
+                'document_type' => Facture::class,
+                'document_id'   => $facture->id,
+                'sent_by'       => auth()->id(),
+                'destinataire'  => $data['email'],
+                'sujet'         => $sujet,
+                'message'       => $data['message'] ?? null,
+                'statut'        => 'envoye',
+                'envoye_at'     => now(),
+            ]);
+
             if ($facture->statut instanceof EnAttente) {
                 $facture->statut->transitionTo(Envoyee::class);
             }
         } catch (\Exception $e) {
             $resultats[] = 'Email échoué : ' . $e->getMessage();
+
+            EmailEnvoi::create([
+                'document_type' => Facture::class,
+                'document_id'   => $facture->id,
+                'sent_by'       => auth()->id(),
+                'destinataire'  => $data['email'],
+                'sujet'         => $sujet,
+                'message'       => $data['message'] ?? null,
+                'statut'        => 'erreur',
+                'erreur'        => $e->getMessage(),
+                'envoye_at'     => now(),
+            ]);
         }
 
         // Sync Odoo si configuré (l'envoi email marque la facture comme envoyée)

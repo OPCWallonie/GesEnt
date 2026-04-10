@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Devis;
 use App\Models\ParametresEntreprise;
 use App\Http\Controllers\DevisController;
+use App\Services\MailConfigService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -17,10 +18,14 @@ class DevisEnvoye extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $signature;
+
     public function __construct(
         public Devis $devis,
         public string $messagePersonnalise = '',
-    ) {}
+    ) {
+        $this->signature = ParametresEntreprise::instance()->mail_signature ?? '';
+    }
 
     public function envelope(): Envelope
     {

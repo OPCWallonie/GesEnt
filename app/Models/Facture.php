@@ -144,6 +144,11 @@ class Facture extends Model
         return $this->hasMany(\App\Models\Avoir::class);
     }
 
+    public function emailEnvois()
+    {
+        return $this->morphMany(EmailEnvoi::class, 'document')->orderByDesc('envoye_at');
+    }
+
     public function totalAvoirs(): float
     {
         return (float) $this->avoirs()->sum('montant_ttc');

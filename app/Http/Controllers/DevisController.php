@@ -6,10 +6,13 @@ use App\Mail\DevisEnvoye;
 use App\Models\Chantier;
 use App\Models\Client;
 use App\Models\Devis;
+use App\Models\EmailEnvoi;
 use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Services\DocumentService;
+use App\Services\MailConfigService;
+use App\Services\MailTemplateService;
 use App\Services\NumerotationService;
 use App\Services\ProduitUsageService;
 use App\States\Devis\Archive as DevisArchive;
@@ -123,11 +126,12 @@ class DevisController extends Controller
 
     public function show(Devis $devis)
     {
-        $devis->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande');
-        $parametres = ParametresEntreprise::instance();
-        $totauxTva  = $this->documentService->calculerTotauxTva($devis->lignes);
+        $devis->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande', 'emailEnvois.sender');
+        $parametres         = ParametresEntreprise::instance();
+        $totauxTva          = $this->documentService->calculerTotauxTva($devis->lignes);
+        $messageEmailDefaut = MailTemplateService::resoudre('devis', $devis);
 
-        return view('devis.show', compact('devis', 'parametres', 'totauxTva'));
+        return view('devis.show', compact('devis', 'parametres', 'totauxTva', 'messageEmailDefaut'));
     }
 
     public function edit(Devis $devis)
@@ -265,14 +269,43 @@ class DevisController extends Controller
     {
         $data = $request->validate([
             'email'   => 'required|email',
-            'message' => 'nullable|string|max:2000',
+            'message' => 'nullable|string|max:5000',
         ]);
+
+        MailConfigService::configure();
+
+        $parametres = ParametresEntreprise::instance();
+        $sujet      = "Devis {$devis->numero} — {$parametres->nom}";
 
         try {
             Mail::to($data['email'])->send(new DevisEnvoye($devis, $data['message'] ?? ''));
+
+            EmailEnvoi::create([
+                'document_type' => Devis::class,
+                'document_id'   => $devis->id,
+                'sent_by'       => auth()->id(),
+                'destinataire'  => $data['email'],
+                'sujet'         => $sujet,
+                'message'       => $data['message'] ?? null,
+                'statut'        => 'envoye',
+                'envoye_at'     => now(),
+            ]);
+
             return back()->with('success', "Devis {$devis->numero} envoyé à {$data['email']}.");
         } catch (\Exception $e) {
-            return back()->with('error', 'Erreur d\'envoi : ' . $e->getMessage() . '. Vérifiez la configuration SMTP dans le fichier .env.');
+            EmailEnvoi::create([
+                'document_type' => Devis::class,
+                'document_id'   => $devis->id,
+                'sent_by'       => auth()->id(),
+                'destinataire'  => $data['email'],
+                'sujet'         => $sujet,
+                'message'       => $data['message'] ?? null,
+                'statut'        => 'erreur',
+                'erreur'        => $e->getMessage(),
+                'envoye_at'     => now(),
+            ]);
+
+            return back()->with('error', 'Erreur d\'envoi : ' . $e->getMessage());
         }
     }
 

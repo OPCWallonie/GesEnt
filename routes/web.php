@@ -154,6 +154,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/parametres', [ParametresController::class, 'edit'])->name('parametres.edit');
         Route::put('/parametres', [ParametresController::class, 'update'])->name('parametres.update');
         Route::post('/parametres/tester-odoo', [ParametresController::class, 'testerOdoo'])->name('parametres.tester-odoo');
+        Route::post('/parametres/tester-email', [ParametresController::class, 'testerEmail'])->name('parametres.tester-email');
         // Test live avec les valeurs du formulaire (avant sauvegarde)
         Route::post('/odoo/test', function (Request $request, \App\Services\OdooService $odoo) {
             $saved   = \App\Models\ParametresEntreprise::instance();

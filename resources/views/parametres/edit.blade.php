@@ -14,6 +14,7 @@
                         'entreprise'   => 'Entreprise',
                         'facturation'  => 'Facturation',
                         'integrations' => 'Intégrations',
+                        'email'        => 'Email',
                         'securite'     => 'Sécurité',
                     ];
                 @endphp
@@ -532,6 +533,163 @@
             </div>
 
             {{-- ════════════════════════════════════
+                 Onglet EMAIL
+                 ════════════════════════════════════ --}}
+            <div x-show="onglet === 'email'" x-cloak class="space-y-6">
+
+                {{-- Configuration SMTP --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                    <h2 class="font-semibold text-gray-700 border-b pb-2">Configuration SMTP</h2>
+
+                    {{-- Presets --}}
+                    <div x-data="smtpPresets()" class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Preset fournisseur</label>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="preset in presets" :key="preset.label">
+                                <button type="button" @click="appliquer(preset)"
+                                        class="px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700">
+                                    <span x-text="preset.label"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Hôte SMTP</label>
+                            <input type="text" name="mail_host" id="mail_host"
+                                   value="{{ old('mail_host', $parametres->mail_host) }}"
+                                   placeholder="smtp.gmail.com"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Port</label>
+                            <input type="number" name="mail_port" id="mail_port"
+                                   value="{{ old('mail_port', $parametres->mail_port) }}"
+                                   placeholder="587"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Chiffrement</label>
+                            <select name="mail_encryption" id="mail_encryption"
+                                    class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                <option value="" {{ !$parametres->mail_encryption ? 'selected' : '' }}>Aucun</option>
+                                <option value="tls" {{ old('mail_encryption', $parametres->mail_encryption) === 'tls' ? 'selected' : '' }}>TLS (STARTTLS)</option>
+                                <option value="ssl" {{ old('mail_encryption', $parametres->mail_encryption) === 'ssl' ? 'selected' : '' }}>SSL</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nom expéditeur</label>
+                            <input type="text" name="mail_from_name"
+                                   value="{{ old('mail_from_name', $parametres->mail_from_name) }}"
+                                   placeholder="{{ $parametres->nom }}"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Utilisateur SMTP</label>
+                            <input type="text" name="mail_username"
+                                   value="{{ old('mail_username', $parametres->mail_username) }}"
+                                   placeholder="votre@email.com"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe SMTP</label>
+                            <input type="password" name="mail_password" autocomplete="new-password"
+                                   placeholder="{{ $parametres->mail_password ? '••••••••' : 'Nouveau mot de passe' }}"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                            @if($parametres->mail_password)
+                                <p class="text-xs text-gray-400 mt-1">Laisser vide pour conserver le mot de passe actuel.</p>
+                            @endif
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Adresse expéditeur (From)</label>
+                            <input type="email" name="mail_from_address"
+                                   value="{{ old('mail_from_address', $parametres->mail_from_address) }}"
+                                   placeholder="{{ $parametres->email }}"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        </div>
+                    </div>
+
+                    {{-- Test email --}}
+                    <div x-data="{ testEmail: '', testResult: null, loading: false }" class="border-t pt-4 mt-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-2">Tester la configuration</h3>
+                        <div class="flex gap-3">
+                            <input type="email" x-model="testEmail" placeholder="email@destinataire.com"
+                                   class="flex-1 rounded-lg border-gray-300 shadow-sm text-sm">
+                            <button type="button" :disabled="loading || !testEmail"
+                                    @click="loading=true; testResult=null;
+                                        fetch('{{ route('parametres.tester-email') }}', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                            body: JSON.stringify({ email: testEmail })
+                                        })
+                                        .then(r => r.json())
+                                        .then(d => { testResult = d; loading = false; })
+                                        .catch(() => { testResult = { success: false, message: 'Erreur réseau' }; loading = false; })"
+                                    class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                                <span x-text="loading ? 'Envoi…' : 'Envoyer un test'"></span>
+                            </button>
+                        </div>
+                        <div x-show="testResult !== null" class="mt-2 text-sm rounded-lg px-3 py-2"
+                             :class="testResult?.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'">
+                            <span x-text="testResult?.message"></span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Signature --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                    <h2 class="font-semibold text-gray-700 border-b pb-2">Signature email</h2>
+                    <p class="text-sm text-gray-500">Apparaît en bas de chaque email envoyé depuis GesEnt.</p>
+                    <textarea name="mail_signature" rows="5"
+                              class="w-full rounded-lg border-gray-300 shadow-sm text-sm"
+                              placeholder="Cordialement,&#10;Votre nom&#10;Téléphone : …">{{ old('mail_signature', $parametres->mail_signature) }}</textarea>
+                </div>
+
+                {{-- Templates email --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                    <h2 class="font-semibold text-gray-700 border-b pb-2">Modèles d'email</h2>
+                    <p class="text-sm text-gray-500">
+                        Variables disponibles : <code class="bg-gray-100 px-1 rounded">{client}</code>,
+                        <code class="bg-gray-100 px-1 rounded">{numero}</code>,
+                        <code class="bg-gray-100 px-1 rounded">{montant}</code>,
+                        <code class="bg-gray-100 px-1 rounded">{entreprise}</code>,
+                        <code class="bg-gray-100 px-1 rounded">{echeance}</code>,
+                        <code class="bg-gray-100 px-1 rounded">{validite}</code>
+                    </p>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Devis</label>
+                        <textarea name="mail_template_devis" rows="4"
+                                  class="w-full rounded-lg border-gray-300 shadow-sm text-sm"
+                                  placeholder="Laisser vide pour utiliser le modèle par défaut">{{ old('mail_template_devis', $parametres->mail_template_devis) }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Facture</label>
+                        <textarea name="mail_template_facture" rows="4"
+                                  class="w-full rounded-lg border-gray-300 shadow-sm text-sm"
+                                  placeholder="Laisser vide pour utiliser le modèle par défaut">{{ old('mail_template_facture', $parametres->mail_template_facture) }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bon de commande</label>
+                        <textarea name="mail_template_bdc" rows="4"
+                                  class="w-full rounded-lg border-gray-300 shadow-sm text-sm"
+                                  placeholder="Laisser vide pour utiliser le modèle par défaut">{{ old('mail_template_bdc', $parametres->mail_template_bdc) }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Relance (automatique)</label>
+                        <textarea name="mail_template_relance" rows="4"
+                                  class="w-full rounded-lg border-gray-300 shadow-sm text-sm"
+                                  placeholder="Laisser vide pour utiliser le modèle par défaut">{{ old('mail_template_relance', $parametres->mail_template_relance) }}</textarea>
+                    </div>
+                </div>
+
+            </div>
+
+            {{-- ════════════════════════════════════
                  Onglet SÉCURITÉ
                  ════════════════════════════════════ --}}
             <div x-show="onglet === 'securite'" x-cloak class="space-y-6">
@@ -570,4 +728,24 @@
 
         </div>{{-- /x-data onglets --}}
     </form>
+
+<script>
+function smtpPresets() {
+    return {
+        presets: [
+            { label: 'Gmail',      host: 'smtp.gmail.com',      port: 587, encryption: 'tls' },
+            { label: 'Outlook',    host: 'smtp.office365.com',  port: 587, encryption: 'tls' },
+            { label: 'OVH',        host: 'ssl0.ovh.net',        port: 465, encryption: 'ssl' },
+            { label: 'Ionos',      host: 'smtp.ionos.fr',       port: 587, encryption: 'tls' },
+            { label: 'Mailgun EU', host: 'smtp.eu.mailgun.org', port: 587, encryption: 'tls' },
+            { label: 'Brevo',      host: 'smtp-relay.brevo.com',port: 587, encryption: 'tls' },
+        ],
+        appliquer(preset) {
+            document.getElementById('mail_host').value       = preset.host;
+            document.getElementById('mail_port').value       = preset.port;
+            document.getElementById('mail_encryption').value = preset.encryption;
+        },
+    };
+}
+</script>
 </x-app-layout>

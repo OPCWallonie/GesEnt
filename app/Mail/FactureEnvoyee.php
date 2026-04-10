@@ -17,10 +17,14 @@ class FactureEnvoyee extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $signature;
+
     public function __construct(
         public Facture $facture,
         public string $messagePersonnalise = '',
-    ) {}
+    ) {
+        $this->signature = ParametresEntreprise::instance()->mail_signature ?? '';
+    }
 
     public function envelope(): Envelope
     {
