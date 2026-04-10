@@ -27,7 +27,8 @@ class ChantierController extends Controller
     public function create(Request $request)
     {
         $clients = Client::where('actif', true)->orderBy('nom')->get(['id', 'nom']);
-        $clientSelectionne = $request->client_id ? Client::find($request->client_id) : null;
+        $clientId = $request->client_id ?: old('client_id');
+        $clientSelectionne = $clientId ? Client::find($clientId) : null;
         return view('chantiers.create', compact('clients', 'clientSelectionne'));
     }
 
@@ -55,6 +56,25 @@ class ChantierController extends Controller
 
         return redirect()->route('chantiers.show', $chantier)
             ->with('success', "Chantier « {$chantier->nom} » créé.");
+    }
+
+    public function apiSearch(Request $request)
+    {
+        $q        = $request->get('q', '');
+        $clientId = $request->get('client_id');
+        return response()->json(
+            Chantier::query()
+                ->when($clientId, fn($query) => $query->where('client_id', $clientId))
+                ->when($q, fn($query) => $query->where('nom', 'like', '%' . like_escape($q) . '%'))
+                ->orderBy('nom')
+                ->limit(15)
+                ->get(['id', 'nom', 'coefficient_marge', 'client_id'])
+                ->map(fn($c) => [
+                    'id'               => $c->id,
+                    'nom'              => $c->nom,
+                    'coefficient_marge' => (float) $c->coefficient_marge,
+                ])
+        );
     }
 
     public function quickCreate(Request $request, Client $client)

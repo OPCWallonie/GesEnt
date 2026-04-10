@@ -37,10 +37,11 @@ class FactureAchatController extends Controller
         $fournisseurs  = Fournisseur::actif()->orderBy('nom')->get();
         $chantiers     = Chantier::with('client')->orderByDesc('id')->get();
         $bonsCommande  = BonCommande::with('client')->orderByDesc('id')->take(50)->get();
-        $fournisseurId = $request->fournisseur_id;
-        $chantierId    = $request->chantier_id;
+        $fournisseurId       = $request->fournisseur_id ?: old('fournisseur_id');
+        $chantierId          = $request->chantier_id;
+        $fournisseurSelectionne = $fournisseurId ? Fournisseur::find($fournisseurId) : null;
 
-        return view('factures-achat.create', compact('fournisseurs', 'chantiers', 'bonsCommande', 'fournisseurId', 'chantierId'));
+        return view('factures-achat.create', compact('fournisseurs', 'chantiers', 'bonsCommande', 'fournisseurId', 'chantierId', 'fournisseurSelectionne'));
     }
 
     public function store(Request $request)

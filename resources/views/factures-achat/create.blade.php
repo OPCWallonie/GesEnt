@@ -177,17 +177,17 @@ function ocrImport() {
             if (data.notes)           set('notes', data.notes);
 
             if (data.fournisseur_nom) {
-                const select = document.querySelector('[name="fournisseur_id"]');
-                if (select) {
-                    const nom = data.fournisseur_nom.toLowerCase();
-                    for (const opt of select.options) {
-                        if (opt.text.toLowerCase().includes(nom)) {
-                            select.value = opt.value;
-                            select.dispatchEvent(new Event('change', { bubbles: true }));
-                            break;
-                        }
+                fetch('{{ route('fournisseurs.api-search') }}?q=' + encodeURIComponent(data.fournisseur_nom), {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(results => {
+                    if (results.length > 0) {
+                        window.dispatchEvent(new CustomEvent('combobox-add-item', {
+                            detail: { field: 'fournisseur_id', id: results[0].id, nom: results[0].nom }
+                        }));
                     }
-                }
+                });
             }
         },
     };

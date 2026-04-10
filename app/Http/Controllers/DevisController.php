@@ -48,11 +48,11 @@ class DevisController extends Controller
         $tauxTva       = TauxTva::orderBy('taux')->get();
         $parametres    = ParametresEntreprise::instance();
 
-        $clientSelectionne = $request->client_id ? Client::find($request->client_id) : null;
+        $clientId    = $request->client_id ?: old('client_id');
+        $chantierId  = $request->chantier_id ?: old('chantier_id');
 
-        $chantierSelectionne = $request->chantier_id
-            ? Chantier::with('client')->find($request->chantier_id)
-            : null;
+        $clientSelectionne   = $clientId   ? Client::find($clientId)                          : null;
+        $chantierSelectionne = $chantierId ? Chantier::with('client')->find($chantierId)       : null;
 
         if ($chantierSelectionne && ! $clientSelectionne) {
             $clientSelectionne = $chantierSelectionne->client;

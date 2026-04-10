@@ -10,113 +10,32 @@
         </div>
     @endisset
 
-    <form method="POST" action="{{ route('bons-commande.store') }}"
-          x-data="{
-              clientId: '{{ old('client_id', $devisSource->client_id ?? '') }}',
-              chantiers: @js($chantiers ?? collect()),
-              chargerChantiers(id) {
-                  if (!id) { this.chantiers = []; return; }
-                  fetch('/api/clients/' + id + '/chantiers')
-                      .then(r => r.json())
-                      .then(data => { this.chantiers = data; });
-              },
-              openNewClient: false,
-              openNewChantier: false,
-              newClient: { nom: '', email: '', telephone: '', ville: '' },
-              newChantier: { nom: '', adresse_chantier: '' },
-              savingClient: false,
-              savingChantier: false,
-              async submitNewClient() {
-                  this.savingClient = true;
-                  const resp = await fetch('{{ route('clients.quick-create') }}', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                      body: JSON.stringify(this.newClient),
-                  });
-                  const data = await resp.json();
-                  if (resp.ok) {
-                      this.$refs.clientSelect.add(new Option(data.nom, data.id, true, true));
-                      this.clientId = String(data.id);
-                      this.chargerChantiers(data.id);
-                      this.openNewClient = false;
-                      this.newClient = { nom: '', email: '', telephone: '', ville: '' };
-                  }
-                  this.savingClient = false;
-              },
-              async submitNewChantier() {
-                  if (!this.clientId) return;
-                  this.savingChantier = true;
-                  const resp = await fetch('/api/clients/' + this.clientId + '/chantiers/quick-create', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                      body: JSON.stringify(this.newChantier),
-                  });
-                  const data = await resp.json();
-                  if (resp.ok) {
-                      this.chantiers = [...this.chantiers, data];
-                      this.openNewChantier = false;
-                      this.newChantier = { nom: '', adresse_chantier: '' };
-                      this.$nextTick(() => {
-                          this.$refs.chantierSelect.value = data.id;
-                      });
-                  }
-                  this.savingChantier = false;
-              },
-          }"
-          x-init="clientId && chargerChantiers(clientId)">
+    <form method="POST" action="{{ route('bons-commande.store') }}">
         @csrf
 
         @isset($devisSource)
             <input type="hidden" name="devis_id" value="{{ $devisSource->id }}">
         @endisset
 
-        {{-- Modals création à la volée --}}
-        <div x-show="openNewClient" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div @click.outside="openNewClient = false" class="bg-white rounded-xl shadow-xl p-6 w-[440px] space-y-4">
-                <h3 class="font-semibold text-gray-800">Nouveau client</h3>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
-                        <input type="text" x-model="newClient.nom" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Nom ou raison sociale">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" x-model="newClient.email" class="w-full rounded-lg border-gray-300 text-sm"></div>
-                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                            <input type="text" x-model="newClient.telephone" class="w-full rounded-lg border-gray-300 text-sm"></div>
-                    </div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Ville</label>
-                        <input type="text" x-model="newClient.ville" class="w-full rounded-lg border-gray-300 text-sm"></div>
-                </div>
-                <div class="flex gap-3 pt-1">
-                    <button type="button" @click="openNewClient = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">Annuler</button>
-                    <button type="button" @click="submitNewClient()" :disabled="savingClient || !newClient.nom"
-                            class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                        <span x-text="savingClient ? 'Création…' : 'Créer le client'"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div x-show="openNewChantier" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div @click.outside="openNewChantier = false" class="bg-white rounded-xl shadow-xl p-6 w-[440px] space-y-4">
-                <h3 class="font-semibold text-gray-800">Nouveau chantier</h3>
-                <p class="text-xs text-gray-400" x-show="!clientId">Sélectionnez d'abord un client.</p>
-                <div class="space-y-3" x-show="clientId">
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Nom du chantier *</label>
-                        <input type="text" x-model="newChantier.nom" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Ex: Rénovation cuisine"></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Adresse chantier</label>
-                        <input type="text" x-model="newChantier.adresse_chantier" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Rue et numéro"></div>
-                </div>
-                <div class="flex gap-3 pt-1">
-                    <button type="button" @click="openNewChantier = false" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">Annuler</button>
-                    <button type="button" @click="submitNewChantier()" :disabled="savingChantier || !newChantier.nom || !clientId"
-                            class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                        <span x-text="savingChantier ? 'Création…' : 'Créer le chantier'"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
+        <script>
+        window.addEventListener('combobox-selected', function(e) {
+            if (e.detail.field === 'client_id') {
+                window.dispatchEvent(new CustomEvent('combobox-update-endpoint', {
+                    detail: { field: 'chantier_id', endpoint: '{{ route('chantiers.api-search') }}?client_id=' + e.detail.id }
+                }));
+                window.dispatchEvent(new CustomEvent('combobox-update-create-url', {
+                    detail: { field: 'chantier_id', createUrl: '/api/clients/' + e.detail.id + '/chantiers/quick-create' }
+                }));
+            }
+        });
+        window.addEventListener('combobox-cleared', function(e) {
+            if (e.detail.field === 'client_id') {
+                window.dispatchEvent(new CustomEvent('combobox-update-create-url', {
+                    detail: { field: 'chantier_id', createUrl: null }
+                }));
+            }
+        });
+        </script>
 
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
@@ -128,44 +47,42 @@
                     <h2 class="text-sm font-semibold text-gray-700 mb-4">Client & Chantier</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Client <span class="text-red-500">*</span></label>
-                            <div class="flex gap-2">
-                                <select name="client_id" x-model="clientId" x-ref="clientSelect"
-                                        @change="chargerChantiers(clientId)"
-                                        class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                    <option value="">Sélectionner un client</option>
-                                    @foreach($clients as $client)
-                                        <option value="{{ $client->id }}" {{ old('client_id', $devisSource->client_id ?? '') == $client->id ? 'selected' : '' }}>
-                                            {{ $client->nom }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <button type="button" @click="openNewClient = true" title="Créer un nouveau client"
-                                        class="shrink-0 w-9 h-9 flex items-center justify-center border border-gray-300 rounded-lg text-gray-500 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                                </button>
-                            </div>
-                            @error('client_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            <x-combobox
+                                name="client_id"
+                                label="Client"
+                                :endpoint="route('clients.api-search')"
+                                :value="old('client_id', $devisSource->client_id ?? null)"
+                                :text="$devisSource->client->nom ?? ''"
+                                :required="true"
+                                placeholder="Rechercher un client…"
+                                :allow-create="true"
+                                create-label="Nouveau client"
+                                :create-url="route('clients.quick-create')"
+                                :create-fields="[
+                                    ['name' => 'nom', 'label' => 'Nom', 'type' => 'text', 'required' => true],
+                                    ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
+                                    ['name' => 'telephone', 'label' => 'Téléphone', 'type' => 'text'],
+                                    ['name' => 'ville', 'label' => 'Ville', 'type' => 'text'],
+                                ]"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Chantier</label>
-                            <div class="flex gap-2">
-                                <select name="chantier_id" x-ref="chantierSelect"
-                                        class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">Aucun chantier</option>
-                                    <template x-for="c in chantiers" :key="c.id">
-                                        <option :value="c.id"
-                                                :selected="c.id == {{ old('chantier_id', $devisSource->chantier_id ?? 'null') }}"
-                                                x-text="c.nom"></option>
-                                    </template>
-                                </select>
-                                <button type="button" @click="openNewChantier = true" title="Créer un nouveau chantier"
-                                        :disabled="!clientId"
-                                        class="shrink-0 w-9 h-9 flex items-center justify-center border border-gray-300 rounded-lg text-gray-500 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                                </button>
-                            </div>
-                            @error('chantier_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            <x-combobox
+                                name="chantier_id"
+                                label="Chantier"
+                                :endpoint="route('chantiers.api-search') . (isset($devisSource) && $devisSource->client_id ? '?client_id=' . $devisSource->client_id : '')"
+                                :value="old('chantier_id', $devisSource->chantier_id ?? null)"
+                                :text="isset($devisSource) && $devisSource->chantier ? $devisSource->chantier->nom : ''"
+                                placeholder="Rechercher un chantier…"
+                                :allow-create="true"
+                                create-label="Nouveau chantier"
+                                :create-url="isset($devisSource) && $devisSource->client_id ? '/api/clients/' . $devisSource->client_id . '/chantiers/quick-create' : null"
+                                :create-fields="[
+                                    ['name' => 'nom', 'label' => 'Nom du chantier', 'type' => 'text', 'required' => true],
+                                    ['name' => 'adresse_chantier', 'label' => 'Adresse', 'type' => 'text'],
+                                    ['name' => 'ville', 'label' => 'Ville', 'type' => 'text'],
+                                ]"
+                            />
                         </div>
                     </div>
                 </div>

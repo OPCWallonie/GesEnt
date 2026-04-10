@@ -120,6 +120,19 @@ class ClientController extends Controller
             ->with('success', "Client « {$client->nom} » supprimé.");
     }
 
+    public function apiSearch(Request $request)
+    {
+        $q = $request->get('q', '');
+        return response()->json(
+            Client::query()
+                ->when($q, fn($query) => $query->where('nom', 'like', '%' . like_escape($q) . '%')
+                    ->orWhere('code_client', 'like', '%' . like_escape($q) . '%'))
+                ->orderBy('nom')
+                ->limit(15)
+                ->get(['id', 'nom'])
+        );
+    }
+
     public function quickCreate(Request $request)
     {
         $data = $request->validate([

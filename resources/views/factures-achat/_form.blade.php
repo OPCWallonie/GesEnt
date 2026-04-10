@@ -2,13 +2,23 @@
     <h2 class="font-semibold text-gray-700 border-b pb-2">Facture fournisseur</h2>
     <div class="grid grid-cols-2 gap-4">
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Fournisseur *</label>
-            <select name="fournisseur_id" required class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
-                <option value="">— Sélectionner —</option>
-                @foreach($fournisseurs as $f)
-                    <option value="{{ $f->id }}" @selected(old('fournisseur_id', $facture->fournisseur_id ?? $fournisseurId) == $f->id)>{{ $f->nom }}</option>
-                @endforeach
-            </select>
+            <x-combobox
+                name="fournisseur_id"
+                label="Fournisseur"
+                :endpoint="route('fournisseurs.api-search')"
+                :value="old('fournisseur_id', isset($facture) && $facture ? $facture->fournisseur_id : ($fournisseurId ?? null))"
+                :text="isset($facture) && $facture ? ($facture->fournisseur?->nom ?? '') : ($fournisseurSelectionne?->nom ?? '')"
+                :required="true"
+                placeholder="Rechercher un fournisseur…"
+                :allow-create="true"
+                create-label="Nouveau fournisseur"
+                :create-url="route('fournisseurs.quick-create')"
+                :create-fields="[
+                    ['name' => 'nom', 'label' => 'Nom', 'type' => 'text', 'required' => true],
+                    ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
+                    ['name' => 'telephone', 'label' => 'Téléphone', 'type' => 'text'],
+                ]"
+            />
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Référence fournisseur</label>

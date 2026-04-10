@@ -5,25 +5,66 @@
         @csrf @method('PUT')
         <input type="hidden" name="devis_id" value="{{ $bdc->devis_id }}">
 
+        <script>
+        window.addEventListener('combobox-selected', function(e) {
+            if (e.detail.field === 'client_id') {
+                window.dispatchEvent(new CustomEvent('combobox-update-endpoint', {
+                    detail: { field: 'chantier_id', endpoint: '{{ route('chantiers.api-search') }}?client_id=' + e.detail.id }
+                }));
+                window.dispatchEvent(new CustomEvent('combobox-update-create-url', {
+                    detail: { field: 'chantier_id', createUrl: '/api/clients/' + e.detail.id + '/chantiers/quick-create' }
+                }));
+            }
+        });
+        window.addEventListener('combobox-cleared', function(e) {
+            if (e.detail.field === 'client_id') {
+                window.dispatchEvent(new CustomEvent('combobox-update-create-url', {
+                    detail: { field: 'chantier_id', createUrl: null }
+                }));
+            }
+        });
+        </script>
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
             <h2 class="font-semibold text-gray-700 border-b pb-2">Informations générales</h2>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Client *</label>
-                    <select name="client_id" required class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
-                        @foreach($clients as $c)
-                            <option value="{{ $c->id }}" @selected(old('client_id', $bdc->client_id) == $c->id)>{{ $c->nom }}</option>
-                        @endforeach
-                    </select>
+                    <x-combobox
+                        name="client_id"
+                        label="Client"
+                        :endpoint="route('clients.api-search')"
+                        :value="old('client_id', $bdc->client_id)"
+                        :text="$bdc->client?->nom ?? ''"
+                        :required="true"
+                        placeholder="Rechercher un client…"
+                        :allow-create="true"
+                        create-label="Nouveau client"
+                        :create-url="route('clients.quick-create')"
+                        :create-fields="[
+                            ['name' => 'nom', 'label' => 'Nom', 'type' => 'text', 'required' => true],
+                            ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
+                            ['name' => 'telephone', 'label' => 'Téléphone', 'type' => 'text'],
+                            ['name' => 'ville', 'label' => 'Ville', 'type' => 'text'],
+                        ]"
+                    />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Chantier</label>
-                    <select name="chantier_id" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
-                        <option value="">— Aucun —</option>
-                        @foreach($chantiers as $ch)
-                            <option value="{{ $ch->id }}" @selected(old('chantier_id', $bdc->chantier_id) == $ch->id)>{{ $ch->nom }}</option>
-                        @endforeach
-                    </select>
+                    <x-combobox
+                        name="chantier_id"
+                        label="Chantier"
+                        :endpoint="route('chantiers.api-search') . '?client_id=' . $bdc->client_id"
+                        :value="old('chantier_id', $bdc->chantier_id)"
+                        :text="$bdc->chantier?->nom ?? ''"
+                        placeholder="Rechercher un chantier…"
+                        :allow-create="true"
+                        create-label="Nouveau chantier"
+                        :create-url="'/api/clients/' . $bdc->client_id . '/chantiers/quick-create'"
+                        :create-fields="[
+                            ['name' => 'nom', 'label' => 'Nom du chantier', 'type' => 'text', 'required' => true],
+                            ['name' => 'adresse_chantier', 'label' => 'Adresse', 'type' => 'text'],
+                            ['name' => 'ville', 'label' => 'Ville', 'type' => 'text'],
+                        ]"
+                    />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>

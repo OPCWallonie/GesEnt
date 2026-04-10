@@ -92,6 +92,32 @@ class FournisseurController extends Controller
             ->with('success', 'Fournisseur mis à jour.');
     }
 
+    public function apiSearch(Request $request)
+    {
+        $q = $request->get('q', '');
+        return response()->json(
+            Fournisseur::query()
+                ->when($q, fn($query) => $query->where('nom', 'like', '%' . like_escape($q) . '%'))
+                ->where('actif', true)
+                ->orderBy('nom')
+                ->limit(15)
+                ->get(['id', 'nom'])
+        );
+    }
+
+    public function quickCreate(Request $request)
+    {
+        $data = $request->validate([
+            'nom'       => 'required|string|max:100',
+            'email'     => 'nullable|email|max:120',
+            'telephone' => 'nullable|string|max:30',
+        ]);
+
+        $fournisseur = Fournisseur::create(array_merge($data, ['actif' => true]));
+
+        return response()->json(['id' => $fournisseur->id, 'nom' => $fournisseur->nom]);
+    }
+
     public function destroy(Fournisseur $fournisseur)
     {
         if ($fournisseur->facturesAchat()->exists()) {

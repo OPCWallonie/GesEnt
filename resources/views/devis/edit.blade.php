@@ -1,20 +1,34 @@
 <x-app-layout>
     <x-slot name="header">Modifier le devis {{ $devis->numero }}</x-slot>
 
-    <form method="POST" action="{{ route('devis.update', $devis) }}"
-          x-data="{
-              clientId: '{{ old('client_id', $devis->client_id) }}',
-              chantiers: @js($chantiers ?? collect()),
-              chargerChantiers(id) {
-                  if (!id) { this.chantiers = []; return; }
-                  fetch('/api/clients/' + id + '/chantiers')
-                      .then(r => r.json())
-                      .then(data => { this.chantiers = data; });
-              }
-          }"
-          x-init="clientId && chargerChantiers(clientId)">
+    <form method="POST" action="{{ route('devis.update', $devis) }}">
         @csrf
         @method('PUT')
+
+        <script>
+        window.coefficientMargeActuel = {{ ($devis->chantier?->coefficientMargeEffectif()) ?? 0 }};
+        window.addEventListener('combobox-selected', function(e) {
+            if (e.detail.field === 'client_id') {
+                window.dispatchEvent(new CustomEvent('combobox-update-endpoint', {
+                    detail: { field: 'chantier_id', endpoint: '{{ route('chantiers.api-search') }}?client_id=' + e.detail.id }
+                }));
+                window.dispatchEvent(new CustomEvent('combobox-update-create-url', {
+                    detail: { field: 'chantier_id', createUrl: '/api/clients/' + e.detail.id + '/chantiers/quick-create' }
+                }));
+            }
+            if (e.detail.field === 'chantier_id') {
+                window.coefficientMargeActuel = e.detail.item.coefficient_marge || 0;
+            }
+        });
+        window.addEventListener('combobox-cleared', function(e) {
+            if (e.detail.field === 'chantier_id') window.coefficientMargeActuel = 0;
+            if (e.detail.field === 'client_id') {
+                window.dispatchEvent(new CustomEvent('combobox-update-create-url', {
+                    detail: { field: 'chantier_id', createUrl: null }
+                }));
+            }
+        });
+        </script>
 
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
@@ -26,30 +40,42 @@
                     <h2 class="text-sm font-semibold text-gray-700 mb-4">Client & Chantier</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Client <span class="text-red-500">*</span></label>
-                            <select name="client_id" x-model="clientId" @change="chargerChantiers(clientId)"
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                <option value="">Sélectionner un client</option>
-                                @foreach($clients as $client)
-                                    <option value="{{ $client->id }}" {{ old('client_id', $devis->client_id) == $client->id ? 'selected' : '' }}>
-                                        {{ $client->nom }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('client_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            <x-combobox
+                                name="client_id"
+                                label="Client"
+                                :endpoint="route('clients.api-search')"
+                                :value="old('client_id', $devis->client_id)"
+                                :text="$devis->client?->nom ?? ''"
+                                :required="true"
+                                placeholder="Rechercher un client…"
+                                :allow-create="true"
+                                create-label="Nouveau client"
+                                :create-url="route('clients.quick-create')"
+                                :create-fields="[
+                                    ['name' => 'nom', 'label' => 'Nom', 'type' => 'text', 'required' => true],
+                                    ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
+                                    ['name' => 'telephone', 'label' => 'Téléphone', 'type' => 'text'],
+                                    ['name' => 'ville', 'label' => 'Ville', 'type' => 'text'],
+                                ]"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Chantier</label>
-                            <select name="chantier_id"
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">Aucun chantier</option>
-                                <template x-for="c in chantiers" :key="c.id">
-                                    <option :value="c.id"
-                                            :selected="c.id == {{ old('chantier_id', $devis->chantier_id ?? 'null') }}"
-                                            x-text="c.nom"></option>
-                                </template>
-                            </select>
-                            @error('chantier_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            <x-combobox
+                                name="chantier_id"
+                                label="Chantier"
+                                :endpoint="route('chantiers.api-search') . '?client_id=' . $devis->client_id"
+                                :value="old('chantier_id', $devis->chantier_id)"
+                                :text="$devis->chantier?->nom ?? ''"
+                                placeholder="Rechercher un chantier…"
+                                :allow-create="true"
+                                create-label="Nouveau chantier"
+                                :create-url="'/api/clients/' . $devis->client_id . '/chantiers/quick-create'"
+                                :create-fields="[
+                                    ['name' => 'nom', 'label' => 'Nom du chantier', 'type' => 'text', 'required' => true],
+                                    ['name' => 'adresse_chantier', 'label' => 'Adresse', 'type' => 'text'],
+                                    ['name' => 'ville', 'label' => 'Ville', 'type' => 'text'],
+                                ]"
+                            />
                         </div>
                     </div>
                 </div>

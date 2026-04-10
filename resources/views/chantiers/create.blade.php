@@ -10,18 +10,24 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Client *</label>
-                        <select name="client_id" required
-                                class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 @error('client_id') border-red-400 @enderror">
-                            <option value="">— Sélectionner un client —</option>
-                            @foreach($clients as $client)
-                                <option value="{{ $client->id }}"
-                                    @selected(old('client_id', $clientSelectionne?->id) == $client->id)>
-                                    {{ $client->nom }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('client_id')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                        <x-combobox
+                            name="client_id"
+                            label="Client"
+                            :endpoint="route('clients.api-search')"
+                            :value="old('client_id', $clientSelectionne?->id)"
+                            :text="$clientSelectionne?->nom ?? ''"
+                            :required="true"
+                            placeholder="Rechercher un client…"
+                            :allow-create="true"
+                            create-label="Nouveau client"
+                            :create-url="route('clients.quick-create')"
+                            :create-fields="[
+                                ['name' => 'nom', 'label' => 'Nom', 'type' => 'text', 'required' => true],
+                                ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
+                                ['name' => 'telephone', 'label' => 'Téléphone', 'type' => 'text'],
+                                ['name' => 'ville', 'label' => 'Ville', 'type' => 'text'],
+                            ]"
+                        />
                     </div>
 
                     <div>
