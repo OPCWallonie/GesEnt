@@ -136,4 +136,22 @@ class BonCommande extends Model
     {
         return (int) $this->factures()->max('numero_situation') + 1;
     }
+
+    /**
+     * Ventilation TVA : ['21' => ['ht' => 1000.00, 'tva' => 210.00], ...]
+     * Inclut les lignes BDC uniquement (sans avenants).
+     */
+    public function totauxParTva(): array
+    {
+        $totaux = [];
+        foreach ($this->lignes->where('est_section', false) as $ligne) {
+            $taux = (string)(float) $ligne->taux_tva;
+            $ht   = (float) $ligne->montant_ht;
+            $totaux[$taux] ??= ['ht' => 0.0, 'tva' => 0.0];
+            $totaux[$taux]['ht']  += $ht;
+            $totaux[$taux]['tva'] += $ht * ((float) $ligne->taux_tva / 100);
+        }
+        ksort($totaux);
+        return $totaux;
+    }
 }

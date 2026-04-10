@@ -67,4 +67,17 @@ class FactureAchat extends Model
     {
         return self::$categories[$this->categorie] ?? $this->categorie;
     }
+
+    /**
+     * Ventilation TVA : ['21' => ['ht' => 1000.00, 'tva' => 210.00], ...]
+     * Calculé depuis les colonnes scalaires (pas de lignes sur les factures d'achat).
+     */
+    public function totauxParTva(): array
+    {
+        $taux = (float) $this->taux_tva;
+        $ht   = (float) $this->montant_ht;
+        if ($ht <= 0) return [];
+        $key  = (string) $taux;
+        return [$key => ['ht' => $ht, 'tva' => $ht * ($taux / 100)]];
+    }
 }
