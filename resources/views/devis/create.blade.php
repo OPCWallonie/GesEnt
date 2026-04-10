@@ -69,7 +69,7 @@
                 <div class="space-y-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
-                        <input type="text" x-model="newClient.nom" required autofocus
+                        <input type="text" x-model="newClient.nom"
                                class="w-full rounded-lg border-gray-300 text-sm" placeholder="Nom ou raison sociale">
                     </div>
                     <div class="grid grid-cols-2 gap-3">
@@ -106,7 +106,7 @@
                 <div class="space-y-3" x-show="clientId">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nom du chantier *</label>
-                        <input type="text" x-model="newChantier.nom" required
+                        <input type="text" x-model="newChantier.nom"
                                class="w-full rounded-lg border-gray-300 text-sm" placeholder="Ex: Rénovation cuisine">
                     </div>
                     <div>
