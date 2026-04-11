@@ -13,18 +13,19 @@ class Ouvrier extends Model
     protected $fillable = [
         'nom', 'prenom', 'numero_national', 'categorie',
         'cout_horaire', 'date_entree', 'date_sortie', 'actif',
-        'telephone', 'email', 'notes',
+        'telephone', 'email', 'notes', 'metier', 'qualifications',
     ];
 
     protected $casts = [
-        'date_entree'  => 'date',
-        'date_sortie'  => 'date',
-        'cout_horaire' => 'decimal:2',
-        'actif'        => 'boolean',
+        'date_entree'    => 'date',
+        'date_sortie'    => 'date',
+        'cout_horaire'   => 'decimal:2',
+        'actif'          => 'boolean',
+        'qualifications' => 'array',
     ];
 
-    // Catégories CP124
-    public const CATEGORIES = ['I', 'II', 'III', 'IV'];
+    // Catégories CP124 (I, II, IIIA, IIIB, IV)
+    public const CATEGORIES = ['I', 'II', 'III', 'IIIA', 'IIIB', 'IV'];
 
     // ─── Relations ───────────────────────────────────────────────
     public function pointages()

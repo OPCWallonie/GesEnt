@@ -44,13 +44,14 @@ class OuvrierController extends Controller
             'nom'             => 'required|string|max:100',
             'prenom'          => 'required|string|max:100',
             'numero_national' => 'nullable|string|max:20|unique:ouvriers,numero_national',
-            'categorie'       => 'required|in:I,II,III,IV',
+            'categorie'       => 'required|in:' . implode(',', \App\Models\Ouvrier::CATEGORIES),
             'cout_horaire'    => 'required|numeric|min:0',
             'date_entree'     => 'required|date',
             'date_sortie'     => 'nullable|date|after_or_equal:date_entree',
             'telephone'       => 'nullable|string|max:20',
             'email'           => 'nullable|email|max:100',
             'notes'           => 'nullable|string',
+            'metier'          => 'nullable|string|max:100',
         ]);
 
         $data['actif'] = $request->boolean('actif', true);
@@ -106,13 +107,14 @@ class OuvrierController extends Controller
             'nom'             => 'required|string|max:100',
             'prenom'          => 'required|string|max:100',
             'numero_national' => "nullable|string|max:20|unique:ouvriers,numero_national,{$ouvrier->id}",
-            'categorie'       => 'required|in:I,II,III,IV',
+            'categorie'       => 'required|in:' . implode(',', \App\Models\Ouvrier::CATEGORIES),
             'cout_horaire'    => 'required|numeric|min:0',
             'date_entree'     => 'required|date',
             'date_sortie'     => 'nullable|date|after_or_equal:date_entree',
             'telephone'       => 'nullable|string|max:20',
             'email'           => 'nullable|email|max:100',
             'notes'           => 'nullable|string',
+            'metier'          => 'nullable|string|max:100',
         ]);
 
         $data['actif'] = $request->boolean('actif', true);
