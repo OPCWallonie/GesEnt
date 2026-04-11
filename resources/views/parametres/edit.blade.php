@@ -16,6 +16,7 @@
                         'integrations' => 'Intégrations',
                         'email'        => 'Email',
                         'securite'     => 'Sécurité',
+                        'rh'           => 'RH & Formation',
                     ];
                 @endphp
                 @foreach($tabs as $id => $label)
@@ -714,6 +715,41 @@
                         <strong>Méthodes disponibles</strong> : Application TOTP (Google Authenticator, Authy…),
                         code par email, codes de récupération à usage unique.
                         Chaque utilisateur peut configurer sa 2FA depuis son profil.
+                    </div>
+                </div>
+
+            </div>
+
+            {{-- ════════════════════════════════════
+                 Onglet RH & Formation
+                 ════════════════════════════════════ --}}
+            <div x-show="onglet === 'rh'" x-cloak class="space-y-6">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                    <h2 class="font-semibold text-gray-700 border-b pb-2">Organisme Paritaire de Formation (OPC)</h2>
+                    <p class="text-xs text-gray-500">
+                        L'OPC est l'organisme sectoriel auprès duquel l'entreprise est affiliée pour la formation des ouvriers de la construction (CP124).
+                        Ces informations sont utilisées dans les documents RH et pour le suivi des certifications.
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Organisme paritaire</label>
+                            <select name="opc"
+                                    class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">— Non défini —</option>
+                                @foreach(\App\Models\ParametresEntreprise::OPC_LIST as $key => $label)
+                                    <option value="{{ $key }}" @selected(old('opc', $parametres->opc) === $key)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">N° d'affiliation OPC</label>
+                            <input type="text" name="opc_numero_affiliation"
+                                   value="{{ old('opc_numero_affiliation', $parametres->opc_numero_affiliation) }}"
+                                   placeholder="ex: BX-2026-00123"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
                     </div>
                 </div>
 

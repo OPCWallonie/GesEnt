@@ -23,6 +23,18 @@ class ParametresEntreprise extends Model
         'mail_host', 'mail_port', 'mail_encryption', 'mail_username', 'mail_password',
         'mail_from_address', 'mail_from_name', 'mail_signature',
         'mail_template_devis', 'mail_template_facture', 'mail_template_bdc', 'mail_template_relance',
+        'opc', 'opc_numero_affiliation',
+    ];
+
+    // Organismes Paritaires de la Construction en Belgique
+    public const OPC_LIST = [
+        'constructiv'       => 'Constructiv (Fonds de Formation de la Construction)',
+        'forem'             => 'FOREM',
+        'vdab'              => 'VDAB',
+        'bruxelles_formation' => 'Bruxelles Formation',
+        'ifapme'            => 'IFAPME',
+        'syntra'            => 'Syntra',
+        'autre'             => 'Autre',
     ];
 
     protected $casts = [

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Certification;
 use App\Models\Ouvrier;
 use Illuminate\Http\Request;
 
@@ -35,7 +36,8 @@ class OuvrierController extends Controller
     public function create()
     {
         $ouvrier = new Ouvrier(['date_entree' => today()]);
-        return view('ouvriers.edit', compact('ouvrier'));
+        $certificationTypes = Certification::TYPES;
+        return view('ouvriers.edit', compact('ouvrier', 'certificationTypes'));
     }
 
     public function store(Request $request)
@@ -57,13 +59,15 @@ class OuvrierController extends Controller
         $data['actif'] = $request->boolean('actif', true);
         $ouvrier = Ouvrier::create($data);
 
+        $this->syncCertifications($ouvrier, $request->input('certifications', []));
+
         return redirect()->route('ouvriers.show', $ouvrier)
             ->with('success', "Ouvrier {$ouvrier->nom_complet} créé.");
     }
 
     public function show(Ouvrier $ouvrier)
     {
-        $ouvrier->load(['pointages.chantier', 'absences']);
+        $ouvrier->load(['pointages.chantier', 'absences', 'certifications']);
 
         // Semaine en cours pour le résumé
         $lundi    = now()->startOfWeek();
@@ -90,15 +94,36 @@ class OuvrierController extends Controller
 
         $reposRestants = $ouvrier->reposCompensatoiresRestants(now()->year);
 
+        // Résumé absences par type (année en cours)
+        $resumeAbsences = $ouvrier->absences()
+            ->whereYear('date_debut', now()->year)
+            ->get()
+            ->groupBy('type')
+            ->map(fn($groupe) => [
+                'count'  => $groupe->count(),
+                'jours'  => $groupe->sum(fn($a) => $a->nb_jours),
+                'libelle' => $groupe->first()->libelle_type,
+            ]);
+
+        // Bradford Factor (maladie uniquement)
+        $bradfordFactor = $ouvrier->bradfordFactor(now()->year);
+
+        // Certifications à renouveler
+        $certificationsAlerte = $ouvrier->certifications
+            ->filter(fn($c) => $c->est_expiree || $c->expire_bientot);
+
         return view('ouvriers.show', compact(
             'ouvrier', 'heureSem', 'coutAnnee',
-            'derniersPointages', 'absencesActives', 'reposRestants'
+            'derniersPointages', 'absencesActives', 'reposRestants',
+            'resumeAbsences', 'bradfordFactor', 'certificationsAlerte'
         ));
     }
 
     public function edit(Ouvrier $ouvrier)
     {
-        return view('ouvriers.edit', compact('ouvrier'));
+        $ouvrier->load('certifications');
+        $certificationTypes = Certification::TYPES;
+        return view('ouvriers.edit', compact('ouvrier', 'certificationTypes'));
     }
 
     public function update(Request $request, Ouvrier $ouvrier)
@@ -120,6 +145,8 @@ class OuvrierController extends Controller
         $data['actif'] = $request->boolean('actif', true);
         $ouvrier->update($data);
 
+        $this->syncCertifications($ouvrier, $request->input('certifications', []));
+
         return redirect()->route('ouvriers.show', $ouvrier)
             ->with('success', 'Ouvrier mis à jour.');
     }
@@ -129,6 +156,65 @@ class OuvrierController extends Controller
         $ouvrier->delete();
         return redirect()->route('ouvriers.index')
             ->with('success', 'Ouvrier archivé.');
+    }
+
+    private function syncCertifications(Ouvrier $ouvrier, array $certifications): void
+    {
+        // IDs soumis (existants)
+        $idsGardes = [];
+
+        foreach ($certifications as $row) {
+            if (empty($row['type'])) {
+                continue;
+            }
+
+            // Validation minimale
+            $type           = $row['type'];
+            $dateObtention  = $row['date_obtention'] ?? null;
+            $dateExpiration = $row['date_expiration'] ?? null ?: null;
+
+            if (! $dateObtention || ! array_key_exists($type, Certification::TYPES)) {
+                continue;
+            }
+
+            if (! empty($row['id'])) {
+                // Mise à jour
+                $cert = $ouvrier->certifications()->find($row['id']);
+                if ($cert) {
+                    $cert->update([
+                        'type'             => $type,
+                        'date_obtention'   => $dateObtention,
+                        'date_expiration'  => $dateExpiration,
+                        'organisme'        => $row['organisme'] ?? null,
+                        'numero_certificat'=> $row['numero_certificat'] ?? null,
+                        'notes'            => $row['notes'] ?? null,
+                    ]);
+                    $idsGardes[] = $cert->id;
+                }
+            } else {
+                // Création (updateOrCreate sur type pour respecter la contrainte unique)
+                $cert = $ouvrier->certifications()->updateOrCreate(
+                    ['type' => $type],
+                    [
+                        'date_obtention'   => $dateObtention,
+                        'date_expiration'  => $dateExpiration,
+                        'organisme'        => $row['organisme'] ?? null,
+                        'numero_certificat'=> $row['numero_certificat'] ?? null,
+                        'notes'            => $row['notes'] ?? null,
+                    ]
+                );
+                $idsGardes[] = $cert->id;
+            }
+        }
+
+        // Supprimer les certifications qui n'ont pas été soumises
+        if (! empty($idsGardes)) {
+            $ouvrier->certifications()->whereNotIn('id', $idsGardes)->delete();
+        } else {
+            // Aucune certification soumise = tout supprimer (si le formulaire était vide)
+            // On ne supprime que si le champ certifications était explicitement soumis
+            // (le tableau peut être absent si JS désactivé — dans ce cas on ne touche pas)
+        }
     }
 
     public function apiSearch(Request $request)

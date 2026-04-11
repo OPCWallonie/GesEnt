@@ -73,6 +73,8 @@ class ParametresController extends Controller
             'mail_template_facture'  => 'nullable|string',
             'mail_template_bdc'      => 'nullable|string',
             'mail_template_relance'  => 'nullable|string',
+            'opc'                    => 'nullable|string|max:100',
+            'opc_numero_affiliation' => 'nullable|string|max:50',
         ]);
 
         $parametres = ParametresEntreprise::instance();

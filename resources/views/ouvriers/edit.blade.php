@@ -3,13 +3,14 @@
         {{ $ouvrier->exists ? 'Modifier ' . $ouvrier->nom_complet : 'Nouvel ouvrier' }}
     </x-slot>
 
-    <div class="max-w-2xl">
+    <div class="max-w-2xl space-y-6">
         <form method="POST"
               action="{{ $ouvrier->exists ? route('ouvriers.update', $ouvrier) : route('ouvriers.store') }}"
-              class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+              class="space-y-6">
             @csrf
             @if($ouvrier->exists) @method('PUT') @endif
 
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
             @if($errors->any())
                 <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 space-y-1">
                     @foreach($errors->all() as $e) <div>{{ $e }}</div> @endforeach
@@ -105,6 +106,105 @@
                 </form>
                 @endif
             </div>
+            </div>{{-- /bg-white --}}
+
+            {{-- ──── Certifications ──── --}}
+            @php
+                $certsInitiales = old('certifications', $ouvrier->certifications->map(fn($c) => [
+                    'id'               => $c->id,
+                    'type'             => $c->type,
+                    'date_obtention'   => $c->date_obtention->format('Y-m-d'),
+                    'date_expiration'  => $c->date_expiration?->format('Y-m-d') ?? '',
+                    'organisme'        => $c->organisme ?? '',
+                    'numero_certificat'=> $c->numero_certificat ?? '',
+                    'notes'            => $c->notes ?? '',
+                ])->values()->toArray());
+            @endphp
+
+            <div x-data="certEditor({{ json_encode($certsInitiales) }}, {{ json_encode(collect($certificationTypes)->map(fn($v, $k) => ['key' => $k, 'label' => $v['label']])->values()) }})"
+                 class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h2 class="font-semibold text-gray-700">Certifications & habilitations</h2>
+                    <button type="button" @click="ajouter()"
+                            class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Ajouter
+                    </button>
+                </div>
+
+                <template x-if="lignes.length === 0">
+                    <p class="text-sm text-gray-400 py-2">Aucune certification enregistrée.</p>
+                </template>
+
+                <template x-for="(ligne, index) in lignes" :key="index">
+                    <div class="grid grid-cols-12 gap-2 items-start py-2 border-b border-gray-50 last:border-0">
+                        {{-- Type --}}
+                        <div class="col-span-4">
+                            <label class="block text-xs text-gray-500 mb-0.5">Type *</label>
+                            <select :name="`certifications[${index}][type]`" x-model="ligne.type"
+                                    class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-400">
+                                <option value="">— choisir —</option>
+                                <template x-for="t in types" :key="t.key">
+                                    <option :value="t.key" :selected="ligne.type === t.key" x-text="t.label"></option>
+                                </template>
+                            </select>
+                        </div>
+                        {{-- Date obtention --}}
+                        <div class="col-span-2">
+                            <label class="block text-xs text-gray-500 mb-0.5">Obtention *</label>
+                            <input type="date" :name="`certifications[${index}][date_obtention]`" x-model="ligne.date_obtention"
+                                   class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-400">
+                        </div>
+                        {{-- Date expiration --}}
+                        <div class="col-span-2">
+                            <label class="block text-xs text-gray-500 mb-0.5">Expiration</label>
+                            <input type="date" :name="`certifications[${index}][date_expiration]`" x-model="ligne.date_expiration"
+                                   class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-400"
+                                   placeholder="Auto">
+                        </div>
+                        {{-- Organisme --}}
+                        <div class="col-span-3">
+                            <label class="block text-xs text-gray-500 mb-0.5">Organisme</label>
+                            <input type="text" :name="`certifications[${index}][organisme]`" x-model="ligne.organisme"
+                                   placeholder="ex: Constructiv"
+                                   class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-400">
+                        </div>
+                        {{-- Supprimer --}}
+                        <div class="col-span-1 flex items-end pb-0.5">
+                            <button type="button" @click="supprimer(index)"
+                                    class="text-gray-300 hover:text-red-400 transition mt-5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        {{-- ID caché --}}
+                        <input type="hidden" :name="`certifications[${index}][id]`" :value="ligne.id ?? ''">
+                        <input type="hidden" :name="`certifications[${index}][notes]`" :value="ligne.notes ?? ''">
+                        <input type="hidden" :name="`certifications[${index}][numero_certificat]`" :value="ligne.numero_certificat ?? ''">
+                    </div>
+                </template>
+            </div>
+
         </form>
     </div>
+
+<script>
+function certEditor(initial, types) {
+    return {
+        lignes: initial.map(l => ({...l})),
+        types: types,
+
+        ajouter() {
+            this.lignes.push({
+                id: '', type: '', date_obtention: '', date_expiration: '',
+                organisme: '', numero_certificat: '', notes: '',
+            });
+        },
+
+        supprimer(index) {
+            this.lignes.splice(index, 1);
+        },
+    };
+}
+</script>
 </x-app-layout>

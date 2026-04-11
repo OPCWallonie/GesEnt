@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BonCommande;
+use App\Models\Certification;
 use App\Models\Chantier;
 use App\Models\Devis;
 use App\Models\Facture;
@@ -84,10 +85,19 @@ class DashboardController extends Controller
         $nbOuvriersPlanifies  = Pointage::whereBetween('date', [$lundi, $vendredi])
             ->distinct('ouvrier_id')->count('ouvrier_id');
 
+        // Certifications expirant dans les 90 jours (ouvriers actifs uniquement)
+        $certificationsARenouveler = Certification::with('ouvrier')
+            ->whereHas('ouvrier', fn($q) => $q->where('actif', true))
+            ->whereNotNull('date_expiration')
+            ->where('date_expiration', '<=', $maintenant->copy()->addDays(90))
+            ->orderBy('date_expiration')
+            ->get();
+
         return view('dashboard.index', compact(
             'stats', 'facturesEnRetard', 'derniersDevis',
             'dernieresFactures', 'devisExpirantBientot', 'achatsEnRetard',
-            'chantiersActifs', 'moSemaine', 'nbOuvriersActifs', 'nbOuvriersPlanifies'
+            'chantiersActifs', 'moSemaine', 'nbOuvriersActifs', 'nbOuvriersPlanifies',
+            'certificationsARenouveler'
         ));
     }
 }

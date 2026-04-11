@@ -15,6 +15,28 @@
         </div>
     </x-slot>
 
+    {{-- Alerte certifications --}}
+    @if($certificationsAlerte->isNotEmpty())
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+        <div class="flex items-center gap-2 mb-2">
+            <svg class="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <span class="font-semibold text-amber-800">{{ $certificationsAlerte->count() }} certification(s) à renouveler</span>
+        </div>
+        <div class="space-y-0.5">
+            @foreach($certificationsAlerte as $c)
+            <div class="text-sm text-amber-700 flex items-center justify-between">
+                <span>{{ $c->libelle_type }}</span>
+                @if($c->est_expiree)
+                    <span class="text-red-600 font-medium">Expirée le {{ $c->date_expiration->format('d/m/Y') }}</span>
+                @else
+                    <span>Expire le {{ $c->date_expiration->format('d/m/Y') }}</span>
+                @endif
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {{-- Colonne gauche : infos --}}
@@ -92,8 +114,78 @@
             @endif
         </div>
 
-        {{-- Colonne droite : historique --}}
+        {{-- Colonne droite : certifications + historique --}}
         <div class="lg:col-span-2 space-y-4">
+
+            {{-- Certifications --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+                    <h3 class="font-semibold text-gray-700 text-sm">Certifications & habilitations</h3>
+                    <a href="{{ route('ouvriers.edit', $ouvrier) }}" class="text-xs text-blue-500 hover:text-blue-700">Gérer →</a>
+                </div>
+                @if($ouvrier->certifications->isEmpty())
+                    <p class="px-5 py-4 text-sm text-gray-400 text-center">Aucune certification enregistrée.</p>
+                @else
+                <table class="min-w-full text-sm divide-y divide-gray-100">
+                    <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Certification</th>
+                            <th class="px-4 py-2 text-left">Obtention</th>
+                            <th class="px-4 py-2 text-left">Expiration</th>
+                            <th class="px-4 py-2 text-left">Organisme</th>
+                            <th class="px-4 py-2 text-left">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        @foreach($ouvrier->certifications as $cert)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2 font-medium text-gray-800">{{ $cert->libelle_type }}</td>
+                            <td class="px-4 py-2 text-gray-500">{{ $cert->date_obtention->format('d/m/Y') }}</td>
+                            <td class="px-4 py-2 text-gray-500">
+                                {{ $cert->date_expiration ? $cert->date_expiration->format('d/m/Y') : '—' }}
+                            </td>
+                            <td class="px-4 py-2 text-gray-500">{{ $cert->organisme ?: '—' }}</td>
+                            <td class="px-4 py-2">
+                                @if($cert->est_expiree)
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-medium">Expirée</span>
+                                @elseif($cert->expire_bientot)
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">À renouveler</span>
+                                @else
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">Valide</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                @endif
+            </div>
+
+            {{-- Bradford Factor & résumé absences --}}
+            @if($resumeAbsences->isNotEmpty() || $bradfordFactor > 0)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-gray-700 text-sm">Absences {{ now()->year }}</h3>
+                    @php
+                        $bfColor = $bradfordFactor < 50 ? 'text-green-700 bg-green-50' : ($bradfordFactor < 200 ? 'text-amber-700 bg-amber-50' : 'text-red-700 bg-red-100');
+                    @endphp
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400">Bradford Factor</span>
+                        <span class="px-2 py-0.5 rounded-full text-sm font-bold {{ $bfColor }}">{{ $bradfordFactor }}</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    @foreach($resumeAbsences as $type => $info)
+                    <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                        <span class="text-gray-600">{{ $info['libelle'] }}</span>
+                        <span class="font-medium text-gray-800">{{ $info['count'] }} ép. · {{ $info['jours'] }}j</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- Derniers pointages --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
                     <h3 class="font-semibold text-gray-700 text-sm">Derniers pointages</h3>
