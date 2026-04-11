@@ -51,6 +51,19 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Référence chantier
+                        <span class="text-xs text-gray-400 font-normal">— générée automatiquement si vide</span>
+                    </label>
+                    <input type="text" name="reference" value="{{ old('reference', $chantier->reference ?? '') }}"
+                           placeholder="Ex: RBA-2026-001"
+                           maxlength="20"
+                           class="w-full rounded-lg border-gray-300 shadow-sm text-sm font-mono focus:ring-blue-500 focus:border-blue-500 @error('reference') border-red-400 @enderror">
+                    @error('reference')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    <p class="text-xs text-gray-400 mt-1">Ce code est donné aux ouvriers pour identifier le chantier chez les fournisseurs. Max 20 caractères.</p>
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <textarea name="description" rows="3"
                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">{{ old('description', $chantier->description) }}</textarea>

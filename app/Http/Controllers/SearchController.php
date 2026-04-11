@@ -48,21 +48,22 @@ class SearchController extends Controller
                 ];
             });
 
-        // Chantiers : nom, adresse, ville, code postal
+        // Chantiers : nom, référence, adresse, ville, code postal
         Chantier::where(function ($query) use ($like) {
                 $query->where('nom', 'like', $like)
+                      ->orWhere('reference', 'like', $like)
                       ->orWhere('adresse_chantier', 'like', $like)
                       ->orWhere('ville', 'like', $like)
                       ->orWhere('code_postal', 'like', $like);
             })
             ->with('client:id,nom')
             ->limit(4)
-            ->get(['id', 'nom', 'client_id', 'ville'])
+            ->get(['id', 'nom', 'reference', 'client_id', 'ville'])
             ->each(function ($c) use (&$results) {
                 $results[] = [
                     'type'  => 'Chantier',
                     'icon'  => 'building',
-                    'label' => $c->nom
+                    'label' => ($c->reference ? "[{$c->reference}] " : '') . $c->nom
                         . ($c->ville ? " ({$c->ville})" : '')
                         . ($c->client ? " — {$c->client->nom}" : ''),
                     'url'   => route('chantiers.show', $c),

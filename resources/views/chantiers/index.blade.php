@@ -37,6 +37,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Référence</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adresse</th>
@@ -52,6 +53,15 @@
                                     </a>
                                     @if($chantier->date_debut)
                                         <div class="text-xs text-gray-400 mt-0.5">Début : {{ $chantier->date_debut->format('d/m/Y') }}</div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($chantier->reference)
+                                        <span class="font-mono text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
+                                            {{ $chantier->reference }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-300">—</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-gray-600">

@@ -40,10 +40,24 @@
                 <option value="">— Aucun —</option>
                 @foreach($chantiers as $ch)
                     <option value="{{ $ch->id }}" @selected(old('chantier_id', $facture->chantier_id ?? $chantierId) == $ch->id)>
-                        {{ $ch->nom }} ({{ $ch->client?->nom }})
+                        {{ $ch->reference ? '[' . $ch->reference . '] ' : '' }}{{ $ch->nom }}{{ $ch->client ? ' (' . $ch->client->nom . ')' : '' }}
                     </option>
                 @endforeach
             </select>
+            {{-- Bandeau de confiance OCR (affiché uniquement en création) --}}
+            @if(!isset($facture) || !$facture)
+            <div x-show="chantierMessage" x-cloak class="mt-1.5 text-xs rounded-lg px-3 py-2 flex items-start gap-1.5"
+                 :class="{
+                     'bg-green-50 text-green-700 border border-green-200': chantierConfiance === 'haute',
+                     'bg-amber-50 text-amber-700 border border-amber-200': chantierConfiance === 'moyenne',
+                     'bg-blue-50 text-blue-700 border border-blue-200':   chantierConfiance === 'basse',
+                 }">
+                <span x-show="chantierConfiance === 'haute'">✓</span>
+                <span x-show="chantierConfiance === 'moyenne'">~</span>
+                <span x-show="chantierConfiance === 'basse'">💡</span>
+                <span x-text="chantierMessage"></span>
+            </div>
+            @endif
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Bon de commande lié</label>

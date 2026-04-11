@@ -37,6 +37,7 @@ class ChantierController extends Controller
         $data = $request->validate([
             'client_id'        => 'required|exists:clients,id',
             'nom'              => 'required|string|max:150',
+            'reference'        => 'nullable|string|max:20|unique:chantiers,reference',
             'description'      => 'nullable|string',
             'adresse_chantier' => 'nullable|string|max:150',
             'code_postal'      => 'nullable|string|max:10',
@@ -67,14 +68,18 @@ class ChantierController extends Controller
         return response()->json(
             Chantier::query()
                 ->when($clientId, fn($query) => $query->where('client_id', $clientId))
-                ->when($q, fn($query) => $query->where('nom', 'like', '%' . like_escape($q) . '%'))
-                ->when(!$q, fn($query) => $query->orderByDesc('updated_at'))
-                ->when($q,  fn($query) => $query->orderBy('nom'))
+                ->when($q, fn($query) => $query->where(function ($q2) use ($q) {
+                    $escaped = like_escape($q);
+                    $q2->where('nom', 'like', '%' . $escaped . '%')
+                       ->orWhere('reference', 'like', '%' . $escaped . '%');
+                }))
+                ->when(! $q, fn($query) => $query->orderByDesc('updated_at'))
+                ->when($q,   fn($query) => $query->orderBy('nom'))
                 ->limit($limit)
-                ->get(['id', 'nom', 'coefficient_marge', 'client_id'])
+                ->get(['id', 'nom', 'reference', 'coefficient_marge', 'client_id'])
                 ->map(fn($c) => [
                     'id'                => $c->id,
-                    'nom'               => $c->nom,
+                    'nom'               => $c->reference ? "[{$c->reference}] {$c->nom}" : $c->nom,
                     'coefficient_marge' => (float) $c->coefficient_marge,
                 ])
         );
@@ -203,6 +208,7 @@ class ChantierController extends Controller
         $data = $request->validate([
             'client_id'        => 'required|exists:clients,id',
             'nom'              => 'required|string|max:150',
+            'reference'        => "nullable|string|max:20|unique:chantiers,reference,{$chantier->id}",
             'description'      => 'nullable|string',
             'adresse_chantier' => 'nullable|string|max:150',
             'code_postal'      => 'nullable|string|max:10',

@@ -290,10 +290,12 @@ JSON attendu :
   "taux_tva_principal": 21,
   "montant_tva": 0.00,
   "montant_ttc": 0.00,
+  "reference_chantier": "code de référence chantier si présent dans la facture (format XX-YYYY-NNN ou code court similaire), sinon null",
   "notes": "référence commande ou autres infos utiles"
 }
 
 Règles : dates en YYYY-MM-DD, montants en nombre décimal sans symbole monétaire, null si information absente.
+Pour reference_chantier : chercher dans la facture un code court alphanumérique avec tirets qui ressemble à une référence de chantier (ex: RBA-2026-001, VD-2026-003, CHT-001...). S'il n'y en a pas, mettre null.
 PROMPT;
     }
 
@@ -312,10 +314,12 @@ JSON attendu :
   "taux_tva_principal": 21,
   "montant_tva": 0.00,
   "montant_ttc": 0.00,
+  "reference_chantier": "code de référence chantier si présent dans la facture (format XX-YYYY-NNN ou code court similaire), sinon null",
   "notes": "référence commande ou autres infos utiles"
 }
 
 Règles : dates en YYYY-MM-DD, montants en nombre décimal sans symbole monétaire, null si information absente.
+Pour reference_chantier : chercher dans la facture un code court alphanumérique avec tirets qui ressemble à une référence de chantier (ex: RBA-2026-001, VD-2026-003, CHT-001...). S'il n'y en a pas, mettre null.
 PROMPT;
     }
 
@@ -337,16 +341,24 @@ PROMPT;
         }
 
         // Normaliser et typer les valeurs
+        $tva = (float) ($data['taux_tva_principal'] ?? 21);
+        if ($tva <= 0) {
+            $tva = 21;
+        }
+
         return [
-            'fournisseur_nom'   => $data['fournisseur_nom'] ?? null,
-            'numero_facture'    => $data['numero_facture'] ?? null,
-            'date_document'     => $data['date_document'] ?? now()->format('Y-m-d'),
-            'date_echeance'     => $data['date_echeance'] ?? null,
-            'montant_ht'        => (float)($data['montant_ht'] ?? 0),
-            'taux_tva'          => (int)($data['taux_tva_principal'] ?? 21),
-            'montant_tva'       => (float)($data['montant_tva'] ?? 0),
-            'montant_ttc'       => (float)($data['montant_ttc'] ?? 0),
-            'notes'             => $data['notes'] ?? null,
+            'fournisseur_nom'    => $data['fournisseur_nom'] ?? null,
+            'numero_facture'     => $data['numero_facture'] ?? null,
+            'date_document'      => $data['date_document'] ?? now()->format('Y-m-d'),
+            'date_echeance'      => $data['date_echeance'] ?? null,
+            'montant_ht'         => (float)($data['montant_ht'] ?? 0),
+            'taux_tva'           => $tva,
+            'montant_tva'        => (float)($data['montant_tva'] ?? 0),
+            'montant_ttc'        => (float)($data['montant_ttc'] ?? 0),
+            'reference_chantier' => isset($data['reference_chantier']) && $data['reference_chantier'] !== 'null'
+                                    ? $data['reference_chantier']
+                                    : null,
+            'notes'              => $data['notes'] ?? null,
         ];
     }
 }

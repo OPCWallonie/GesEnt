@@ -112,6 +112,8 @@ function ocrImport() {
         succes: false,
         viewerUrl: null,
         viewerType: null,
+        chantierMessage: '',
+        chantierConfiance: '',
 
         fermerViewer() {
             if (this.viewerUrl) URL.revokeObjectURL(this.viewerUrl);
@@ -175,6 +177,16 @@ function ocrImport() {
             if (data.montant_ht)      set('montant_ht', data.montant_ht);
             if (data.taux_tva)        set('taux_tva', data.taux_tva);
             if (data.notes)           set('notes', data.notes);
+
+            // Chantier auto-détecté par l'IA
+            if (data.chantier_id) {
+                set('chantier_id', data.chantier_id);
+                this.chantierMessage   = data.chantier_message   || '';
+                this.chantierConfiance = data.chantier_confiance || 'basse';
+            } else {
+                this.chantierMessage   = '';
+                this.chantierConfiance = '';
+            }
 
             if (data.fournisseur_nom) {
                 fetch('{{ route('fournisseurs.api-search') }}?q=' + encodeURIComponent(data.fournisseur_nom), {
