@@ -18,7 +18,9 @@
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
             <div>
                 <a href="/">
-                    <img src="{{ asset('images/logo_site.png') }}" alt="Gesent" class="h-16 w-auto">
+                    <span class="inline-block bg-slate-800 rounded-2xl px-5 py-3">
+                        <img src="{{ asset('images/logo_site.png') }}" alt="Gesent" class="h-16 w-auto">
+                    </span>
                 </a>
             </div>
 
