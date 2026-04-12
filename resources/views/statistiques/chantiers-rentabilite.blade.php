@@ -143,17 +143,23 @@
         @endif
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-    <script>
     @if($chantiers->isNotEmpty())
-    const bubbleData = @json($chantiers->map(fn($c) => [
+    @php
+    $bubbleData = $chantiers->map(fn($c) => [
         'x'    => round($c['ventes'], 2),
         'y'    => $c['taux_marge'] !== null ? round($c['taux_marge'], 1) : 0,
         'r'    => max(5, min(30, sqrt(abs($c['marge'])) / 5)),
         'nom'  => $c['chantier']->nom,
         'marge' => $c['marge'],
         'taux' => $c['taux_marge'],
-    ])->values());
+    ])->values();
+    @endphp
+    @endif
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <script>
+    @if($chantiers->isNotEmpty())
+    const bubbleData = @json($bubbleData);
 
     const colors = bubbleData.map(d => d.taux >= 25 ? 'rgba(34,197,94,0.6)' : (d.taux >= 10 ? 'rgba(249,115,22,0.6)' : 'rgba(239,68,68,0.6)'));
 
