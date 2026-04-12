@@ -24,9 +24,8 @@
            class="flex flex-col w-64 bg-slate-800 text-white flex-shrink-0 z-30"
            x-cloak>
         {{-- Logo --}}
-        <div class="flex items-center justify-between h-16 px-5 bg-slate-900">
-            <span class="text-xl font-bold tracking-wide text-white">Gesent</span>
-            <span class="text-xs text-slate-400">ERP</span>
+        <div class="flex items-center h-16 px-5 bg-slate-900">
+            <img src="{{ asset('images/logo_site.png') }}" alt="Gesent" class="h-10 w-auto">
         </div>
 
         {{-- Nav --}}
