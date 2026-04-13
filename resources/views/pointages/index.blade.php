@@ -13,8 +13,9 @@
                 <a href="{{ route('pointages.index') }}"
                    class="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">Aujourd'hui</a>
                 @if($pointages->isEmpty())
+                @php $semainePrecLibelle = $lundi->copy()->subWeek()->format('d/m'); @endphp
                 <form method="POST" action="{{ route('pointages.copier') }}"
-                      onsubmit="return confirm('Recopier le planning de la semaine du {{ $lundi->copy()->subWeek()->format(\'d/m\') }} ?')">
+                      onsubmit="return confirm('Recopier le planning de la semaine du {{ $semainePrecLibelle }} ?')">
                     @csrf
                     <input type="hidden" name="semaine" value="{{ $lundi->format('Y-m-d') }}">
                     <button type="submit"
