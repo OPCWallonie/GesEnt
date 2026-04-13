@@ -76,6 +76,62 @@ class PointageController extends Controller
         return back()->with('success', 'Pointage enregistré.');
     }
 
+    /**
+     * Recopie les pointages de la semaine précédente vers la semaine en cours.
+     * N'écrase pas les créneaux déjà saisis.
+     */
+    public function copier(Request $request)
+    {
+        $lundi = $request->filled('semaine')
+            ? Carbon::parse($request->semaine)->startOfWeek()
+            : Carbon::now()->startOfWeek();
+
+        $lundiPrec    = $lundi->copy()->subWeek();
+        $vendrediPrec = $lundiPrec->copy()->addDays(4);
+
+        $precedents = Pointage::whereBetween('date', [$lundiPrec, $vendrediPrec])->get();
+
+        // Ouvriers actifs indexés par id (pour le cout_horaire à jour)
+        $ouvrierActifs = Ouvrier::where('actif', true)->get()->keyBy('id');
+
+        $copies = 0;
+        foreach ($precedents as $p) {
+            // Ignorer si l'ouvrier est désormais inactif/supprimé
+            if (! isset($ouvrierActifs[$p->ouvrier_id])) {
+                continue;
+            }
+
+            $offset      = (int) $p->date->diffInDays($lundiPrec);
+            $nouvelleDate = $lundi->copy()->addDays($offset);
+
+            // Ne pas écraser un créneau déjà saisi pour cet ouvrier ce jour-là
+            $existe = Pointage::where('ouvrier_id', $p->ouvrier_id)
+                ->where('date', $nouvelleDate)
+                ->exists();
+
+            if (! $existe) {
+                Pointage::create([
+                    'ouvrier_id'  => $p->ouvrier_id,
+                    'chantier_id' => $p->chantier_id,
+                    'date'        => $nouvelleDate,
+                    'heures'      => $p->heures,
+                    'heures_sup'  => $p->heures_sup,
+                    'cout_horaire' => $ouvrierActifs[$p->ouvrier_id]->cout_horaire,
+                    'notes'       => $p->notes,
+                ]);
+                $copies++;
+            }
+        }
+
+        $msg = $copies > 0
+            ? "{$copies} pointage(s) recopiés depuis la semaine du {$lundiPrec->format('d/m/Y')}. Vérifiez et ajustez si nécessaire."
+            : "Semaine du {$lundiPrec->format('d/m/Y')} vide, rien à recopier.";
+
+        return redirect()
+            ->route('pointages.index', ['semaine' => $lundi->format('Y-m-d')])
+            ->with('success', $msg);
+    }
+
     public function destroy(Pointage $pointage)
     {
         $pointage->delete();

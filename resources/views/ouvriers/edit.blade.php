@@ -99,11 +99,9 @@
                    class="text-sm text-gray-500 hover:text-gray-700">Annuler</a>
 
                 @if($ouvrier->exists)
-                <form method="POST" action="{{ route('ouvriers.destroy', $ouvrier) }}" class="ml-auto"
-                      onsubmit="return confirm('Archiver cet ouvrier ?')">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="text-sm text-red-500 hover:text-red-700">Archiver</button>
-                </form>
+                <button type="submit" form="form-archiver"
+                        class="ml-auto text-sm text-red-500 hover:text-red-700"
+                        onclick="return confirm('Archiver cet ouvrier ?')">Archiver</button>
                 @endif
             </div>
             </div>{{-- /bg-white --}}
@@ -187,6 +185,12 @@
 
         </form>
     </div>
+
+    @if($ouvrier->exists)
+    <form id="form-archiver" method="POST" action="{{ route('ouvriers.destroy', $ouvrier) }}" class="hidden">
+        @csrf @method('DELETE')
+    </form>
+    @endif
 
 <script>
 function certEditor(initial, types) {

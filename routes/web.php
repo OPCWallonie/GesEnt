@@ -283,6 +283,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Pointages
         Route::post('/pointages', [PointageController::class, 'store'])->name('pointages.store');
+        Route::post('/pointages/copier-semaine', [PointageController::class, 'copier'])->name('pointages.copier');
         Route::delete('/pointages/{pointage}', [PointageController::class, 'destroy'])->name('pointages.destroy');
 
         // Absences
