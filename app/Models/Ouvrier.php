@@ -17,11 +17,12 @@ class Ouvrier extends Model
     ];
 
     protected $casts = [
-        'date_entree'    => 'date',
-        'date_sortie'    => 'date',
-        'cout_horaire'   => 'decimal:2',
-        'actif'          => 'boolean',
-        'qualifications' => 'array',
+        'date_entree'      => 'date',
+        'date_sortie'      => 'date',
+        'cout_horaire'     => 'decimal:2',
+        'actif'            => 'boolean',
+        'qualifications'   => 'array',
+        'numero_national'  => 'encrypted',
     ];
 
     // Catégories CP124 (I, II, IIIA, IIIB, IV)

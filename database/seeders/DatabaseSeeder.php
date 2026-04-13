@@ -7,6 +7,7 @@ use App\Models\TauxTva;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
@@ -18,14 +19,19 @@ class DatabaseSeeder extends Seeder
         $comptable = Role::firstOrCreate(['name' => 'comptable']);
         Role::firstOrCreate(['name' => 'lecture']);
 
-        // Utilisateur admin par défaut
+        // Utilisateur admin par défaut — mot de passe aléatoire, affiché une seule fois
+        $password = Str::random(16);
         $user = User::firstOrCreate(
             ['email' => 'admin@gesent.local'],
             [
                 'name'     => 'Administrateur',
-                'password' => Hash::make('password'),
+                'password' => Hash::make($password),
             ]
         );
+        if ($user->wasRecentlyCreated) {
+            $this->command->info(">>> Admin créé : admin@gesent.local / {$password}");
+            $this->command->warn(">>> NOTEZ CE MOT DE PASSE, il ne sera plus affiché.");
+        }
         $user->assignRole($admin);
 
         // Taux TVA (Belgique)

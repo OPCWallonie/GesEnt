@@ -147,7 +147,7 @@ class OcrFactureService
         ]);
 
         if (!$response->successful()) {
-            throw new \RuntimeException("Erreur Claude : " . ($response->json('error.message') ?? $response->status()));
+            throw new \RuntimeException($this->filtrerMessageErreur("Erreur Claude : " . ($response->json('error.message') ?? $response->status())));
         }
 
         return $response->json('content.0.text') ?? '';
@@ -172,7 +172,7 @@ class OcrFactureService
             ]);
 
         if (!$response->successful()) {
-            throw new \RuntimeException("Erreur OpenAI : " . ($response->json('error.message') ?? $response->status()));
+            throw new \RuntimeException($this->filtrerMessageErreur("Erreur OpenAI : " . ($response->json('error.message') ?? $response->status())));
         }
 
         return $response->json('choices.0.message.content') ?? '';
@@ -197,7 +197,7 @@ class OcrFactureService
             if (str_contains((string)$msg, 'not found')) {
                 $msg .= " — Vérifiez le nom du modèle dans Paramètres > IA. Modèles gratuits disponibles : gemini-2.0-flash-lite, gemini-2.0-flash.";
             }
-            throw new \RuntimeException("Erreur Gemini : " . $msg);
+            throw new \RuntimeException($this->filtrerMessageErreur("Erreur Gemini : " . $msg));
         }
 
         return $response->json('candidates.0.content.parts.0.text') ?? '';
@@ -222,7 +222,7 @@ class OcrFactureService
             ]);
 
         if (!$response->successful()) {
-            throw new \RuntimeException("Erreur Mistral : " . ($response->json('message') ?? $response->status()));
+            throw new \RuntimeException($this->filtrerMessageErreur("Erreur Mistral : " . ($response->json('message') ?? $response->status())));
         }
 
         return $response->json('choices.0.message.content') ?? '';
@@ -244,10 +244,25 @@ class OcrFactureService
         ]);
 
         if (!$response->successful()) {
-            throw new \RuntimeException("Erreur Ollama : " . ($response->body() ?: $response->status()));
+            throw new \RuntimeException($this->filtrerMessageErreur("Erreur Ollama : " . ($response->body() ?: $response->status())));
         }
 
         return $response->json('message.content') ?? '';
+    }
+
+    // ---------------------------------------------------------------
+    // Sécurité — ne jamais exposer une clé API dans un message d'erreur
+    // ---------------------------------------------------------------
+
+    private function filtrerMessageErreur(string $message): string
+    {
+        $patterns = ['sk-', 'AIza', 'Bearer ', 'api_key=', 'key='];
+        foreach ($patterns as $pattern) {
+            if (stripos($message, $pattern) !== false) {
+                return 'Erreur de connexion au service IA. Vérifiez votre clé API dans les paramètres.';
+            }
+        }
+        return $message;
     }
 
     // ---------------------------------------------------------------

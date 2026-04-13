@@ -57,24 +57,33 @@ class DemoSeeder extends Seeder
             'validite_devis_defaut'  => 30,
         ]);
 
-        // --- UTILISATEURS ---
-        $admin = User::firstOrCreate(
-            ['email' => 'demo@gesent.be'],
-            ['name' => 'Jean Dupont (Admin)', 'password' => Hash::make('Demo2026!')]
-        );
-        $admin->assignRole('admin');
-
-        $comptable = User::firstOrCreate(
-            ['email' => 'comptable@gesent.be'],
-            ['name' => 'Marie Lecomte (Comptable)', 'password' => Hash::make('Demo2026!')]
-        );
-        $comptable->assignRole(Role::firstOrCreate(['name' => 'comptable']));
-
-        $lecture = User::firstOrCreate(
-            ['email' => 'lecture@gesent.be'],
-            ['name' => 'Pierre Martin (Lecture)', 'password' => Hash::make('Demo2026!')]
-        );
-        $lecture->assignRole(Role::firstOrCreate(['name' => 'lecture']));
+        // --- UTILISATEURS — mots de passe aléatoires, affichés une seule fois ---
+        $motsDePasse = [];
+        foreach ([
+            ['email' => 'demo@gesent.be',     'name' => 'Jean Dupont (Admin)',       'role' => 'admin'],
+            ['email' => 'comptable@gesent.be', 'name' => 'Marie Lecomte (Comptable)', 'role' => 'comptable'],
+            ['email' => 'lecture@gesent.be',   'name' => 'Pierre Martin (Lecture)',   'role' => 'lecture'],
+        ] as $u) {
+            $pwd  = \Illuminate\Support\Str::random(16);
+            $user = User::firstOrCreate(
+                ['email' => $u['email']],
+                ['name' => $u['name'], 'password' => Hash::make($pwd)]
+            );
+            if ($user->wasRecentlyCreated) {
+                $motsDePasse[] = "{$u['email']} / {$pwd}";
+            }
+            $user->assignRole(Role::firstOrCreate(['name' => $u['role']]));
+        }
+        if ($motsDePasse) {
+            $this->command->info(">>> Comptes démo créés :");
+            foreach ($motsDePasse as $ligne) {
+                $this->command->info("    {$ligne}");
+            }
+            $this->command->warn(">>> NOTEZ CES MOTS DE PASSE.");
+        }
+        $admin     = User::where('email', 'demo@gesent.be')->first();
+        $comptable = User::where('email', 'comptable@gesent.be')->first();
+        $lecture   = User::where('email', 'lecture@gesent.be')->first();
 
         // --- CLIENTS ---
         $clientsData = [
