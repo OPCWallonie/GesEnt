@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Absence;
 use App\Models\Chantier;
 use App\Models\Ouvrier;
 use App\Models\Pointage;
@@ -46,12 +47,19 @@ class PointageController extends Controller
         // Total heures semaine par ouvrier
         $totaux = $pointages->map(fn($jrs) => $jrs->sum(fn($p) => $p->heures + $p->heures_sup));
 
+        // Absences chevauchant la semaine, indexées par [ouvrier_id]
+        $absences = Absence::where('date_debut', '<=', $vendredi->toDateString())
+            ->where('date_fin', '>=', $lundi->toDateString())
+            ->get()
+            ->groupBy('ouvrier_id');
+
         $semainePrecedente = $lundi->copy()->subWeek()->format('Y-m-d');
         $semaineSuivante   = $lundi->copy()->addWeek()->format('Y-m-d');
 
         return view('pointages.index', compact(
             'lundi', 'jours', 'ouvriers', 'chantiers',
-            'pointages', 'totaux', 'semainePrecedente', 'semaineSuivante'
+            'pointages', 'totaux', 'absences',
+            'semainePrecedente', 'semaineSuivante'
         ));
     }
 

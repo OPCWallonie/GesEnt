@@ -65,10 +65,38 @@
 
                         @foreach($jours as $jour)
                         @php
-                            $dateKey  = $jour->format('Y-m-d');
-                            $pointage = $pointages[$ouvrier->id][$dateKey] ?? null;
+                            $dateKey     = $jour->format('Y-m-d');
+                            $pointage    = $pointages[$ouvrier->id][$dateKey] ?? null;
+
+                            // Absence couvrant ce jour précis
+                            $absenceJour = null;
+                            foreach (($absences[$ouvrier->id] ?? []) as $abs) {
+                                if ($abs->date_debut->lte($jour) && $abs->date_fin->gte($jour)) {
+                                    $absenceJour = $abs;
+                                    break;
+                                }
+                            }
+
+                            // Style du badge d'absence
+                            $absBg = match($absenceJour?->type) {
+                                'maladie', 'accident_travail' => ['bg' => 'bg-red-50',  'border' => 'border-red-200',  'text' => 'text-red-600'],
+                                'conge'                       => ['bg' => 'bg-sky-50',  'border' => 'border-sky-200',  'text' => 'text-sky-600'],
+                                'repos_compensatoire'         => ['bg' => 'bg-blue-50', 'border' => 'border-blue-200', 'text' => 'text-blue-600'],
+                                default                       => ['bg' => 'bg-orange-50','border'=> 'border-orange-200','text'=> 'text-orange-600'],
+                            };
                         @endphp
                         <td class="px-2 py-1.5 text-center align-top">
+
+                            {{-- Cas 1 : absent ce jour ET pas de pointage → badge non-interactif --}}
+                            @if($absenceJour && ! $pointage)
+                                <div class="w-full rounded-lg px-2 py-1.5 border {{ $absBg['bg'] }} {{ $absBg['border'] }}">
+                                    <div class="text-xs font-medium {{ $absBg['text'] }}">
+                                        {{ $absenceJour->libelle_type }}
+                                    </div>
+                                </div>
+
+                            {{-- Cas 2 : normal (avec ou sans pointage, absence ignorée si pointage saisi) --}}
+                            @else
                             <div x-data="cellEditor({
                                     ouvrierDd: {{ $ouvrier->id }},
                                     date: '{{ $dateKey }}',
@@ -83,9 +111,14 @@
                                 {{-- Affichage compact --}}
                                 <button @click="open = true"
                                         class="w-full text-center rounded-lg px-2 py-1.5 transition
-                                               {{ $pointage ? 'bg-blue-50 hover:bg-blue-100 border border-blue-200' : 'hover:bg-gray-100 border border-dashed border-gray-200' }}">
+                                               {{ $pointage
+                                                    ? ($absenceJour ? 'bg-orange-50 hover:bg-orange-100 border border-orange-300' : 'bg-blue-50 hover:bg-blue-100 border border-blue-200')
+                                                    : 'hover:bg-gray-100 border border-dashed border-gray-200' }}">
                                     @if($pointage)
-                                        <div class="text-sm font-semibold text-blue-700">
+                                        @if($absenceJour)
+                                            <div class="text-xs text-orange-500 leading-none mb-0.5">⚠ {{ $absenceJour->libelle_type }}</div>
+                                        @endif
+                                        <div class="text-sm font-semibold {{ $absenceJour ? 'text-orange-700' : 'text-blue-700' }}">
                                             {{ number_format($pointage->heures, 1) }}h
                                             @if($pointage->heures_sup > 0)
                                                 <span class="text-orange-500">+{{ number_format($pointage->heures_sup, 1) }}h</span>
@@ -105,6 +138,12 @@
                                     <div class="text-xs font-semibold text-gray-600 mb-3 uppercase">
                                         {{ $ouvrier->prenom }} · {{ $jour->format('d/m') }}
                                     </div>
+
+                                    @if($absenceJour)
+                                    <div class="mb-3 px-2 py-1.5 rounded-lg text-xs {{ $absBg['bg'] }} {{ $absBg['text'] }} {{ $absBg['border'] }} border">
+                                        ⚠ {{ $absenceJour->libelle_type }} — encodage possible mais vérifiez.
+                                    </div>
+                                    @endif
 
                                     <div class="space-y-2">
                                         <div>
@@ -151,6 +190,8 @@
                                     </div>
                                 </div>
                             </div>
+                            @endif
+
                         </td>
                         @endforeach
 
