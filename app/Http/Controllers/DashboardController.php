@@ -81,7 +81,14 @@ class DashboardController extends Controller
         $lundi     = $maintenant->copy()->startOfWeek();
         $vendredi  = $lundi->copy()->addDays(4);
         $moSemaine = Pointage::whereBetween('date', [$lundi, $vendredi])->sum('cout_total');
-        $nbOuvriersActifs     = Ouvrier::where('actif', true)->count();
+        // Dénominateur : ouvriers actifs disponibles cette semaine
+        // (exclut ceux absents sur toute la semaine lun-ven)
+        $nbOuvriersActifs = Ouvrier::where('actif', true)
+            ->whereDoesntHave('absences', fn($q) => $q
+                ->where('date_debut', '<=', $lundi->toDateString())
+                ->where('date_fin', '>=', $vendredi->toDateString())
+            )
+            ->count();
         $nbOuvriersPlanifies  = Pointage::whereBetween('date', [$lundi, $vendredi])
             ->distinct('ouvrier_id')->count('ouvrier_id');
 
