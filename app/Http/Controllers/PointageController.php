@@ -83,13 +83,16 @@ class PointageController extends Controller
     public function copier(Request $request)
     {
         $lundi = $request->filled('semaine')
-            ? Carbon::parse($request->semaine)->startOfWeek()
-            : Carbon::now()->startOfWeek();
+            ? Carbon::parse($request->semaine)->startOfWeek(Carbon::MONDAY)
+            : Carbon::now()->startOfWeek(Carbon::MONDAY);
 
         $lundiPrec    = $lundi->copy()->subWeek();
         $vendrediPrec = $lundiPrec->copy()->addDays(4);
 
-        $precedents = Pointage::whereBetween('date', [$lundiPrec, $vendrediPrec])->get();
+        $precedents = Pointage::whereBetween('date', [
+            $lundiPrec->toDateString(),
+            $vendrediPrec->toDateString(),
+        ])->get();
 
         // Ouvriers actifs indexés par id (pour le cout_horaire à jour)
         $ouvrierActifs = Ouvrier::where('actif', true)->get()->keyBy('id');
@@ -101,23 +104,24 @@ class PointageController extends Controller
                 continue;
             }
 
-            $offset      = (int) $p->date->diffInDays($lundiPrec);
-            $nouvelleDate = $lundi->copy()->addDays($offset);
+            // Offset basé sur le jour ISO (1=lun … 5=ven), indépendant des timezones
+            $offsetJour   = $p->date->dayOfWeekIso - 1;  // 0=lun, 1=mar, …, 4=ven
+            $nouvelleDate = $lundi->copy()->addDays($offsetJour)->toDateString();
 
             // Ne pas écraser un créneau déjà saisi pour cet ouvrier ce jour-là
             $existe = Pointage::where('ouvrier_id', $p->ouvrier_id)
-                ->where('date', $nouvelleDate)
+                ->whereDate('date', $nouvelleDate)
                 ->exists();
 
             if (! $existe) {
                 Pointage::create([
-                    'ouvrier_id'  => $p->ouvrier_id,
-                    'chantier_id' => $p->chantier_id,
-                    'date'        => $nouvelleDate,
-                    'heures'      => $p->heures,
-                    'heures_sup'  => $p->heures_sup,
+                    'ouvrier_id'   => $p->ouvrier_id,
+                    'chantier_id'  => $p->chantier_id,
+                    'date'         => $nouvelleDate,
+                    'heures'       => $p->heures,
+                    'heures_sup'   => $p->heures_sup,
                     'cout_horaire' => $ouvrierActifs[$p->ouvrier_id]->cout_horaire,
-                    'notes'       => $p->notes,
+                    'notes'        => $p->notes,
                 ]);
                 $copies++;
             }
@@ -125,7 +129,7 @@ class PointageController extends Controller
 
         $msg = $copies > 0
             ? "{$copies} pointage(s) recopiés depuis la semaine du {$lundiPrec->format('d/m/Y')}. Vérifiez et ajustez si nécessaire."
-            : "Semaine du {$lundiPrec->format('d/m/Y')} vide, rien à recopier.";
+            : "Semaine du {$lundiPrec->format('d/m/Y')} vide (ou déjà complète), rien à recopier.";
 
         return redirect()
             ->route('pointages.index', ['semaine' => $lundi->format('Y-m-d')])

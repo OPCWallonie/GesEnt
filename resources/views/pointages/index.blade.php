@@ -12,18 +12,16 @@
                    class="border border-gray-300 text-gray-600 text-sm px-3 py-1.5 rounded-lg hover:bg-gray-50 transition">Semaine suiv. →</a>
                 <a href="{{ route('pointages.index') }}"
                    class="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">Aujourd'hui</a>
-                @if($pointages->isEmpty())
                 @php $semainePrecLibelle = $lundi->copy()->subWeek()->format('d/m'); @endphp
                 <form method="POST" action="{{ route('pointages.copier') }}"
-                      onsubmit="return confirm('Recopier le planning de la semaine du {{ $semainePrecLibelle }} ?')">
+                      onsubmit="return confirm('Recopier le planning de la semaine du {{ $semainePrecLibelle }} ?\n(Les créneaux déjà saisis ne seront pas écrasés.)')">
                     @csrf
                     <input type="hidden" name="semaine" value="{{ $lundi->format('Y-m-d') }}">
                     <button type="submit"
-                            class="border border-indigo-300 text-indigo-600 text-sm px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition">
+                            class="border {{ $pointages->isEmpty() ? 'border-indigo-300 text-indigo-600 hover:bg-indigo-50' : 'border-gray-300 text-gray-500 hover:bg-gray-50' }} text-sm px-3 py-1.5 rounded-lg transition">
                         ↩ Recopier sem. préc.
                     </button>
                 </form>
-                @endif
             </div>
         </div>
     </x-slot>
