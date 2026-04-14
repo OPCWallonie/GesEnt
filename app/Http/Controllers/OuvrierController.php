@@ -11,6 +11,7 @@ class OuvrierController extends Controller
     public function index(Request $request)
     {
         $query = Ouvrier::withCount(['pointages'])
+            ->with('absenceActuelle')
             ->withTrashed(false);
 
         if ($request->filled('q')) {

@@ -73,10 +73,20 @@
                     <td class="px-4 py-3 text-center">
                         @if(! $ouvrier->actif)
                             <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-gray-200 text-gray-500">Désactivé</span>
-                        @elseif($ouvrier->est_disponible)
+                        @elseif(! $ouvrier->absenceActuelle)
                             <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-700">Disponible</span>
                         @else
-                            <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-orange-50 text-orange-600">En absence</span>
+                            @php $abs = $ouvrier->absenceActuelle; @endphp
+                            <span class="inline-block px-2 py-0.5 rounded-full text-xs
+                                {{ in_array($abs->type, ['maladie','accident_travail'])
+                                    ? 'bg-red-50 text-red-600'
+                                    : ($abs->type === 'conge'
+                                        ? 'bg-sky-50 text-sky-600'
+                                        : ($abs->type === 'repos_compensatoire'
+                                            ? 'bg-blue-50 text-blue-700'
+                                            : 'bg-orange-50 text-orange-600')) }}">
+                                {{ $abs->libelle_type }}
+                            </span>
                         @endif
                     </td>
                     <td class="px-4 py-3 text-right text-gray-500">{{ $ouvrier->pointages_count }}</td>

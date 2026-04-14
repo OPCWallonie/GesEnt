@@ -44,6 +44,14 @@ class Ouvrier extends Model
         return $this->hasMany(Certification::class)->orderBy('type');
     }
 
+    // Absence en cours aujourd'hui (eager-loadable sans N+1)
+    public function absenceActuelle()
+    {
+        return $this->hasOne(Absence::class)
+            ->whereDate('date_debut', '<=', now())
+            ->whereDate('date_fin', '>=', now());
+    }
+
     // Certifications expirées ou expirant dans les 90 jours
     public function certificationsARenouveler()
     {
