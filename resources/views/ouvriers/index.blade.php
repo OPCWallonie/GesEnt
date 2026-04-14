@@ -23,15 +23,15 @@
         </select>
 
         <label class="flex items-center gap-2 text-sm text-gray-600">
-            <input type="checkbox" name="actifs_seulement" value="1" @checked(request('actifs_seulement'))
+            <input type="checkbox" name="desactives" value="1" @checked(request('desactives'))
                    class="rounded border-gray-300 text-blue-600">
-            Actifs seulement
+            Afficher les désactivés (licenciés / partis)
         </label>
 
         <button type="submit" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm px-4 py-1.5 rounded-lg transition">
             Filtrer
         </button>
-        @if(request()->anyFilled(['q','categorie','actifs_seulement']))
+        @if(request()->anyFilled(['q','categorie','desactives']))
             <a href="{{ route('ouvriers.index') }}" class="text-sm text-gray-400 hover:text-gray-600 py-1.5">Réinitialiser</a>
         @endif
     </form>
@@ -72,7 +72,7 @@
                     <td class="px-4 py-3 text-center text-gray-500">{{ $ouvrier->date_entree->format('d/m/Y') }}</td>
                     <td class="px-4 py-3 text-center">
                         @if(! $ouvrier->actif)
-                            <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">Inactif</span>
+                            <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-gray-200 text-gray-500">Désactivé</span>
                         @elseif($ouvrier->est_disponible)
                             <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-700">Disponible</span>
                         @else

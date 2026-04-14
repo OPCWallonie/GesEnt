@@ -22,7 +22,7 @@ class OuvrierController extends Controller
             $query->where('categorie', $request->categorie);
         }
 
-        if ($request->boolean('actifs_seulement')) {
+        if (! $request->boolean('desactives')) {
             $query->where('actif', true);
         }
 
