@@ -21,7 +21,14 @@ class PointageController extends Controller
 
         $jours = collect(range(0, 4))->map(fn($i) => $lundi->copy()->addDays($i));
 
+        $vendredi = $lundi->copy()->addDays(4);
+
+        // Ouvriers actifs, sauf ceux absents sur TOUTE la semaine affichée
         $ouvriers = Ouvrier::where('actif', true)
+            ->whereDoesntHave('absences', fn($q) => $q
+                ->where('date_debut', '<=', $lundi->toDateString())
+                ->where('date_fin', '>=', $vendredi->toDateString())
+            )
             ->orderBy('nom')->orderBy('prenom')
             ->get();
 

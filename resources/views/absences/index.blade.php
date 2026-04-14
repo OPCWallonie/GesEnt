@@ -20,7 +20,9 @@
         <select name="ouvrier_id" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
             <option value="">Tous les ouvriers</option>
             @foreach($ouvriers as $o)
-                <option value="{{ $o->id }}" @selected(request('ouvrier_id') == $o->id)>{{ $o->nom_complet }}</option>
+                <option value="{{ $o->id }}" @selected(request('ouvrier_id') == $o->id)>
+                    {{ $o->nom_complet }}{{ $o->actif ? '' : ' (inactif)' }}
+                </option>
             @endforeach
         </select>
 

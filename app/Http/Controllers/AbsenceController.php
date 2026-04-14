@@ -25,7 +25,7 @@ class AbsenceController extends Controller
 
         $absences = $query->paginate(30)->withQueryString();
 
-        $ouvriers = Ouvrier::where('actif', true)->orderBy('nom')->get(['id', 'nom', 'prenom']);
+        $ouvriers = Ouvrier::orderBy('actif', 'desc')->orderBy('nom')->get(['id', 'nom', 'prenom', 'actif']);
 
         return view('absences.index', compact('absences', 'ouvriers', 'annee'));
     }
@@ -33,7 +33,7 @@ class AbsenceController extends Controller
     public function create(Request $request)
     {
         $absence  = new Absence(['date_debut' => today(), 'date_fin' => today(), 'justifie' => true]);
-        $ouvriers = Ouvrier::where('actif', true)->orderBy('nom')->get(['id', 'nom', 'prenom']);
+        $ouvriers = Ouvrier::orderBy('actif', 'desc')->orderBy('nom')->get(['id', 'nom', 'prenom', 'actif']);
         $ouvrierId = $request->ouvrier_id;
         return view('absences.edit', compact('absence', 'ouvriers', 'ouvrierId'));
     }
@@ -58,7 +58,7 @@ class AbsenceController extends Controller
 
     public function edit(Absence $absence)
     {
-        $ouvriers = Ouvrier::where('actif', true)->orderBy('nom')->get(['id', 'nom', 'prenom']);
+        $ouvriers = Ouvrier::orderBy('actif', 'desc')->orderBy('nom')->get(['id', 'nom', 'prenom', 'actif']);
         return view('absences.edit', compact('absence', 'ouvriers'));
     }
 

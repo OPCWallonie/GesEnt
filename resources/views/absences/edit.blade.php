@@ -24,7 +24,7 @@
                     @foreach($ouvriers as $o)
                         <option value="{{ $o->id }}"
                                 @selected(old('ouvrier_id', $absence->ouvrier_id ?? ($ouvrierId ?? null)) == $o->id)>
-                            {{ $o->nom_complet }}
+                            {{ $o->nom_complet }}{{ $o->actif ? '' : ' (inactif)' }}
                         </option>
                     @endforeach
                 </select>
