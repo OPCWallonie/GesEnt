@@ -3,10 +3,12 @@
         <div class="flex items-center justify-between">
             <span>{{ $ouvrier->nom_complet }}</span>
             <div class="flex items-center gap-2">
+                @if($ouvrier->est_planifiable)
                 <a href="{{ route('absences.create', ['ouvrier_id' => $ouvrier->id]) }}"
                    class="text-sm border border-orange-300 text-orange-600 px-3 py-1.5 rounded-lg hover:bg-orange-50 transition">
                     + Absence
                 </a>
+                @endif
                 <a href="{{ route('ouvriers.edit', $ouvrier) }}"
                    class="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition">
                     Modifier
@@ -14,6 +16,24 @@
             </div>
         </div>
     </x-slot>
+
+    {{-- Bandeau inactif --}}
+    @if(! $ouvrier->actif)
+    <div class="bg-gray-100 border border-gray-300 rounded-xl px-5 py-3 mb-4 flex items-center gap-3 text-sm text-gray-700">
+        <svg class="w-5 h-5 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span>
+            <span class="font-semibold">Inactif</span>
+            @if($ouvrier->date_sortie)
+                depuis le {{ $ouvrier->date_sortie->format('d/m/Y') }}
+            @endif
+            @if($ouvrier->motif_sortie)
+                — Motif : {{ \App\Models\Ouvrier::MOTIFS_SORTIE[$ouvrier->motif_sortie] ?? $ouvrier->motif_sortie }}
+            @endif
+        </span>
+    </div>
+    @endif
 
     {{-- Alerte certifications --}}
     @if($certificationsAlerte->isNotEmpty())
@@ -42,13 +62,26 @@
         {{-- Colonne gauche : infos --}}
         <div class="space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-3">
+                @php
+                    $typeBadge = match($ouvrier->type_personnel) {
+                        'ouvrier'         => 'bg-blue-50 text-blue-700',
+                        'employe_terrain' => 'bg-violet-50 text-violet-700',
+                        'employe_admin'   => 'bg-gray-100 text-gray-600',
+                        'direction'       => 'bg-amber-50 text-amber-700',
+                        default           => 'bg-gray-100 text-gray-500',
+                    };
+                    $typeLabel = \App\Models\Ouvrier::TYPES_PERSONNEL[$ouvrier->type_personnel] ?? $ouvrier->type_personnel;
+                @endphp
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-lg">
                         {{ mb_strtoupper(mb_substr($ouvrier->prenom, 0, 1) . mb_substr($ouvrier->nom, 0, 1)) }}
                     </div>
                     <div>
                         <div class="font-semibold text-gray-800">{{ $ouvrier->nom_complet }}</div>
-                        <div class="text-xs text-gray-400">CP124 – Catégorie {{ $ouvrier->categorie }} · {{ $ouvrier->anciennete }} an{{ $ouvrier->anciennete > 1 ? 's' : '' }} d'ancienneté</div>
+                        <div class="flex items-center gap-1 mt-0.5">
+                            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium {{ $typeBadge }}">{{ $typeLabel }}</span>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ $ouvrier->label_cp }} · {{ $ouvrier->anciennete }} an{{ $ouvrier->anciennete > 1 ? 's' : '' }} d'ancienneté</div>
                     </div>
                 </div>
 
@@ -63,9 +96,18 @@
                         <span class="text-gray-400 w-4">☎</span>{{ $ouvrier->telephone }}
                     </div>
                     @endif
+
+                    @if($ouvrier->cout_horaire > 0)
                     <div class="flex items-center gap-2 text-gray-600">
                         <span class="text-gray-400 w-4">€</span>{{ number_format($ouvrier->cout_horaire, 2, ',', ' ') }} €/h
                     </div>
+                    @elseif($ouvrier->cout_mensuel > 0)
+                    <div class="flex items-center gap-2 text-gray-600">
+                        <span class="text-gray-400 w-4">€</span>{{ number_format($ouvrier->cout_mensuel, 0, ',', ' ') }} €/mois
+                        <span class="text-xs text-gray-400">(≈ {{ number_format($ouvrier->cout_horaire_effectif, 2, ',', ' ') }} €/h)</span>
+                    </div>
+                    @endif
+
                     <div class="flex items-center gap-2 text-gray-600">
                         <span class="text-gray-400 w-4">↗</span>Entrée le {{ $ouvrier->date_entree->format('d/m/Y') }}
                     </div>
@@ -83,6 +125,7 @@
             </div>
 
             {{-- KPIs --}}
+            @if($ouvrier->est_planifiable)
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <div class="text-xs text-gray-400 mb-1">Heures cette semaine</div>
@@ -99,6 +142,20 @@
                     </div>
                 </div>
             </div>
+            @else
+            {{-- Employés admin / direction : coût mensuel en frais généraux --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-4">
+                <div class="text-xs text-gray-400 mb-1">Coût mensuel</div>
+                @if($ouvrier->cout_mensuel > 0)
+                    <div class="text-xl font-bold text-gray-800">{{ number_format($ouvrier->cout_mensuel, 0, ',', ' ') }} €/mois</div>
+                @elseif($ouvrier->cout_horaire > 0)
+                    <div class="text-xl font-bold text-gray-800">{{ number_format($ouvrier->cout_horaire, 2, ',', ' ') }} €/h</div>
+                @else
+                    <div class="text-gray-400 text-sm">Non renseigné</div>
+                @endif
+                <p class="text-xs text-gray-400 mt-1">Coût réparti en frais généraux</p>
+            </div>
+            @endif
 
             {{-- Absences actives --}}
             @if($absencesActives->isNotEmpty())
@@ -141,9 +198,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2 font-medium text-gray-800">{{ $cert->libelle_type }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ $cert->date_obtention->format('d/m/Y') }}</td>
-                            <td class="px-4 py-2 text-gray-500">
-                                {{ $cert->date_expiration ? $cert->date_expiration->format('d/m/Y') : '—' }}
-                            </td>
+                            <td class="px-4 py-2 text-gray-500">{{ $cert->date_expiration ? $cert->date_expiration->format('d/m/Y') : '—' }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ $cert->organisme ?: '—' }}</td>
                             <td class="px-4 py-2">
                                 @if($cert->est_expiree)
@@ -161,8 +216,8 @@
                 @endif
             </div>
 
-            {{-- Bradford Factor & résumé absences --}}
-            @if($resumeAbsences->isNotEmpty() || $bradfordFactor > 0)
+            {{-- Bradford Factor & résumé absences (uniquement pour personnel planifiable) --}}
+            @if($ouvrier->est_planifiable && ($resumeAbsences->isNotEmpty() || $bradfordFactor > 0))
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-semibold text-gray-700 text-sm">Absences {{ now()->year }}</h3>
@@ -185,7 +240,8 @@
             </div>
             @endif
 
-            {{-- Derniers pointages --}}
+            {{-- Derniers pointages (uniquement pour personnel planifiable) --}}
+            @if($ouvrier->est_planifiable)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
                     <h3 class="font-semibold text-gray-700 text-sm">Derniers pointages</h3>
@@ -224,6 +280,8 @@
                 </table>
                 @endif
             </div>
+            @endif
+
         </div>
     </div>
 </x-app-layout>

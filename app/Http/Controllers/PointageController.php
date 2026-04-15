@@ -24,8 +24,10 @@ class PointageController extends Controller
 
         $vendredi = $lundi->copy()->addDays(4);
 
-        // Ouvriers actifs, sauf ceux absents sur TOUTE la semaine affichée
-        $ouvriers = Ouvrier::where('actif', true)
+        // Personnel planifiable (ouvriers + employés terrain), actifs,
+        // sauf ceux absents sur TOUTE la semaine affichée
+        $ouvriers = Ouvrier::planifiable()
+            ->where('actif', true)
             ->whereDoesntHave('absences', fn($q) => $q
                 ->where('date_debut', '<=', $lundi->toDateString())
                 ->where('date_fin', '>=', $vendredi->toDateString())
@@ -76,8 +78,8 @@ class PointageController extends Controller
 
         $data['heures_sup'] ??= 0;
 
-        // Copie snapshot cout_horaire
-        $data['cout_horaire'] = Ouvrier::find($data['ouvrier_id'])?->cout_horaire ?? 0;
+        // Snapshot du coût horaire effectif (direct ou converti depuis le mensuel)
+        $data['cout_horaire'] = Ouvrier::find($data['ouvrier_id'])?->cout_horaire_effectif ?? 0;
 
         Pointage::updateOrCreate(
             ['ouvrier_id' => $data['ouvrier_id'], 'date' => $data['date'], 'chantier_id' => $data['chantier_id']],
@@ -109,8 +111,8 @@ class PointageController extends Controller
             $vendrediPrec->toDateString(),
         ])->get();
 
-        // Ouvriers actifs indexés par id (pour le cout_horaire à jour)
-        $ouvrierActifs = Ouvrier::where('actif', true)->get()->keyBy('id');
+        // Personnel planifiable actif indexé par id (pour le cout_horaire_effectif à jour)
+        $ouvrierActifs = Ouvrier::planifiable()->where('actif', true)->get()->keyBy('id');
 
         $copies = 0;
         foreach ($precedents as $p) {
@@ -135,7 +137,7 @@ class PointageController extends Controller
                     'date'         => $nouvelleDate,
                     'heures'       => $p->heures,
                     'heures_sup'   => $p->heures_sup,
-                    'cout_horaire' => $ouvrierActifs[$p->ouvrier_id]->cout_horaire,
+                    'cout_horaire' => $ouvrierActifs[$p->ouvrier_id]->cout_horaire_effectif,
                     'notes'        => $p->notes,
                 ]);
                 $copies++;

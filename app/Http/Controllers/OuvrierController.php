@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Certification;
 use App\Models\Ouvrier;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class OuvrierController extends Controller
 {
@@ -17,6 +18,14 @@ class OuvrierController extends Controller
         if ($request->filled('q')) {
             $q = $request->q;
             $query->where(fn($s) => $s->where('nom', 'like', "%$q%")->orWhere('prenom', 'like', "%$q%"));
+        }
+
+        if ($request->filled('type_personnel')) {
+            $query->where('type_personnel', $request->type_personnel);
+        }
+
+        if ($request->filled('commission_paritaire')) {
+            $query->where('commission_paritaire', $request->commission_paritaire);
         }
 
         if ($request->filled('categorie')) {
@@ -34,58 +43,59 @@ class OuvrierController extends Controller
 
     public function create()
     {
-        $ouvrier = new Ouvrier(['date_entree' => today()]);
+        $ouvrier = new Ouvrier([
+            'date_entree'          => today(),
+            'type_personnel'       => 'ouvrier',
+            'commission_paritaire' => 'CP124',
+        ]);
         $certificationTypes = Certification::TYPES;
         return view('ouvriers.edit', compact('ouvrier', 'certificationTypes'));
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'nom'             => 'required|string|max:100',
-            'prenom'          => 'required|string|max:100',
-            'numero_national' => 'nullable|string|max:20|unique:ouvriers,numero_national',
-            'categorie'       => 'required|in:' . implode(',', \App\Models\Ouvrier::CATEGORIES),
-            'cout_horaire'    => 'required|numeric|min:0',
-            'date_entree'     => 'required|date',
-            'date_sortie'     => 'nullable|date|after_or_equal:date_entree',
-            'telephone'       => 'nullable|string|max:20',
-            'email'           => 'nullable|email|max:100',
-            'notes'           => 'nullable|string',
-            'metier'          => 'nullable|string|max:100',
-        ]);
+        $data = $this->validatePersonnel($request);
 
         $data['actif'] = $request->boolean('actif', true);
-        $ouvrier = Ouvrier::create($data);
 
+        // Désactivation : date et motif obligatoires
+        if (! $data['actif']) {
+            $request->validate([
+                'date_sortie'   => 'required|date',
+                'motif_sortie'  => ['required', Rule::in(array_keys(Ouvrier::MOTIFS_SORTIE))],
+            ]);
+            $data['date_sortie']  = $request->date_sortie;
+            $data['motif_sortie'] = $request->motif_sortie;
+        } else {
+            $data['date_sortie']  = null;
+            $data['motif_sortie'] = null;
+        }
+
+        $ouvrier = Ouvrier::create($data);
         $this->syncCertifications($ouvrier, $request->input('certifications', []));
 
         return redirect()->route('ouvriers.show', $ouvrier)
-            ->with('success', "Ouvrier {$ouvrier->nom_complet} créé.");
+            ->with('success', "Membre du personnel {$ouvrier->nom_complet} créé.");
     }
 
     public function show(Ouvrier $ouvrier)
     {
         $ouvrier->load(['pointages.chantier', 'absences', 'certifications']);
 
-        // Semaine en cours pour le résumé
         $lundi    = now()->startOfWeek();
         $heureSem = $ouvrier->pointages()
             ->whereBetween('date', [$lundi, $lundi->copy()->addDays(6)])
             ->selectRaw('SUM(heures + heures_sup) as total')
             ->value('total') ?? 0;
 
-        // Coût YTD
         $coutAnnee = $ouvrier->coutTotal(now()->year);
 
-        // Derniers pointages
         $derniersPointages = $ouvrier->pointages()
             ->with('chantier')
             ->orderByDesc('date')
             ->limit(20)
             ->get();
 
-        // Absences en cours / à venir
         $absencesActives = $ouvrier->absences()
             ->where('date_fin', '>=', today())
             ->orderBy('date_debut')
@@ -93,21 +103,18 @@ class OuvrierController extends Controller
 
         $reposRestants = $ouvrier->reposCompensatoiresRestants(now()->year);
 
-        // Résumé absences par type (année en cours)
         $resumeAbsences = $ouvrier->absences()
             ->whereYear('date_debut', now()->year)
             ->get()
             ->groupBy('type')
             ->map(fn($groupe) => [
-                'count'  => $groupe->count(),
-                'jours'  => $groupe->sum(fn($a) => $a->nb_jours),
+                'count'   => $groupe->count(),
+                'jours'   => $groupe->sum(fn($a) => $a->nb_jours),
                 'libelle' => $groupe->first()->libelle_type,
             ]);
 
-        // Bradford Factor (maladie uniquement)
         $bradfordFactor = $ouvrier->bradfordFactor(now()->year);
 
-        // Certifications à renouveler
         $certificationsAlerte = $ouvrier->certifications
             ->filter(fn($c) => $c->est_expiree || $c->expire_bientot);
 
@@ -127,39 +134,80 @@ class OuvrierController extends Controller
 
     public function update(Request $request, Ouvrier $ouvrier)
     {
-        $data = $request->validate([
-            'nom'             => 'required|string|max:100',
-            'prenom'          => 'required|string|max:100',
-            'numero_national' => "nullable|string|max:20|unique:ouvriers,numero_national,{$ouvrier->id}",
-            'categorie'       => 'required|in:' . implode(',', \App\Models\Ouvrier::CATEGORIES),
-            'cout_horaire'    => 'required|numeric|min:0',
-            'date_entree'     => 'required|date',
-            'date_sortie'     => 'nullable|date|after_or_equal:date_entree',
-            'telephone'       => 'nullable|string|max:20',
-            'email'           => 'nullable|email|max:100',
-            'notes'           => 'nullable|string',
-            'metier'          => 'nullable|string|max:100',
-        ]);
+        $data = $this->validatePersonnel($request, $ouvrier->id);
 
         $data['actif'] = $request->boolean('actif', true);
-        $ouvrier->update($data);
 
+        if (! $data['actif']) {
+            $request->validate([
+                'date_sortie'   => 'required|date',
+                'motif_sortie'  => ['required', Rule::in(array_keys(Ouvrier::MOTIFS_SORTIE))],
+            ]);
+            $data['date_sortie']  = $request->date_sortie;
+            $data['motif_sortie'] = $request->motif_sortie;
+        } else {
+            // Réactivation : nettoyer les champs de sortie
+            $data['date_sortie']  = null;
+            $data['motif_sortie'] = null;
+        }
+
+        $ouvrier->update($data);
         $this->syncCertifications($ouvrier, $request->input('certifications', []));
 
         return redirect()->route('ouvriers.show', $ouvrier)
-            ->with('success', 'Ouvrier mis à jour.');
+            ->with('success', 'Membre du personnel mis à jour.');
     }
 
     public function destroy(Ouvrier $ouvrier)
     {
         $ouvrier->delete();
         return redirect()->route('ouvriers.index')
-            ->with('success', 'Ouvrier archivé.');
+            ->with('success', 'Membre du personnel archivé.');
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────
+
+    /**
+     * Validation commune store/update.
+     * $ouvrierId fourni pour l'unicité du numéro national en update.
+     */
+    private function validatePersonnel(Request $request, ?int $ouvrierId = null): array
+    {
+        $typePersonnel = $request->input('type_personnel', 'ouvrier');
+        $cp            = $request->input('commission_paritaire', 'CP124');
+
+        $data = $request->validate([
+            'type_personnel'       => ['required', Rule::in(array_keys(Ouvrier::TYPES_PERSONNEL))],
+            'nom'                  => 'required|string|max:100',
+            'prenom'               => 'required|string|max:100',
+            'numero_national'      => [
+                'nullable', 'string', 'max:20',
+                $ouvrierId
+                    ? Rule::unique('ouvriers', 'numero_national')->ignore($ouvrierId)
+                    : Rule::unique('ouvriers', 'numero_national'),
+            ],
+            'commission_paritaire' => ['required', Rule::in(array_keys(Ouvrier::COMMISSIONS_PARITAIRES))],
+            'categorie'            => 'nullable|string|max:10',
+            'cout_horaire'         => 'nullable|numeric|min:0',
+            'cout_mensuel'         => 'nullable|numeric|min:0',
+            'date_entree'          => 'required|date',
+            'telephone'            => 'nullable|string|max:20',
+            'email'                => 'nullable|email|max:100',
+            'notes'                => 'nullable|string',
+            'metier'               => 'nullable|string|max:100',
+        ]);
+
+        // Catégorie valide pour la CP choisie
+        $cpCats = Ouvrier::CATEGORIES_PAR_CP[$cp] ?? [];
+        if (! empty($cpCats) && ! empty($data['categorie']) && ! in_array($data['categorie'], $cpCats)) {
+            $data['categorie'] = null;
+        }
+
+        return $data;
     }
 
     private function syncCertifications(Ouvrier $ouvrier, array $certifications): void
     {
-        // IDs soumis (existants)
         $idsGardes = [];
 
         foreach ($certifications as $row) {
@@ -167,7 +215,6 @@ class OuvrierController extends Controller
                 continue;
             }
 
-            // Validation minimale
             $type           = $row['type'];
             $dateObtention  = $row['date_obtention'] ?? null;
             $dateExpiration = $row['date_expiration'] ?? null ?: null;
@@ -177,59 +224,53 @@ class OuvrierController extends Controller
             }
 
             if (! empty($row['id'])) {
-                // Mise à jour
                 $cert = $ouvrier->certifications()->find($row['id']);
                 if ($cert) {
                     $cert->update([
-                        'type'             => $type,
-                        'date_obtention'   => $dateObtention,
-                        'date_expiration'  => $dateExpiration,
-                        'organisme'        => $row['organisme'] ?? null,
-                        'numero_certificat'=> $row['numero_certificat'] ?? null,
-                        'notes'            => $row['notes'] ?? null,
+                        'type'              => $type,
+                        'date_obtention'    => $dateObtention,
+                        'date_expiration'   => $dateExpiration,
+                        'organisme'         => $row['organisme'] ?? null,
+                        'numero_certificat' => $row['numero_certificat'] ?? null,
+                        'notes'             => $row['notes'] ?? null,
                     ]);
                     $idsGardes[] = $cert->id;
                 }
             } else {
-                // Création (updateOrCreate sur type pour respecter la contrainte unique)
                 $cert = $ouvrier->certifications()->updateOrCreate(
                     ['type' => $type],
                     [
-                        'date_obtention'   => $dateObtention,
-                        'date_expiration'  => $dateExpiration,
-                        'organisme'        => $row['organisme'] ?? null,
-                        'numero_certificat'=> $row['numero_certificat'] ?? null,
-                        'notes'            => $row['notes'] ?? null,
+                        'date_obtention'    => $dateObtention,
+                        'date_expiration'   => $dateExpiration,
+                        'organisme'         => $row['organisme'] ?? null,
+                        'numero_certificat' => $row['numero_certificat'] ?? null,
+                        'notes'             => $row['notes'] ?? null,
                     ]
                 );
                 $idsGardes[] = $cert->id;
             }
         }
 
-        // Supprimer les certifications qui n'ont pas été soumises
         if (! empty($idsGardes)) {
             $ouvrier->certifications()->whereNotIn('id', $idsGardes)->delete();
-        } else {
-            // Aucune certification soumise = tout supprimer (si le formulaire était vide)
-            // On ne supprime que si le champ certifications était explicitement soumis
-            // (le tableau peut être absent si JS désactivé — dans ce cas on ne touche pas)
         }
     }
 
     public function apiSearch(Request $request)
     {
-        $q       = $request->get('q', '');
-        $actif   = $request->boolean('actif', true);
+        $q     = $request->get('q', '');
+        $actif = $request->boolean('actif', true);
+
         $results = Ouvrier::where('actif', $actif)
             ->where(fn($s) => $s->where('nom', 'like', "%$q%")->orWhere('prenom', 'like', "%$q%"))
             ->orderBy('nom')->orderBy('prenom')
             ->limit(20)
-            ->get(['id', 'nom', 'prenom', 'categorie', 'cout_horaire'])
+            ->get(['id', 'nom', 'prenom', 'categorie', 'cout_horaire', 'cout_mensuel'])
             ->map(fn($o) => [
-                'id'           => $o->id,
-                'nom_complet'  => $o->nom_complet,
-                'categorie'    => $o->categorie,
-                'cout_horaire' => $o->cout_horaire,
+                'id'            => $o->id,
+                'nom_complet'   => $o->nom_complet,
+                'categorie'     => $o->categorie,
+                'cout_horaire'  => $o->cout_horaire_effectif,
             ]);
 
         return response()->json($results);
