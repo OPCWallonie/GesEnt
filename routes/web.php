@@ -33,6 +33,23 @@ use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// Contraintes globales : tous les paramètres {id} ne peuvent être que numériques,
+// ce qui évite que les routes show interceptent les routes /create ou /edit.
+Route::patterns([
+    'ouvrier'      => '[0-9]+',
+    'client'       => '[0-9]+',
+    'chantier'     => '[0-9]+',
+    'produit'      => '[0-9]+',
+    'fournisseur'  => '[0-9]+',
+    'devis'        => '[0-9]+',
+    'bonCommande'  => '[0-9]+',
+    'facture'      => '[0-9]+',
+    'factureAchat' => '[0-9]+',
+    'avoir'        => '[0-9]+',
+    'absence'      => '[0-9]+',
+    'kit'          => '[0-9]+',
+]);
+
 Route::get('/', fn() => redirect()->route('dashboard'));
 
 // Webhook Peppol — réception factures entrantes (public, sans CSRF, token custom)
