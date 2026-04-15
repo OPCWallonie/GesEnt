@@ -135,12 +135,32 @@
                     <div class="text-xs text-gray-400 mb-1">Coût {{ now()->year }}</div>
                     <div class="text-xl font-bold text-gray-800">{{ number_format($coutAnnee, 0, ',', ' ') }} €</div>
                 </div>
+                @php
+                    $quota    = $ouvrier->quotaRcAnnuel();
+                    $utilises = $ouvrier->reposCompensatoiresUtilises(now()->year);
+                    $rcPct    = $quota > 0 ? min(100, round(($utilises / $quota) * 100)) : 0;
+                @endphp
+                @if($quota > 0)
                 <div class="bg-white rounded-xl border border-gray-200 p-4 col-span-2">
-                    <div class="text-xs text-gray-400 mb-1">Repos compensatoires restants {{ now()->year }}</div>
-                    <div class="text-2xl font-bold {{ $reposRestants > 0 ? 'text-green-700' : 'text-gray-400' }}">
-                        {{ $reposRestants }} / 12 jours
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="text-xs text-gray-400">Repos compensatoires {{ now()->year }}</div>
+                        <a href="{{ route('repos-collectifs.index') }}" class="text-xs text-blue-400 hover:text-blue-600">
+                            Voir calendrier
+                        </a>
                     </div>
+                    <div class="flex items-end gap-2 mb-2">
+                        <span class="text-2xl font-bold {{ $reposRestants > 0 ? 'text-green-700' : 'text-gray-400' }}">
+                            {{ number_format($reposRestants, 1) }}
+                        </span>
+                        <span class="text-sm text-gray-400 mb-0.5">/ {{ $quota }} j restants</span>
+                    </div>
+                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full {{ $rcPct >= 100 ? 'bg-red-400' : ($rcPct >= 75 ? 'bg-orange-400' : 'bg-green-400') }}"
+                             style="width: {{ $rcPct }}%"></div>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">{{ number_format($utilises, 1) }} jour(s) utilisé(s)</div>
                 </div>
+                @endif
             </div>
             @else
             {{-- Employés admin / direction : coût mensuel en frais généraux --}}

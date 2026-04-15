@@ -72,6 +72,20 @@ class Ouvrier extends Model
         'autre' => 0.50,
     ];
 
+    /**
+     * Quota annuel de jours de repos compensatoire par CP.
+     * CP124 (Construction) : 12 jours réglementaires.
+     * Les autres CPs n'ont pas de RC collectifs au sens strict ; on met 0
+     * pour les exclure du calcul, sauf si la convention l'a prévu.
+     */
+    public const QUOTA_RC_PAR_CP = [
+        'CP124' => 12,
+        'CP149' => 12,
+        'CP111' => 12,
+        'CP200' => 0,
+        'autre'  => 0,
+    ];
+
     public const MOTIFS_SORTIE = [
         'licenciement' => 'Licenciement (C4)',
         'demission'    => 'Démission',
@@ -210,14 +224,32 @@ class Ouvrier extends Model
 
     public function reposCompensatoiresRestants(int $annee): float
     {
-        // CP124 : 12 jours de repos compensatoire par an
+        $quota = self::QUOTA_RC_PAR_CP[$this->commission_paritaire] ?? 0;
+        if ($quota === 0) {
+            return 0;
+        }
+
         $utilises = $this->absences()
             ->where('type', 'repos_compensatoire')
             ->whereYear('date_debut', $annee)
             ->get()
             ->sum(fn($a) => $a->nb_jours);
 
-        return max(0, 12 - $utilises);
+        return max(0, $quota - $utilises);
+    }
+
+    public function reposCompensatoiresUtilises(int $annee): float
+    {
+        return (float) $this->absences()
+            ->where('type', 'repos_compensatoire')
+            ->whereYear('date_debut', $annee)
+            ->get()
+            ->sum(fn($a) => $a->nb_jours);
+    }
+
+    public function quotaRcAnnuel(): int
+    {
+        return self::QUOTA_RC_PAR_CP[$this->commission_paritaire] ?? 0;
     }
 
     /**

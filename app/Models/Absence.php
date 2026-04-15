@@ -7,14 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class Absence extends Model
 {
     protected $fillable = [
-        'ouvrier_id', 'date_debut', 'date_fin',
-        'type', 'justifie', 'motif',
+        'ouvrier_id', 'repos_collectif_id', 'date_debut', 'date_fin',
+        'type', 'demi_journee', 'justifie', 'motif',
     ];
 
     protected $casts = [
-        'date_debut' => 'date',
-        'date_fin'   => 'date',
-        'justifie'   => 'boolean',
+        'date_debut'   => 'date',
+        'date_fin'     => 'date',
+        'justifie'     => 'boolean',
+        'demi_journee' => 'boolean',
     ];
 
     public const TYPES = [
@@ -31,10 +32,18 @@ class Absence extends Model
         return $this->belongsTo(Ouvrier::class);
     }
 
-    // ─── Accessors ───────────────────────────────────────────────
-    public function getNbJoursAttribute(): int
+    public function reposCollectif()
     {
-        return (int) $this->date_debut->diffInWeekdays($this->date_fin) + 1;
+        return $this->belongsTo(ReposCollectif::class);
+    }
+
+    // ─── Accessors ───────────────────────────────────────────────
+    public function getNbJoursAttribute(): float
+    {
+        if ($this->demi_journee) {
+            return 0.5;
+        }
+        return (float) ($this->date_debut->diffInWeekdays($this->date_fin) + 1);
     }
 
     public function getLibelleTypeAttribute(): string

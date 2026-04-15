@@ -75,6 +75,12 @@
                                ($absence->type === 'repos_compensatoire' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600'))) }}">
                             {{ $absence->libelle_type }}
                         </span>
+                        @if($absence->repos_collectif_id)
+                            <a href="{{ route('repos-collectifs.show', $absence->repos_collectif_id) }}"
+                               class="ml-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">
+                                (collectif)
+                            </a>
+                        @endif
                         @if($enCours)
                             <span class="ml-1 text-xs text-orange-500 font-medium">En cours</span>
                         @elseif($aVenir)
