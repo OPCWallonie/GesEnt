@@ -2,12 +2,12 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <span>Personnel</span>
-            @can('role:admin|comptable')
+            @hasanyrole('admin|comptable')
             <a href="{{ route('ouvriers.create') }}"
                class="inline-flex items-center gap-1 bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                 + Nouveau membre
             </a>
-            @endcan
+            @endhasanyrole
         </div>
     </x-slot>
 
