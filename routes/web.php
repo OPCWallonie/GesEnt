@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AvenantController;
 use App\Http\Controllers\AvoirController;
+use App\Http\Controllers\ChargeFonctionnementController;
 use App\Http\Controllers\BonCommandeController;
 use App\Http\Controllers\ChantierController;
 use App\Http\Controllers\ClientController;
@@ -290,6 +291,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/catalog/config', [CatalogController::class, 'updateConfig'])->name('catalog.config');
         Route::post('/catalog/vider', [CatalogController::class, 'vider'])->name('catalog.vider');
         Route::delete('/catalog/config', [CatalogController::class, 'deleteConfig'])->name('catalog.config.delete');
+
+        // Charges fixes & frais généraux
+        Route::resource('charges-fonctionnement', ChargeFonctionnementController::class)
+            ->except('show');
 
         // Ouvriers
         Route::get('ouvriers/create', [OuvrierController::class, 'create'])->name('ouvriers.create');

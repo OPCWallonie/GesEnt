@@ -752,6 +752,34 @@
                         </div>
                     </div>
                 </div>
+                </div>{{-- /bg-white OPC --}}
+
+                {{-- Calcul de rentabilité --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                    <h2 class="font-semibold text-gray-700 border-b pb-2">Calcul de rentabilité</h2>
+                    <p class="text-xs text-gray-500">
+                        Les frais généraux (personnel indirect + charges fixes) sont répartis sur les chantiers selon la méthode choisie.
+                        Ce paramètre affecte la colonne "Marge nette" dans les statistiques et les fiches chantier.
+                    </p>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Clé de répartition des frais généraux</label>
+                        @foreach(\App\Models\ParametresEntreprise::CLES_REPARTITION as $key => $label)
+                        <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer mb-2
+                            {{ old('cle_repartition_frais', $parametres->cle_repartition_frais ?? 'prorata_heures') === $key
+                                ? 'border-blue-400 bg-blue-50'
+                                : 'border-gray-200 hover:bg-gray-50' }}">
+                            <input type="radio" name="cle_repartition_frais" value="{{ $key }}"
+                                   @checked(old('cle_repartition_frais', $parametres->cle_repartition_frais ?? 'prorata_heures') === $key)
+                                   class="mt-0.5 text-blue-600">
+                            <span class="text-sm text-gray-700">{{ $label }}</span>
+                        </label>
+                        @endforeach
+                        <p class="text-xs text-gray-400 mt-2">
+                            Gérez vos charges fixes dans
+                            <a href="{{ route('charges-fonctionnement.index') }}" class="text-blue-500 hover:underline">Charges fixes &amp; frais généraux</a>.
+                        </p>
+                    </div>
+                </div>
 
             </div>
 

@@ -225,6 +225,26 @@
                         </dd>
                     </div>
                     @endif
+                    @if($quotePartFG > 0)
+                    <div class="flex justify-between text-xs text-gray-400 pt-1">
+                        <dt>Quote-part frais généraux</dt>
+                        <dd class="text-orange-500">− {{ number_format($quotePartFG, 0, ',', ' ') }} €</dd>
+                    </div>
+                    <div class="flex justify-between border-t border-gray-200 pt-2 mt-1">
+                        <dt class="font-semibold text-gray-700">Marge nette</dt>
+                        <dd class="font-bold {{ $margeNette >= 0 ? 'text-green-700' : 'text-red-600' }}">
+                            {{ number_format($margeNette, 0, ',', ' ') }} €
+                        </dd>
+                    </div>
+                    @if($tauxMargeNette !== null)
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400 text-xs">Taux net</dt>
+                        <dd class="font-medium text-xs {{ $tauxMargeNette >= 25 ? 'text-green-600' : ($tauxMargeNette >= 10 ? 'text-orange-600' : 'text-red-600') }}">
+                            {{ number_format($tauxMargeNette, 1) }}%
+                        </dd>
+                    </div>
+                    @endif
+                    @endif
                 </dl>
 
                 @if($pointagesParOuvrier->isNotEmpty())

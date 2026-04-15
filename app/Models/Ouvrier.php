@@ -59,6 +59,19 @@ class Ouvrier extends Model
     // Personnel apparaissant dans la grille de pointage
     public const TYPES_PLANIFIABLES = ['ouvrier', 'employe_terrain'];
 
+    /**
+     * Taux de majoration des heures supplémentaires par CP.
+     * En Belgique le taux légal est 50% pour toutes les CP listées ici,
+     * mais en le sortant en constante on peut l'ajuster par CP sans toucher la logique.
+     */
+    public const MAJORATION_HEURES_SUP = [
+        'CP124' => 0.50,
+        'CP149' => 0.50,
+        'CP111' => 0.50,
+        'CP200' => 0.50,
+        'autre' => 0.50,
+    ];
+
     public const MOTIFS_SORTIE = [
         'licenciement' => 'Licenciement (C4)',
         'demission'    => 'Démission',
@@ -156,6 +169,12 @@ class Ouvrier extends Model
             return round((float) $this->cout_mensuel / 164.54, 2);
         }
         return 0;
+    }
+
+    // Taux de majoration applicable à ce membre du personnel
+    public function getTauxMajorationAttribute(): float
+    {
+        return self::MAJORATION_HEURES_SUP[$this->commission_paritaire] ?? 0.50;
     }
 
     // Libellé CP + catégorie combinés (ex: "CP 124 — Construction – III")

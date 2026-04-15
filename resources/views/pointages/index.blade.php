@@ -214,7 +214,7 @@
         </div>
 
         <div class="mt-3 text-xs text-gray-400">
-            Les heures en orange dépassent 40h/semaine (CP124). Heures sup majorées à 50 % pour le calcul des coûts.
+            Les heures en orange dépassent 40h/semaine. Les heures sup sont majorées selon la CP de chaque membre du personnel.
         </div>
     </div>
 

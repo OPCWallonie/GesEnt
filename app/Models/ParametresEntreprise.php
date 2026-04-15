@@ -24,6 +24,13 @@ class ParametresEntreprise extends Model
         'mail_from_address', 'mail_from_name', 'mail_signature',
         'mail_template_devis', 'mail_template_facture', 'mail_template_bdc', 'mail_template_relance',
         'opc', 'opc_numero_affiliation',
+        'cle_repartition_frais',
+    ];
+
+    public const CLES_REPARTITION = [
+        'prorata_heures' => 'Au prorata des heures pointées par chantier',
+        'prorata_ca'     => 'Au prorata du CA HT par chantier',
+        'uniforme'       => 'Répartition uniforme sur les chantiers actifs',
     ];
 
     // Organismes Paritaires de la Construction en Belgique

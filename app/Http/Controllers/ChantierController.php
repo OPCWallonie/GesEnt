@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Chantier;
 use App\Models\Client;
+use App\Services\FraisGenerauxService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -169,11 +170,19 @@ class ChantierController extends Controller
             }
         }
 
-        // Main d'œuvre
-        $annee          = now()->year;
-        $coutMo         = $chantier->coutMainOeuvre($annee);
-        $margeReelle    = $chantier->margeReelle($annee);
+        // Main d'œuvre + frais généraux
+        $annee           = now()->year;
+        $coutMo          = $chantier->coutMainOeuvre($annee);
+        $margeReelle     = $chantier->margeReelle($annee);
         $tauxMargeReelle = $chantier->tauxMargeReelle($annee);
+
+        // Quote-part FG : calculée une seule fois via le service
+        $repartitionFG   = app(FraisGenerauxService::class)->repartir($annee);
+        $quotePartFG     = $repartitionFG[$chantier->id] ?? 0;
+        $margeNette      = $margeReelle - $quotePartFG;
+        $tauxMargeNette  = $chantier->totalVentes() > 0
+            ? ($margeNette / $chantier->totalVentes()) * 100
+            : null;
 
         $pointagesParOuvrier = $chantier->pointages()
             ->with('ouvrier')
@@ -193,7 +202,9 @@ class ChantierController extends Controller
             'chantier', 'devis', 'bonsCommande', 'factures', 'facturesAchat',
             'moisLabels', 'ventesParMois', 'achatsParMois', 'margeCumulee',
             'pctFacture', 'pctPaye',
-            'coutMo', 'margeReelle', 'tauxMargeReelle', 'pointagesParOuvrier', 'annee'
+            'coutMo', 'margeReelle', 'tauxMargeReelle',
+            'quotePartFG', 'margeNette', 'tauxMargeNette',
+            'pointagesParOuvrier', 'annee'
         ));
     }
 

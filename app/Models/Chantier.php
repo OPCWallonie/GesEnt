@@ -157,4 +157,32 @@ class Chantier extends Model
         $ventes = $this->totalVentes();
         return $ventes > 0 ? ($this->margeReelle($annee) / $ventes) * 100 : null;
     }
+
+    /**
+     * Quote-part des frais généraux répartis sur ce chantier pour l'année.
+     */
+    public function quotePartFraisGeneraux(?int $annee = null): float
+    {
+        $annee       = $annee ?? now()->year;
+        $repartition = app(\App\Services\FraisGenerauxService::class)->repartir($annee);
+        return $repartition[$this->id] ?? 0;
+    }
+
+    /**
+     * Marge nette = Marge réelle - Quote-part frais généraux.
+     */
+    public function margeNette(?int $annee = null): float
+    {
+        return $this->margeReelle($annee) - $this->quotePartFraisGeneraux($annee);
+    }
+
+    public function tauxMargeNette(?int $annee = null): ?float
+    {
+        $ventes = $this->totalVentes();
+        return $ventes > 0 ? ($this->margeNette($annee) / $ventes) * 100 : null;
+    }
+
+    // TODO Lot futur : méthode quotePartFraisGenerauxMensuel($annee, $mois)
+    // Répartition des coûts employe_admin + direction au prorata
+    // des heures pointées par chantier sur la période
 }

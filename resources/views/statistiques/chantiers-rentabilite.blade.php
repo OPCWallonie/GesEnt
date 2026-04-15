@@ -4,13 +4,16 @@
     @include('statistiques.partials.nav')
 
     @php
-        $totalVentes     = $chantiers->sum('ventes');
-        $totalAchats     = $chantiers->sum('achats');
-        $totalMo         = $chantiers->sum('cout_mo');
-        $totalMarge      = $chantiers->sum('marge');
+        $totalVentes      = $chantiers->sum('ventes');
+        $totalAchats      = $chantiers->sum('achats');
+        $totalMo          = $chantiers->sum('cout_mo');
+        $totalMarge       = $chantiers->sum('marge');
         $totalMargeReelle = $chantiers->sum('marge_reelle');
-        $tauxGlobal      = $totalVentes > 0 ? ($totalMarge / $totalVentes) * 100 : 0;
-        $tauxReelGlobal  = $totalVentes > 0 ? ($totalMargeReelle / $totalVentes) * 100 : 0;
+        $totalFG          = $chantiers->sum('quote_part_fg');
+        $totalMargeNette  = $chantiers->sum('marge_nette');
+        $tauxGlobal       = $totalVentes > 0 ? ($totalMarge / $totalVentes) * 100 : 0;
+        $tauxReelGlobal   = $totalVentes > 0 ? ($totalMargeReelle / $totalVentes) * 100 : 0;
+        $tauxNetGlobal    = $totalVentes > 0 ? ($totalMargeNette / $totalVentes) * 100 : 0;
     @endphp
 
     {{-- KPIs --}}
@@ -65,7 +68,9 @@
                         <th class="px-4 py-2 text-right">MO</th>
                         <th class="px-4 py-2 text-right">Marge brute</th>
                         <th class="px-4 py-2 text-right">Marge réelle</th>
-                        <th class="px-4 py-2 text-right">Taux réel</th>
+                        <th class="px-4 py-2 text-right">FG répartis</th>
+                        <th class="px-4 py-2 text-right">Marge nette</th>
+                        <th class="px-4 py-2 text-right">Taux net</th>
                         <th class="px-4 py-2 text-center">Avancement</th>
                     </tr>
                 </thead>
@@ -73,8 +78,9 @@
                     @foreach($chantiers as $i => $data)
                     @php
                         $tauxR   = $data['taux_marge_reelle'];
-                        $couleur = $tauxR === null ? 'text-gray-400' : ($tauxR >= 25 ? 'text-green-600' : ($tauxR >= 10 ? 'text-orange-600' : 'text-red-600'));
-                        $bg      = $tauxR === null ? '' : ($tauxR >= 25 ? 'bg-green-50' : ($tauxR >= 10 ? 'bg-orange-50' : 'bg-red-50'));
+                        $tauxN   = $data['taux_marge_nette'];
+                        $couleurN = $tauxN === null ? 'text-gray-400' : ($tauxN >= 25 ? 'text-green-600' : ($tauxN >= 10 ? 'text-orange-600' : 'text-red-600'));
+                        $bgN      = $tauxN === null ? '' : ($tauxN >= 25 ? 'bg-green-50' : ($tauxN >= 10 ? 'bg-orange-50' : 'bg-red-50'));
                     @endphp
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 text-gray-400 font-mono text-xs">{{ $i + 1 }}</td>
@@ -95,13 +101,19 @@
                         <td class="px-4 py-3 text-right font-medium {{ $data['marge'] >= 0 ? 'text-green-700' : 'text-red-600' }}">
                             {{ number_format($data['marge'], 0, ',', ' ') }} €
                         </td>
-                        <td class="px-4 py-3 text-right font-bold {{ $data['marge_reelle'] >= 0 ? 'text-green-700' : 'text-red-600' }}">
+                        <td class="px-4 py-3 text-right font-medium {{ $data['marge_reelle'] >= 0 ? 'text-green-600' : 'text-red-500' }}">
                             {{ number_format($data['marge_reelle'], 0, ',', ' ') }} €
                         </td>
+                        <td class="px-4 py-3 text-right text-xs {{ $data['quote_part_fg'] > 0 ? 'text-orange-400' : 'text-gray-300' }}">
+                            {{ $data['quote_part_fg'] > 0 ? '−'.number_format($data['quote_part_fg'], 0, ',', ' ').' €' : '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-right font-bold {{ $data['marge_nette'] >= 0 ? 'text-green-700' : 'text-red-600' }}">
+                            {{ number_format($data['marge_nette'], 0, ',', ' ') }} €
+                        </td>
                         <td class="px-4 py-3 text-right">
-                            @if($tauxR !== null)
-                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold {{ $bg }} {{ $couleur }}">
-                                    {{ number_format($tauxR, 1) }}%
+                            @if($tauxN !== null)
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold {{ $bgN }} {{ $couleurN }}">
+                                    {{ number_format($tauxN, 1) }}%
                                 </span>
                             @else
                                 <span class="text-gray-300 text-xs">—</span>
@@ -131,9 +143,13 @@
                             {{ $totalMo > 0 ? number_format($totalMo, 0, ',', ' ').' €' : '—' }}
                         </td>
                         <td class="px-4 py-3 text-right {{ $totalMarge >= 0 ? 'text-green-700' : 'text-red-600' }}">{{ number_format($totalMarge, 0, ',', ' ') }} €</td>
-                        <td class="px-4 py-3 text-right {{ $totalMargeReelle >= 0 ? 'text-green-700' : 'text-red-600' }}">{{ number_format($totalMargeReelle, 0, ',', ' ') }} €</td>
-                        <td class="px-4 py-3 text-right {{ $tauxReelGlobal >= 25 ? 'text-green-600' : ($tauxReelGlobal >= 10 ? 'text-orange-600' : 'text-red-600') }}">
-                            {{ number_format($tauxReelGlobal, 1) }}%
+                        <td class="px-4 py-3 text-right {{ $totalMargeReelle >= 0 ? 'text-green-600' : 'text-red-500' }}">{{ number_format($totalMargeReelle, 0, ',', ' ') }} €</td>
+                        <td class="px-4 py-3 text-right text-xs {{ $totalFG > 0 ? 'text-orange-400' : 'text-gray-300' }}">
+                            {{ $totalFG > 0 ? '−'.number_format($totalFG, 0, ',', ' ').' €' : '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-right {{ $totalMargeNette >= 0 ? 'text-green-700' : 'text-red-600' }}">{{ number_format($totalMargeNette, 0, ',', ' ') }} €</td>
+                        <td class="px-4 py-3 text-right {{ $tauxNetGlobal >= 25 ? 'text-green-600' : ($tauxNetGlobal >= 10 ? 'text-orange-600' : 'text-red-600') }}">
+                            {{ number_format($tauxNetGlobal, 1) }}%
                         </td>
                         <td></td>
                     </tr>

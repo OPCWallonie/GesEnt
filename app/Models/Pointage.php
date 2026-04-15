@@ -22,14 +22,24 @@ class Pointage extends Model
     protected static function booted(): void
     {
         $calculer = function (self $pointage) {
-            // Snapshot du coût horaire si pas fourni
+            $ouvrier = null;
+
+            // Snapshot du coût horaire effectif si pas encore fourni
             if (! $pointage->cout_horaire && $pointage->ouvrier_id) {
-                $pointage->cout_horaire = Ouvrier::find($pointage->ouvrier_id)?->cout_horaire ?? 0;
+                $ouvrier = Ouvrier::find($pointage->ouvrier_id);
+                $pointage->cout_horaire = $ouvrier?->cout_horaire_effectif ?? 0;
             }
-            // Heures sup majorées à 50 % (CP124)
+
+            // Taux de majoration selon la CP de l'ouvrier (défaut 50%)
+            $taux = 1.5;
+            if ($pointage->ouvrier_id) {
+                $ouvrier = $ouvrier ?? Ouvrier::find($pointage->ouvrier_id);
+                $taux = 1 + ($ouvrier?->taux_majoration ?? 0.50);
+            }
+
             $pointage->cout_total = round(
-                ($pointage->heures * $pointage->cout_horaire)
-                + ($pointage->heures_sup * $pointage->cout_horaire * 1.5),
+                ((float) $pointage->heures * (float) $pointage->cout_horaire)
+                + ((float) $pointage->heures_sup * (float) $pointage->cout_horaire * $taux),
                 2
             );
         };

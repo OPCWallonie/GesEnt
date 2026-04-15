@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Chantier;
 use App\Models\Client;
 use App\Models\Devis;
+use App\Services\FraisGenerauxService;
 use App\Models\BonCommande;
 use App\Models\Facture;
 use App\Models\FactureAchat;
@@ -227,15 +228,21 @@ class StatistiquesController extends Controller
     {
         $annee = now()->year;
 
+        // Calculer la répartition FG une seule fois pour éviter le N+1
+        $repartitionFG = app(FraisGenerauxService::class)->repartir($annee);
+
         $chantiers = Chantier::where('statut', '!=', 'archive')
             ->with('client')
             ->get()
-            ->map(function ($c) use ($annee) {
-                $ventes  = $c->totalVentes();
-                $achats  = $c->totalAchats();
-                $marge   = $ventes - $achats;
-                $coutMo  = $c->coutMainOeuvre($annee);
-                $margeRee = $marge - $coutMo;
+            ->map(function (Chantier $c) use ($annee, $repartitionFG) {
+                $ventes      = $c->totalVentes();
+                $achats      = $c->totalAchats();
+                $marge       = $ventes - $achats;
+                $coutMo      = $c->coutMainOeuvre($annee);
+                $margeReelle = $marge - $coutMo;
+                $quotePartFG = $repartitionFG[$c->id] ?? 0;
+                $margeNette  = $margeReelle - $quotePartFG;
+
                 return [
                     'chantier'          => $c,
                     'ventes'            => $ventes,
@@ -243,14 +250,17 @@ class StatistiquesController extends Controller
                     'marge'             => $marge,
                     'taux_marge'        => $ventes > 0 ? ($marge / $ventes) * 100 : null,
                     'cout_mo'           => $coutMo,
-                    'marge_reelle'      => $margeRee,
-                    'taux_marge_reelle' => $ventes > 0 ? ($margeRee / $ventes) * 100 : null,
+                    'marge_reelle'      => $margeReelle,
+                    'taux_marge_reelle' => $ventes > 0 ? ($margeReelle / $ventes) * 100 : null,
+                    'quote_part_fg'     => $quotePartFG,
+                    'marge_nette'       => $margeNette,
+                    'taux_marge_nette'  => $ventes > 0 ? ($margeNette / $ventes) * 100 : null,
                     'avancement'        => $c->avancement ?? 0,
                     'nb_factures'       => $c->factures()->count(),
                 ];
             })
             ->filter(fn($c) => $c['ventes'] > 0 || $c['achats'] > 0)
-            ->sortByDesc('marge')
+            ->sortByDesc('marge_nette')
             ->values();
 
         return view('statistiques.chantiers-rentabilite', compact('chantiers', 'annee'));
