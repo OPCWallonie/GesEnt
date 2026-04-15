@@ -79,9 +79,16 @@
                         <a href="{{ route('ouvriers.show', $ouvrier) }}" class="font-medium text-gray-800 hover:text-blue-600">
                             {{ $ouvrier->nom_complet }}
                         </a>
-                        @if($ouvrier->email)
-                            <div class="text-xs text-gray-400">{{ $ouvrier->email }}</div>
-                        @endif
+                        <div class="flex items-center gap-2 mt-0.5">
+                            @if($ouvrier->email)
+                                <span class="text-xs text-gray-400">{{ $ouvrier->email }}</span>
+                            @endif
+                            @if($ouvrier->heures_semaine && $ouvrier->heures_semaine != 40)
+                                <span class="text-xs text-violet-500 font-medium" title="Régime {{ number_format($ouvrier->heures_semaine, 1) }}h/semaine">
+                                    {{ number_format($ouvrier->heures_semaine, 1) }}h/sem
+                                </span>
+                            @endif
+                        </div>
                     </td>
                     <td class="px-4 py-3 text-center">
                         <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium {{ $typeBadge }}">

@@ -122,8 +122,20 @@
                 </div>
             </div>
 
-            {{-- Date d'entrée --}}
+            {{-- Heures par semaine --}}
             <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Heures / semaine <span class="text-red-500">*</span></label>
+                    <input type="number" name="heures_semaine" x-ref="heuresSemaine"
+                           value="{{ old('heures_semaine', $ouvrier->heures_semaine ?? 40) }}"
+                           @input="quotaRcPreview = calculerQuotaRC()"
+                           step="0.5" min="20" max="50" required
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none @error('heures_semaine') border-red-400 @enderror">
+                    <p class="text-xs mt-1" :class="quotaRcPreview.quota > 0 ? 'text-gray-400' : 'text-gray-300'">
+                        Quota RC : <span x-text="quotaRcPreview.quota + ' j/an'"></span>
+                        <span x-show="quotaRcPreview.plafonne" class="text-amber-500">(plafonné)</span>
+                    </p>
+                </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Date d'entrée <span class="text-red-500">*</span></label>
                     <input type="date" name="date_entree" value="{{ old('date_entree', $ouvrier->date_entree?->format('Y-m-d')) }}" required
@@ -292,6 +304,11 @@ function personnelForm(actifInit, cpInit, catInit, typeInit, categoriesParCp) {
         categorie: catInit,
         typePersonnel: typeInit,
         categoriesParCp: categoriesParCp,
+        quotaRcPreview: { quota: 0, plafonne: false },
+
+        init() {
+            this.quotaRcPreview = this.calculerQuotaRC();
+        },
 
         get categoriesDisponibles() {
             return this.categoriesParCp[this.cp] ?? [];
@@ -302,6 +319,20 @@ function personnelForm(actifInit, cpInit, catInit, typeInit, categoriesParCp) {
             if (! this.categoriesDisponibles.includes(this.categorie)) {
                 this.categorie = '';
             }
+            this.quotaRcPreview = this.calculerQuotaRC();
+        },
+
+        calculerQuotaRC() {
+            const h = parseFloat(this.$refs.heuresSemaine?.value ?? 40);
+            if (h <= 38) return { quota: 0, plafonne: false };
+            const hJour = h / 5;
+            const joursCalc = Math.floor((h - 38) * 52 / hJour);
+            const plafonds = { CP124: 12 };
+            const plafond = plafonds[this.cp] ?? null;
+            if (plafond !== null && joursCalc > plafond) {
+                return { quota: plafond, plafonne: true };
+            }
+            return { quota: joursCalc, plafonne: false };
         },
 
         coutHoraireEquivalent() {

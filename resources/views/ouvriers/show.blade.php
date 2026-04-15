@@ -111,6 +111,15 @@
                     <div class="flex items-center gap-2 text-gray-600">
                         <span class="text-gray-400 w-4">↗</span>Entrée le {{ $ouvrier->date_entree->format('d/m/Y') }}
                     </div>
+                    @if($ouvrier->heures_semaine)
+                    <div class="flex items-center gap-2 text-gray-600">
+                        <span class="text-gray-400 w-4">⏱</span>
+                        {{ number_format($ouvrier->heures_semaine, 1) }}h/semaine
+                        @if($ouvrier->quota_rc_annuel > 0)
+                            <span class="text-xs text-blue-500">→ {{ $ouvrier->quota_rc_annuel }} RC/an</span>
+                        @endif
+                    </div>
+                    @endif
                 </div>
 
                 <div class="pt-2 border-t border-gray-100">
@@ -136,7 +145,7 @@
                     <div class="text-xl font-bold text-gray-800">{{ number_format($coutAnnee, 0, ',', ' ') }} €</div>
                 </div>
                 @php
-                    $quota    = $ouvrier->quotaRcAnnuel();
+                    $quota    = $ouvrier->quota_rc_annuel;
                     $utilises = $ouvrier->reposCompensatoiresUtilises(now()->year);
                     $rcPct    = $quota > 0 ? min(100, round(($utilises / $quota) * 100)) : 0;
                 @endphp

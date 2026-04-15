@@ -13,7 +13,7 @@ class Ouvrier extends Model
     protected $fillable = [
         'type_personnel', 'nom', 'prenom', 'numero_national',
         'commission_paritaire', 'categorie',
-        'cout_horaire', 'cout_mensuel',
+        'cout_horaire', 'cout_mensuel', 'heures_semaine',
         'date_entree', 'date_sortie', 'motif_sortie',
         'actif', 'telephone', 'email', 'notes', 'metier', 'qualifications',
     ];
@@ -23,6 +23,7 @@ class Ouvrier extends Model
         'date_sortie'      => 'date',
         'cout_horaire'     => 'decimal:2',
         'cout_mensuel'     => 'decimal:2',
+        'heures_semaine'   => 'decimal:1',
         'actif'            => 'boolean',
         'qualifications'   => 'array',
         'numero_national'  => 'encrypted',
@@ -73,17 +74,15 @@ class Ouvrier extends Model
     ];
 
     /**
-     * Quota annuel de jours de repos compensatoire par CP.
-     * CP124 (Construction) : 12 jours réglementaires.
-     * Les autres CPs n'ont pas de RC collectifs au sens strict ; on met 0
-     * pour les exclure du calcul, sauf si la convention l'a prévu.
+     * Plafond sectoriel de jours RC pour certaines CPs.
+     * NULL = pas de plafond (formule brute s'applique).
      */
-    public const QUOTA_RC_PAR_CP = [
+    public const PLAFOND_RC_PAR_CP = [
         'CP124' => 12,
-        'CP149' => 12,
-        'CP111' => 12,
-        'CP200' => 0,
-        'autre'  => 0,
+        'CP149' => null,
+        'CP111' => null,
+        'CP200' => null,
+        'autre'  => null,
     ];
 
     public const MOTIFS_SORTIE = [
@@ -172,6 +171,40 @@ class Ouvrier extends Model
         return in_array($this->type_personnel, self::TYPES_PLANIFIABLES);
     }
 
+    // Heures par jour ouvré (régime normal 40h/5j = 8h, proportionnel sinon)
+    public function getHeuresJourAttribute(): float
+    {
+        return round((float) ($this->heures_semaine ?? 38) / 5, 2);
+    }
+
+    /**
+     * Quota annuel de jours RC, calculé dynamiquement à partir du régime horaire.
+     * Formule : (heures_hebdo - 38) × 52 / heures_par_jour, arrondi inférieur.
+     * CP124 : plafonné à 12 jours par convention sectorielle.
+     */
+    public function getQuotaRcAnnuelAttribute(): int
+    {
+        $heures = (float) ($this->heures_semaine ?? 38);
+
+        if ($heures <= 38) {
+            return 0;
+        }
+
+        $heuresJour = $this->heures_jour;
+        if ($heuresJour <= 0) {
+            return 0;
+        }
+
+        $joursCalcules = ($heures - 38) * 52 / $heuresJour;
+
+        $plafond = self::PLAFOND_RC_PAR_CP[$this->commission_paritaire] ?? null;
+        if ($plafond !== null) {
+            return min($plafond, (int) floor($joursCalcules));
+        }
+
+        return (int) floor($joursCalcules);
+    }
+
     // Coût horaire effectif : direct si renseigné, sinon converti depuis le mensuel
     // Base de conversion : 38h/semaine × 4,33 semaines = 164,54 h/mois
     public function getCoutHoraireEffectifAttribute(): float
@@ -224,7 +257,7 @@ class Ouvrier extends Model
 
     public function reposCompensatoiresRestants(int $annee): float
     {
-        $quota = self::QUOTA_RC_PAR_CP[$this->commission_paritaire] ?? 0;
+        $quota = $this->quota_rc_annuel;
         if ($quota === 0) {
             return 0;
         }
@@ -245,11 +278,6 @@ class Ouvrier extends Model
             ->whereYear('date_debut', $annee)
             ->get()
             ->sum(fn($a) => $a->nb_jours);
-    }
-
-    public function quotaRcAnnuel(): int
-    {
-        return self::QUOTA_RC_PAR_CP[$this->commission_paritaire] ?? 0;
     }
 
     /**

@@ -47,6 +47,7 @@ class OuvrierController extends Controller
             'date_entree'          => today(),
             'type_personnel'       => 'ouvrier',
             'commission_paritaire' => 'CP124',
+            'heures_semaine'       => 40,
         ]);
         $certificationTypes = Certification::TYPES;
         return view('ouvriers.edit', compact('ouvrier', 'certificationTypes'));
@@ -190,6 +191,7 @@ class OuvrierController extends Controller
             'categorie'            => 'nullable|string|max:10',
             'cout_horaire'         => 'nullable|numeric|min:0',
             'cout_mensuel'         => 'nullable|numeric|min:0',
+            'heures_semaine'       => 'required|numeric|min:20|max:50',
             'date_entree'          => 'required|date',
             'telephone'            => 'nullable|string|max:20',
             'email'                => 'nullable|email|max:100',
