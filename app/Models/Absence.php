@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Absence extends Model
 {
     protected $fillable = [
-        'ouvrier_id', 'repos_collectif_id', 'date_debut', 'date_fin',
+        'ouvrier_id', 'absence_collective_id', 'date_debut', 'date_fin',
         'type', 'demi_journee', 'justifie', 'motif',
     ];
 
@@ -20,25 +20,30 @@ class Absence extends Model
 
     public const TYPES = [
         'conge'               => 'Congé payé',
+        'conge_anciennete'    => 'Congé ancienneté / extra-légal',
         'maladie'             => 'Maladie',
         'accident_travail'    => 'Accident du travail',
         'repos_compensatoire' => 'Repos compensatoire',
+        'report_ferie'        => 'Report de jour férié',
+        'conge_entreprise'    => 'Congé d\'entreprise',
         'recup_heures_sup'    => 'Récup. heures sup',
         'autre'               => 'Autre',
     ];
 
     // ─── Relations ───────────────────────────────────────────────
+
     public function ouvrier()
     {
         return $this->belongsTo(Ouvrier::class);
     }
 
-    public function reposCollectif()
+    public function absenceCollective()
     {
-        return $this->belongsTo(ReposCollectif::class);
+        return $this->belongsTo(AbsenceCollective::class, 'absence_collective_id');
     }
 
     // ─── Accessors ───────────────────────────────────────────────
+
     public function getNbJoursAttribute(): float
     {
         if ($this->demi_journee) {

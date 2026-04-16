@@ -52,7 +52,7 @@
                             {{ $rc->demi_journee ? '(½ j)' : '' }}
                         </span>
                         @hasanyrole('admin|comptable')
-                        <a href="{{ route('repos-collectifs.show', $rc) }}"
+                        <a href="{{ route('absences-collectives.show', $rc) }}"
                            class="text-xs underline hover:text-amber-900 ml-3">
                             Appliquer →
                         </a>

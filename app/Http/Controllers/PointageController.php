@@ -6,7 +6,7 @@ use App\Models\Absence;
 use App\Models\Chantier;
 use App\Models\Ouvrier;
 use App\Models\Pointage;
-use App\Models\ReposCollectif;
+use App\Models\AbsenceCollective;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -59,8 +59,8 @@ class PointageController extends Controller
         $semainePrecedente = $lundi->copy()->subWeek()->format('Y-m-d');
         $semaineSuivante   = $lundi->copy()->addWeek()->format('Y-m-d');
 
-        // RC collectifs non encore appliqués prévus dans la semaine affichée
-        $reposCollectifsEnAttente = ReposCollectif::where('applique', false)
+        // Absences collectives non encore appliquées prévues dans la semaine affichée
+        $reposCollectifsEnAttente = AbsenceCollective::where('applique', false)
             ->whereBetween('date', [$lundi->toDateString(), $vendredi->toDateString()])
             ->orderBy('date')
             ->get();

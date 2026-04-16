@@ -28,7 +28,7 @@ use App\Http\Controllers\AbsenceController;
 use App\Http\Controllers\KitController;
 use App\Http\Controllers\OuvrierController;
 use App\Http\Controllers\PointageController;
-use App\Http\Controllers\ReposCollectifController;
+use App\Http\Controllers\AbsenceCollectiveController;
 use App\Http\Controllers\RelanceScenariosController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
@@ -50,7 +50,7 @@ Route::patterns([
     'avoir'        => '[0-9]+',
     'absence'        => '[0-9]+',
     'kit'            => '[0-9]+',
-    'reposCollectif' => '[0-9]+',
+    'absenceCollective' => '[0-9]+',
 ]);
 
 Route::get('/', fn() => redirect()->route('dashboard'));
@@ -122,9 +122,9 @@ Route::middleware(['auth'])->group(function () {
     // Absences
     Route::get('absences', [AbsenceController::class, 'index'])->name('absences.index');
 
-    // Repos compensatoires collectifs (lecture)
-    Route::get('repos-collectifs', [ReposCollectifController::class, 'index'])->name('repos-collectifs.index');
-    Route::get('repos-collectifs/{reposCollectif}', [ReposCollectifController::class, 'show'])->name('repos-collectifs.show');
+    // Absences collectives (lecture)
+    Route::get('absences-collectives', [AbsenceCollectiveController::class, 'index'])->name('absences-collectives.index');
+    Route::get('absences-collectives/{absenceCollective}', [AbsenceCollectiveController::class, 'show'])->name('absences-collectives.show');
 
     // Catalogue
     Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
@@ -322,14 +322,12 @@ Route::middleware(['auth'])->group(function () {
         Route::put('absences/{absence}', [AbsenceController::class, 'update'])->name('absences.update');
         Route::delete('absences/{absence}', [AbsenceController::class, 'destroy'])->name('absences.destroy');
 
-        // Repos compensatoires collectifs (écriture)
-        Route::get('repos-collectifs/create', [ReposCollectifController::class, 'create'])->name('repos-collectifs.create');
-        Route::post('repos-collectifs', [ReposCollectifController::class, 'store'])->name('repos-collectifs.store');
-        Route::post('repos-collectifs/{reposCollectif}/appliquer', [ReposCollectifController::class, 'appliquer'])->name('repos-collectifs.appliquer');
-        Route::post('repos-collectifs/{reposCollectif}/annuler', [ReposCollectifController::class, 'annuler'])->name('repos-collectifs.annuler');
-        Route::delete('repos-collectifs/{reposCollectif}', [ReposCollectifController::class, 'destroy'])->name('repos-collectifs.destroy');
-        Route::get('repos-collectifs/importer', [ReposCollectifController::class, 'importerForm'])->name('repos-collectifs.importer');
-        Route::post('repos-collectifs/importer', [ReposCollectifController::class, 'importer'])->name('repos-collectifs.importer.post');
+        // Absences collectives (écriture)
+        Route::get('absences-collectives/create', [AbsenceCollectiveController::class, 'create'])->name('absences-collectives.create');
+        Route::post('absences-collectives', [AbsenceCollectiveController::class, 'store'])->name('absences-collectives.store');
+        Route::post('absences-collectives/{absenceCollective}/appliquer', [AbsenceCollectiveController::class, 'appliquer'])->name('absences-collectives.appliquer');
+        Route::post('absences-collectives/{absenceCollective}/annuler', [AbsenceCollectiveController::class, 'annuler'])->name('absences-collectives.annuler');
+        Route::delete('absences-collectives/{absenceCollective}', [AbsenceCollectiveController::class, 'destroy'])->name('absences-collectives.destroy');
 
         // Exports
         Route::get('/export/factures', [ExportController::class, 'factures'])->name('export.factures');

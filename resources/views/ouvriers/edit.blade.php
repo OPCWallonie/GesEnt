@@ -143,6 +143,15 @@
                 </div>
             </div>
 
+            {{-- Jours de congés supplémentaires --}}
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Jours de congés supplémentaires</label>
+                <input type="number" name="jours_conges_supplementaires" min="0" max="20"
+                       value="{{ old('jours_conges_supplementaires', $ouvrier->jours_conges_supplementaires ?? 0) }}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <p class="text-xs text-gray-400 mt-1">Jours offerts en plus des 20 légaux (ancienneté, cadeau d'entreprise…).</p>
+            </div>
+
             {{-- Mode heures supplémentaires par défaut --}}
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-2">Heures sup. par défaut</label>

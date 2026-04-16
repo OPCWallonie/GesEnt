@@ -14,6 +14,7 @@ class Ouvrier extends Model
         'type_personnel', 'nom', 'prenom', 'numero_national',
         'commission_paritaire', 'categorie',
         'cout_horaire', 'cout_mensuel', 'heures_semaine', 'mode_heures_sup_defaut',
+        'jours_conges_supplementaires',
         'date_entree', 'date_sortie', 'motif_sortie',
         'actif', 'telephone', 'email', 'notes', 'metier', 'qualifications',
     ];
@@ -315,6 +316,51 @@ class Ouvrier extends Model
             $this->heuresRecuperablesAccumulees($annee) - $this->heuresRecupereesConsommees($annee),
             2
         );
+    }
+
+    // ─── Congés payés ────────────────────────────────────────────
+
+    /**
+     * Quota total de jours de congés payés = 20 légaux + jours supplémentaires.
+     */
+    public function getQuotaCongesPayesAttribute(): int
+    {
+        return 20 + (int) ($this->jours_conges_supplementaires ?? 0);
+    }
+
+    /**
+     * Jours de congés payés posés sur l'année (conge + conge_anciennete).
+     */
+    public function congesPayesUtilises(int $annee): float
+    {
+        return (float) $this->absences()
+            ->whereIn('type', ['conge', 'conge_anciennete'])
+            ->whereYear('date_debut', $annee)
+            ->get()
+            ->sum(fn($a) => $a->nb_jours);
+    }
+
+    public function congesPayesRestants(int $annee): float
+    {
+        return max(0, $this->quota_conges_payes - $this->congesPayesUtilises($annee));
+    }
+
+    public function congesLegauxUtilises(int $annee): float
+    {
+        return (float) $this->absences()
+            ->where('type', 'conge')
+            ->whereYear('date_debut', $annee)
+            ->get()
+            ->sum(fn($a) => $a->nb_jours);
+    }
+
+    public function congesAncienneteUtilises(int $annee): float
+    {
+        return (float) $this->absences()
+            ->where('type', 'conge_anciennete')
+            ->whereYear('date_debut', $annee)
+            ->get()
+            ->sum(fn($a) => $a->nb_jours);
     }
 
     /**

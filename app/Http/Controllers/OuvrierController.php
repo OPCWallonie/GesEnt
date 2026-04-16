@@ -122,11 +122,17 @@ class OuvrierController extends Controller
         $certificationsAlerte = $ouvrier->certifications
             ->filter(fn($c) => $c->est_expiree || $c->expire_bientot);
 
+        $congesPayesUtilises  = $ouvrier->congesPayesUtilises(now()->year);
+        $congesPayesRestants  = $ouvrier->congesPayesRestants(now()->year);
+        $congesLegaux         = $ouvrier->congesLegauxUtilises(now()->year);
+        $congesAnciennete     = $ouvrier->congesAncienneteUtilises(now()->year);
+
         return view('ouvriers.show', compact(
             'ouvrier', 'heureSem', 'coutAnnee',
             'derniersPointages', 'absencesActives', 'reposRestants',
             'resumeAbsences', 'bradfordFactor', 'certificationsAlerte',
-            'heuresRecupAccum', 'heuresRecupConso', 'soldeRecup'
+            'heuresRecupAccum', 'heuresRecupConso', 'soldeRecup',
+            'congesPayesUtilises', 'congesPayesRestants', 'congesLegaux', 'congesAnciennete'
         ));
     }
 
@@ -195,8 +201,9 @@ class OuvrierController extends Controller
             'categorie'            => 'nullable|string|max:10',
             'cout_horaire'         => 'nullable|numeric|min:0',
             'cout_mensuel'         => 'nullable|numeric|min:0',
-            'heures_semaine'          => 'required|numeric|min:20|max:50',
-            'mode_heures_sup_defaut'  => 'nullable|in:payees,recuperees',
+            'heures_semaine'                => 'required|numeric|min:20|max:50',
+            'mode_heures_sup_defaut'        => 'nullable|in:payees,recuperees',
+            'jours_conges_supplementaires'  => 'nullable|integer|min:0|max:20',
             'date_entree'          => 'required|date',
             'telephone'            => 'nullable|string|max:20',
             'email'                => 'nullable|email|max:100',

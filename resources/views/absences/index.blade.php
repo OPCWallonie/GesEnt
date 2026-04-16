@@ -75,10 +75,12 @@
                                ($absence->type === 'repos_compensatoire' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600'))) }}">
                             {{ $absence->libelle_type }}
                         </span>
-                        @if($absence->repos_collectif_id)
-                            <a href="{{ route('repos-collectifs.show', $absence->repos_collectif_id) }}"
-                               class="ml-1 text-xs text-indigo-500 hover:text-indigo-700 font-medium">
-                                (collectif)
+                        @if($absence->absence_collective_id)
+                            @php $ac = $absence->absenceCollective; @endphp
+                            <a href="{{ route('absences-collectives.show', $absence->absence_collective_id) }}"
+                               class="ml-1 text-xs text-purple-500 hover:text-purple-700"
+                               title="Issu d'une absence collective : {{ $ac?->libelle }}">
+                                (collectif — {{ \App\Models\AbsenceCollective::TYPES_COLLECTIFS[$ac?->type_collectif] ?? 'collectif' }})
                             </a>
                         @endif
                         @if($enCours)

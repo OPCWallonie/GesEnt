@@ -153,7 +153,7 @@
                 <div class="bg-white rounded-xl border border-gray-200 p-4 col-span-2">
                     <div class="flex items-center justify-between mb-1">
                         <div class="text-xs text-gray-400">Repos compensatoires {{ now()->year }}</div>
-                        <a href="{{ route('repos-collectifs.index') }}" class="text-xs text-blue-400 hover:text-blue-600">
+                        <a href="{{ route('absences-collectives.index') }}" class="text-xs text-blue-400 hover:text-blue-600">
                             Voir calendrier
                         </a>
                     </div>
@@ -267,6 +267,54 @@
                 </table>
                 @endif
             </div>
+
+            {{-- Congés payés --}}
+            @if($ouvrier->est_planifiable)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <h3 class="font-semibold text-gray-700 mb-3 text-sm">Congés payés {{ now()->year }}</h3>
+                @php
+                    $quotaCP = $ouvrier->quota_conges_payes;
+                    $pctCP   = $quotaCP > 0 ? min(100, round(($congesPayesUtilises / $quotaCP) * 100)) : 0;
+                @endphp
+                <div class="flex items-baseline justify-between mb-2">
+                    <div>
+                        <span class="text-2xl font-bold text-gray-800">{{ number_format($congesPayesUtilises, 1, ',', ' ') }}</span>
+                        <span class="text-gray-400 text-sm"> / {{ $quotaCP }} j posés</span>
+                    </div>
+                    <span class="text-sm font-medium
+                          {{ $congesPayesRestants > 5 ? 'text-green-600' : ($congesPayesRestants > 0 ? 'text-orange-600' : 'text-red-600') }}">
+                        {{ number_format($congesPayesRestants, 1, ',', ' ') }} restant{{ $congesPayesRestants > 1 ? 's' : '' }}
+                    </span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div class="bg-blue-500 h-2 rounded-full" style="width: {{ $pctCP }}%"></div>
+                </div>
+                @if($ouvrier->jours_conges_supplementaires > 0)
+                <div class="mt-3 text-xs text-gray-500 space-y-0.5">
+                    <div>Légaux : {{ number_format($congesLegaux, 1, ',', ' ') }} / 20 posés</div>
+                    <div>Ancienneté / extra-légal : {{ number_format($congesAnciennete, 1, ',', ' ') }} / {{ $ouvrier->jours_conges_supplementaires }} posés</div>
+                </div>
+                @endif
+
+                {{-- Reports fériés + Congés entreprise cette année (informatif) --}}
+                @php
+                    $reportsCount  = $ouvrier->absences()->where('type', 'report_ferie')->whereYear('date_debut', now()->year)->get()->sum(fn($a) => $a->nb_jours);
+                    $congesEntrep  = $ouvrier->absences()->where('type', 'conge_entreprise')->whereYear('date_debut', now()->year)->get()->sum(fn($a) => $a->nb_jours);
+                @endphp
+                @if($reportsCount > 0 || $congesEntrep > 0)
+                <div class="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                    Cette année (hors quota) :
+                    @if($reportsCount > 0)
+                        <span class="text-purple-600">{{ $reportsCount }}j report{{ $reportsCount > 1 ? 's' : '' }} férié{{ $reportsCount > 1 ? 's' : '' }}</span>
+                    @endif
+                    @if($reportsCount > 0 && $congesEntrep > 0) · @endif
+                    @if($congesEntrep > 0)
+                        <span class="text-green-600">{{ $congesEntrep }}j congé{{ $congesEntrep > 1 ? 's' : '' }} entreprise</span>
+                    @endif
+                </div>
+                @endif
+            </div>
+            @endif
 
             {{-- Bradford Factor & résumé absences (uniquement pour personnel planifiable) --}}
             @if($ouvrier->est_planifiable && ($resumeAbsences->isNotEmpty() || $bradfordFactor > 0))
