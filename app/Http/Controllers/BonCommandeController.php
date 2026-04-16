@@ -179,11 +179,13 @@ class BonCommandeController extends Controller
                 ->with('error', 'Ce BDC est déjà facturé.');
         }
 
-        $bonCommande->load('lignes');
+        $bonCommande->load('lignes', 'client');
         $clients       = Client::where('actif', true)->orderBy('nom')->get(['id', 'nom']);
         $modesPaiement = ModePaiement::actif()->orderBy('nom')->get();
         $tauxTva       = TauxTva::orderBy('taux')->get();
-        $chantiers     = $bonCommande->client->chantiers()->where('statut', 'actif')->get(['id', 'nom']);
+        $chantiers     = $bonCommande->client
+            ? $bonCommande->client->chantiers()->where('statut', 'actif')->get(['id', 'nom'])
+            : collect();
 
         return view('bons-commande.edit', ['bdc' => $bonCommande, 'clients' => $clients, 'modesPaiement' => $modesPaiement, 'tauxTva' => $tauxTva, 'chantiers' => $chantiers]);
     }

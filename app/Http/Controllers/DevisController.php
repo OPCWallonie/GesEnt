@@ -140,11 +140,13 @@ class DevisController extends Controller
             return redirect()->route('devis.show', $devis)->with('error', 'Ce devis est archivé.');
         }
 
-        $devis->load('lignes');
+        $devis->load('lignes', 'client');
         $clients       = Client::where('actif', true)->orderBy('nom')->get(['id', 'nom']);
         $modesPaiement = ModePaiement::actif()->orderBy('nom')->get();
         $tauxTva       = TauxTva::orderBy('taux')->get();
-        $chantiers     = $devis->client->chantiers()->where('statut', 'actif')->get(['id', 'nom']);
+        $chantiers     = $devis->client
+            ? $devis->client->chantiers()->where('statut', 'actif')->get(['id', 'nom'])
+            : collect();
 
         return view('devis.edit', compact('devis', 'clients', 'modesPaiement', 'tauxTva', 'chantiers'));
     }
