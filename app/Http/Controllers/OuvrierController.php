@@ -199,9 +199,11 @@ class OuvrierController extends Controller
             'metier'               => 'nullable|string|max:100',
         ]);
 
-        // Catégorie valide pour la CP choisie
+        // Catégorie : null si la CP n'en a pas, ou si la valeur reçue n'est pas dans la liste
         $cpCats = Ouvrier::CATEGORIES_PAR_CP[$cp] ?? [];
-        if (! empty($cpCats) && ! empty($data['categorie']) && ! in_array($data['categorie'], $cpCats)) {
+        if (empty($cpCats)) {
+            $data['categorie'] = null;
+        } elseif (! empty($data['categorie']) && ! in_array($data['categorie'], $cpCats)) {
             $data['categorie'] = null;
         }
 
