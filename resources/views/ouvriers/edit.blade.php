@@ -93,31 +93,31 @@
 
             {{-- Coût --}}
             <div class="grid grid-cols-2 gap-4">
-                {{-- Coût horaire : toujours visible --}}
-                <div>
+                {{-- Coût horaire : ouvriers et employés terrain uniquement --}}
+                <div x-show="typePersonnel === 'ouvrier' || typePersonnel === 'employe_terrain'" x-cloak>
                     <label class="block text-xs font-medium text-gray-600 mb-1">
-                        Coût horaire chargé (€/h)
-                        <span x-show="typePersonnel === 'ouvrier' || typePersonnel === 'employe_terrain'" class="text-red-500">*</span>
+                        Coût horaire chargé (€/h) <span class="text-red-500">*</span>
                     </label>
                     <input type="number" name="cout_horaire" value="{{ old('cout_horaire', $ouvrier->cout_horaire) }}"
                            min="0" step="0.01"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <p class="text-xs text-gray-400 mt-1" x-show="typePersonnel === 'ouvrier' || typePersonnel === 'employe_terrain'">
+                    <p class="text-xs text-gray-400 mt-1">
+                        Coût total employeur : salaire brut + ONSS patronal + assurances + avantages.<br>
                         Heures sup majorées +50 % automatiquement.
                     </p>
                 </div>
 
-                {{-- Coût mensuel : visible pour admin/direction, optionnel sinon --}}
+                {{-- Coût mensuel : admin / direction --}}
                 <div x-show="typePersonnel === 'employe_admin' || typePersonnel === 'direction'" x-cloak>
                     <label class="block text-xs font-medium text-gray-600 mb-1">
-                        Coût mensuel chargé (€/mois) <span class="text-red-500">*</span>
+                        Coût mensuel chargé (€/mois)
                     </label>
                     <input type="number" name="cout_mensuel" value="{{ old('cout_mensuel', $ouvrier->cout_mensuel) }}"
                            min="0" step="0.01"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <p class="text-xs text-gray-400 mt-1">
-                        Équivalent horaire (÷ 164,54 h) :
-                        <span x-text="coutHoraireEquivalent()"></span> €/h
+                        Coût total employeur : brut + charges patronales + avantages. Pas le salaire brut seul.<br>
+                        Équivalent horaire (÷ 164,54 h) : <span x-text="coutHoraireEquivalent()"></span> €/h
                     </p>
                 </div>
             </div>

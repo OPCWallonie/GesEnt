@@ -219,6 +219,15 @@ class OuvrierController extends Controller
             $data['categorie'] = null;
         }
 
+        // Pour employé admin / direction : le coût se saisit en mensuel.
+        // Si cout_horaire est absent ou vide, forcer null — l'accesseur
+        // cout_horaire_effectif fera la conversion depuis cout_mensuel.
+        if (in_array($typePersonnel, ['employe_admin', 'direction'])) {
+            if (empty($data['cout_horaire'])) {
+                $data['cout_horaire'] = null;
+            }
+        }
+
         return $data;
     }
 
