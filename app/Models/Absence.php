@@ -23,6 +23,7 @@ class Absence extends Model
         'maladie'             => 'Maladie',
         'accident_travail'    => 'Accident du travail',
         'repos_compensatoire' => 'Repos compensatoire',
+        'recup_heures_sup'    => 'Récup. heures sup',
         'autre'               => 'Autre',
     ];
 

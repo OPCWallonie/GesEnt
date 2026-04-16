@@ -76,18 +76,25 @@ class PointageController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'ouvrier_id'  => 'required|exists:ouvriers,id',
-            'chantier_id' => 'required|exists:chantiers,id',
-            'date'        => 'required|date',
-            'heures'      => 'required|numeric|min:0|max:24',
-            'heures_sup'  => 'nullable|numeric|min:0|max:12',
-            'notes'       => 'nullable|string|max:500',
+            'ouvrier_id'      => 'required|exists:ouvriers,id',
+            'chantier_id'     => 'required|exists:chantiers,id',
+            'date'            => 'required|date',
+            'heures'          => 'required|numeric|min:0|max:24',
+            'heures_sup'      => 'nullable|numeric|min:0|max:12',
+            'mode_heures_sup' => 'nullable|in:payees,recuperees',
+            'notes'           => 'nullable|string|max:500',
         ]);
 
         $data['heures_sup'] ??= 0;
 
         // Snapshot du coût horaire effectif (direct ou converti depuis le mensuel)
-        $data['cout_horaire'] = Ouvrier::find($data['ouvrier_id'])?->cout_horaire_effectif ?? 0;
+        $ouvrier = Ouvrier::find($data['ouvrier_id']);
+        $data['cout_horaire'] = $ouvrier?->cout_horaire_effectif ?? 0;
+
+        // Mode heures sup : valeur fournie ou préférence par défaut du membre
+        $data['mode_heures_sup'] = $data['mode_heures_sup']
+            ?? $ouvrier?->mode_heures_sup_defaut
+            ?? 'payees';
 
         Pointage::updateOrCreate(
             ['ouvrier_id' => $data['ouvrier_id'], 'date' => $data['date'], 'chantier_id' => $data['chantier_id']],
@@ -140,13 +147,14 @@ class PointageController extends Controller
 
             if (! $existe) {
                 Pointage::create([
-                    'ouvrier_id'   => $p->ouvrier_id,
-                    'chantier_id'  => $p->chantier_id,
-                    'date'         => $nouvelleDate,
-                    'heures'       => $p->heures,
-                    'heures_sup'   => $p->heures_sup,
-                    'cout_horaire' => $ouvrierActifs[$p->ouvrier_id]->cout_horaire_effectif,
-                    'notes'        => $p->notes,
+                    'ouvrier_id'      => $p->ouvrier_id,
+                    'chantier_id'     => $p->chantier_id,
+                    'date'            => $nouvelleDate,
+                    'heures'          => $p->heures,
+                    'heures_sup'      => $p->heures_sup,
+                    'mode_heures_sup' => $p->mode_heures_sup,
+                    'cout_horaire'    => $ouvrierActifs[$p->ouvrier_id]->cout_horaire_effectif,
+                    'notes'           => $p->notes,
                 ]);
                 $copies++;
             }

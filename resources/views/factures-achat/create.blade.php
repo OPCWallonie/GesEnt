@@ -80,7 +80,7 @@
             </div>
             @endif
 
-            <form method="POST" action="{{ route('factures-achat.store') }}" id="form-facture-achat">
+            <form method="POST" action="{{ route('factures-achat.store') }}" id="form-facture-achat" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="from_ocr" id="from_ocr_flag" value="0">
                 @php $facture = null; @endphp
@@ -153,6 +153,12 @@ function ocrImport() {
                 this.remplir(json.data);
                 this.succes = true;
                 document.getElementById('from_ocr_flag').value = '1';
+
+                // Transférer le fichier vers l'input de téléchargement du formulaire
+                const dt = new DataTransfer();
+                dt.items.add(fichier);
+                const fileInput = document.getElementById('fichier_original_input');
+                if (fileInput) fileInput.files = dt.files;
 
             } catch (e) {
                 this.erreur = "Impossible de contacter le serveur.";

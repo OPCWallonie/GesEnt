@@ -13,7 +13,7 @@ class Ouvrier extends Model
     protected $fillable = [
         'type_personnel', 'nom', 'prenom', 'numero_national',
         'commission_paritaire', 'categorie',
-        'cout_horaire', 'cout_mensuel', 'heures_semaine',
+        'cout_horaire', 'cout_mensuel', 'heures_semaine', 'mode_heures_sup_defaut',
         'date_entree', 'date_sortie', 'motif_sortie',
         'actif', 'telephone', 'email', 'notes', 'metier', 'qualifications',
     ];
@@ -278,6 +278,43 @@ class Ouvrier extends Model
             ->whereYear('date_debut', $annee)
             ->get()
             ->sum(fn($a) => $a->nb_jours);
+    }
+
+    // ─── Compteur récupération heures sup ────────────────────────
+
+    /**
+     * Heures sup marquées "récupérées" accumulées sur l'année.
+     */
+    public function heuresRecuperablesAccumulees(int $annee): float
+    {
+        return (float) $this->pointages()
+            ->whereYear('date', $annee)
+            ->where('mode_heures_sup', 'recuperees')
+            ->where('heures_sup', '>', 0)
+            ->sum('heures_sup');
+    }
+
+    /**
+     * Heures de récupération déjà consommées (absences type recup_heures_sup).
+     */
+    public function heuresRecupereesConsommees(int $annee): float
+    {
+        return (float) $this->absences()
+            ->where('type', 'recup_heures_sup')
+            ->whereYear('date_debut', $annee)
+            ->get()
+            ->sum(fn($a) => $a->nb_jours * $this->heures_jour);
+    }
+
+    /**
+     * Solde de récupération : accumulées − consommées.
+     */
+    public function soldeRecuperation(int $annee): float
+    {
+        return round(
+            $this->heuresRecuperablesAccumulees($annee) - $this->heuresRecupereesConsommees($annee),
+            2
+        );
     }
 
     /**

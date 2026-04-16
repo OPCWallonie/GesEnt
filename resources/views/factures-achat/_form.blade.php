@@ -125,6 +125,28 @@
     <textarea name="notes" rows="2" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">{{ old('notes', $facture->notes ?? '') }}</textarea>
 </div>
 
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-3">
+    <h2 class="font-semibold text-gray-700 border-b pb-2">Document original</h2>
+    @if(isset($facture) && $facture && $facture->has_fichier)
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+            <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/>
+            </svg>
+            <div class="flex-1 min-w-0">
+                <div class="font-medium text-gray-700 truncate">{{ $facture->fichier_nom_original }}</div>
+                <div class="text-xs text-gray-400">{{ $facture->fichier_mime }}</div>
+            </div>
+            <a href="{{ $facture->fichier_url }}" target="_blank"
+               class="text-xs text-blue-600 hover:underline flex-shrink-0">Voir</a>
+        </div>
+        <label class="block text-xs text-gray-500">Remplacer le document</label>
+    @endif
+    <input type="file" name="fichier_original" id="fichier_original_input"
+           accept=".pdf,.jpg,.jpeg,.png"
+           class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+    <p class="text-xs text-gray-400">PDF ou image (jpg, png). Facultatif.</p>
+</div>
+
 @if($errors->any())
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
         <ul class="list-disc list-inside space-y-1">

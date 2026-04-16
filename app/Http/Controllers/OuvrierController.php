@@ -102,7 +102,10 @@ class OuvrierController extends Controller
             ->orderBy('date_debut')
             ->get();
 
-        $reposRestants = $ouvrier->reposCompensatoiresRestants(now()->year);
+        $reposRestants       = $ouvrier->reposCompensatoiresRestants(now()->year);
+        $heuresRecupAccum    = $ouvrier->heuresRecuperablesAccumulees(now()->year);
+        $heuresRecupConso    = $ouvrier->heuresRecupereesConsommees(now()->year);
+        $soldeRecup          = $ouvrier->soldeRecuperation(now()->year);
 
         $resumeAbsences = $ouvrier->absences()
             ->whereYear('date_debut', now()->year)
@@ -122,7 +125,8 @@ class OuvrierController extends Controller
         return view('ouvriers.show', compact(
             'ouvrier', 'heureSem', 'coutAnnee',
             'derniersPointages', 'absencesActives', 'reposRestants',
-            'resumeAbsences', 'bradfordFactor', 'certificationsAlerte'
+            'resumeAbsences', 'bradfordFactor', 'certificationsAlerte',
+            'heuresRecupAccum', 'heuresRecupConso', 'soldeRecup'
         ));
     }
 
@@ -191,7 +195,8 @@ class OuvrierController extends Controller
             'categorie'            => 'nullable|string|max:10',
             'cout_horaire'         => 'nullable|numeric|min:0',
             'cout_mensuel'         => 'nullable|numeric|min:0',
-            'heures_semaine'       => 'required|numeric|min:20|max:50',
+            'heures_semaine'          => 'required|numeric|min:20|max:50',
+            'mode_heures_sup_defaut'  => 'nullable|in:payees,recuperees',
             'date_entree'          => 'required|date',
             'telephone'            => 'nullable|string|max:20',
             'email'                => 'nullable|email|max:100',

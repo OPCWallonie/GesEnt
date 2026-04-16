@@ -137,17 +137,46 @@
             @endif
         </div>
 
-        <div class="col-span-3 lg:col-span-2">
+        <div class="col-span-3 lg:col-span-2 space-y-4">
             @if($facture->notes)
                 <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-5">
                     <h3 class="text-sm font-semibold text-yellow-800 mb-2">Notes</h3>
                     <p class="text-sm text-yellow-900 whitespace-pre-wrap">{{ $facture->notes }}</p>
                 </div>
-            @else
+            @endif
+
+            @if($facture->has_fichier)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                        <div class="flex items-center gap-2 text-sm font-medium text-gray-700">
+                            <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/>
+                            </svg>
+                            {{ $facture->fichier_nom_original ?? 'Document original' }}
+                        </div>
+                        <a href="{{ $facture->fichier_url }}" target="_blank"
+                           class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                            Ouvrir dans un nouvel onglet
+                        </a>
+                    </div>
+                    @if(str_starts_with($facture->fichier_mime ?? '', 'image/'))
+                        <img src="{{ $facture->fichier_url }}" alt="Facture" class="w-full object-contain max-h-[80vh]">
+                    @else
+                        <iframe src="{{ $facture->fichier_url }}"
+                                class="w-full"
+                                style="height: 80vh; min-height: 500px;"
+                                title="Facture originale">
+                        </iframe>
+                    @endif
+                </div>
+            @elseif(!$facture->notes)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-gray-400 text-sm">
-                    Aucune note pour cette facture.
+                    Aucune note ni document pour cette facture.
                     @if($facture->statut !== 'payee')
-                        <br><a href="{{ route('factures-achat.edit', $facture) }}" class="text-blue-500 hover:underline mt-2 block">Modifier pour ajouter des notes</a>
+                        <br><a href="{{ route('factures-achat.edit', $facture) }}" class="text-blue-500 hover:underline mt-2 block">Modifier pour ajouter des informations</a>
                     @endif
                 </div>
             @endif

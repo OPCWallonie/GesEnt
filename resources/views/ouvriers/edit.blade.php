@@ -143,6 +143,26 @@
                 </div>
             </div>
 
+            {{-- Mode heures supplémentaires par défaut --}}
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-2">Heures sup. par défaut</label>
+                @php $modeDefaut = old('mode_heures_sup_defaut', $ouvrier->mode_heures_sup_defaut ?? 'payees'); @endphp
+                <div class="flex gap-6">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="mode_heures_sup_defaut" value="payees"
+                               {{ $modeDefaut === 'payees' ? 'checked' : '' }}
+                               class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-sm text-gray-700">Payées <span class="text-gray-400">(+50 % majoration)</span></span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="mode_heures_sup_defaut" value="recuperees"
+                               {{ $modeDefaut === 'recuperees' ? 'checked' : '' }}
+                               class="text-orange-500 focus:ring-orange-400">
+                        <span class="text-sm text-orange-600 font-medium">Récupérées <span class="text-gray-400">(contrepartie = jour de repos)</span></span>
+                    </label>
+                </div>
+            </div>
+
             {{-- Téléphone / Email --}}
             <div class="grid grid-cols-2 gap-4">
                 <div>

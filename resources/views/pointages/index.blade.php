@@ -136,6 +136,7 @@
                                     pointageId: {{ $pointage?->id ?? 'null' }},
                                     heures: {{ $pointage?->heures ?? 0 }},
                                     heures_sup: {{ $pointage?->heures_sup ?? 0 }},
+                                    modeHeuresSup: '{{ $pointage?->mode_heures_sup ?? $ouvrier->mode_heures_sup_defaut ?? 'payees' }}',
                                     chantierId: {{ $pointage?->chantier_id ?? 'null' }},
                                     chantierNom: '{{ $pointage?->chantier?->nom ?? '' }}',
                                 })"
@@ -155,6 +156,9 @@
                                             {{ number_format($pointage->heures, 1) }}h
                                             @if($pointage->heures_sup > 0)
                                                 <span class="text-orange-500">+{{ number_format($pointage->heures_sup, 1) }}h</span>
+                                                @if($pointage->mode_heures_sup === 'recuperees')
+                                                    <span class="ml-0.5 text-xs font-bold text-orange-400 bg-orange-100 px-1 rounded" title="Heures récupérées">R</span>
+                                                @endif
                                             @endif
                                         </div>
                                         <div class="text-xs text-gray-500 truncate max-w-[120px]">{{ $pointage->chantier->nom }}</div>
@@ -202,6 +206,21 @@
                                                        class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
                                             </div>
                                         </div>
+
+                                        {{-- Mode heures sup : visible uniquement quand heures_sup > 0 --}}
+                                        <div x-show="parseFloat(heures_sup) > 0" x-cloak>
+                                            <label class="text-xs text-gray-500 block mb-1">Mode h. sup</label>
+                                            <div class="flex gap-3">
+                                                <label class="flex items-center gap-1 text-xs cursor-pointer">
+                                                    <input type="radio" x-model="modeHeuresSup" value="payees" class="text-blue-600">
+                                                    <span class="text-gray-700">Payées</span>
+                                                </label>
+                                                <label class="flex items-center gap-1 text-xs cursor-pointer">
+                                                    <input type="radio" x-model="modeHeuresSup" value="recuperees" class="text-orange-500">
+                                                    <span class="text-orange-600 font-medium">Récupérées</span>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="flex gap-2 mt-3">
@@ -247,7 +266,9 @@
         </div>
 
         <div class="mt-3 text-xs text-gray-400">
-            Les heures en orange dépassent 40h/semaine. Les heures sup sont majorées selon la CP de chaque membre du personnel.
+            Les heures en orange dépassent 40h/semaine.
+            H. sup <strong>payées</strong> : majorées selon la CP (50 % par défaut).
+            H. sup <strong>récupérées</strong> (badge <span class="inline-block bg-orange-100 text-orange-700 font-bold px-1 rounded text-xs">R</span>) : comptabilisées à taux plein, contrepartie = jour de récup.
         </div>
     </div>
 
@@ -267,6 +288,7 @@
             pointageId: config.pointageId,
             heures: config.heures,
             heures_sup: config.heures_sup,
+            modeHeuresSup: config.modeHeuresSup,
             chantierId: config.chantierId,
             chantierNom: config.chantierNom,
 
@@ -282,11 +304,12 @@
                             'Accept': 'application/json',
                         },
                         body: JSON.stringify({
-                            ouvrier_id:  this.ouvrierDd,
-                            chantier_id: this.chantierId,
-                            date:        this.date,
-                            heures:      this.heures,
-                            heures_sup:  this.heures_sup,
+                            ouvrier_id:       this.ouvrierDd,
+                            chantier_id:      this.chantierId,
+                            date:             this.date,
+                            heures:           this.heures,
+                            heures_sup:       this.heures_sup,
+                            mode_heures_sup:  this.modeHeuresSup,
                         }),
                     });
                     if (res.ok) {

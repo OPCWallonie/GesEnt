@@ -8,6 +8,7 @@ use App\Models\FactureAchat;
 use App\Models\Fournisseur;
 use App\Services\NumerotationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class FactureAchatController extends Controller
 {
@@ -72,6 +73,16 @@ class FactureAchatController extends Controller
             'peppol_source' => $request->boolean('from_ocr') ? 'ocr' : 'manuel',
         ]));
 
+        if ($request->hasFile('fichier_original')) {
+            $file = $request->file('fichier_original');
+            $path = $file->store('factures-achat/' . now()->format('Y/m'), 'local');
+            $facture->update([
+                'fichier_path'         => $path,
+                'fichier_mime'         => $file->getMimeType(),
+                'fichier_nom_original' => $file->getClientOriginalName(),
+            ]);
+        }
+
         return redirect()->route('factures-achat.show', $facture)
             ->with('success', "Facture achat {$facture->numero} enregistrée.");
     }
@@ -117,6 +128,19 @@ class FactureAchatController extends Controller
             'montant_ttc' => round($ht + $tva, 2),
         ]));
 
+        if ($request->hasFile('fichier_original')) {
+            if ($factureAchat->fichier_path) {
+                Storage::disk('local')->delete($factureAchat->fichier_path);
+            }
+            $file = $request->file('fichier_original');
+            $path = $file->store('factures-achat/' . now()->format('Y/m'), 'local');
+            $factureAchat->update([
+                'fichier_path'         => $path,
+                'fichier_mime'         => $file->getMimeType(),
+                'fichier_nom_original' => $file->getClientOriginalName(),
+            ]);
+        }
+
         return redirect()->route('factures-achat.show', $factureAchat)
             ->with('success', 'Facture achat mise à jour.');
     }
@@ -125,6 +149,19 @@ class FactureAchatController extends Controller
     {
         $factureAchat->delete();
         return redirect()->route('factures-achat.index')->with('success', 'Facture achat supprimée.');
+    }
+
+    public function fichier(FactureAchat $factureAchat)
+    {
+        if (! $factureAchat->fichier_path || ! Storage::disk('local')->exists($factureAchat->fichier_path)) {
+            abort(404, 'Fichier non trouvé.');
+        }
+
+        return Storage::disk('local')->response(
+            $factureAchat->fichier_path,
+            $factureAchat->fichier_nom_original,
+            ['Content-Type' => $factureAchat->fichier_mime ?? 'application/pdf']
+        );
     }
 
     public function marquerPayee(Request $request, FactureAchat $factureAchat)

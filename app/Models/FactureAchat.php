@@ -17,6 +17,7 @@ class FactureAchat extends Model
         'date_document', 'date_echeance',
         'montant_ht', 'taux_tva', 'montant_tva', 'montant_ttc',
         'statut', 'date_paiement', 'notes',
+        'fichier_path', 'fichier_mime', 'fichier_nom_original',
         'peppol_id', 'peppol_sender_id', 'peppol_recu_at', 'peppol_source', 'peppol_raw_data',
         'odoo_move_id', 'odoo_synced_at',
     ];
@@ -54,6 +55,19 @@ class FactureAchat extends Model
     public function bonCommande()
     {
         return $this->belongsTo(BonCommande::class);
+    }
+
+    public function getHasFichierAttribute(): bool
+    {
+        return ! empty($this->fichier_path);
+    }
+
+    public function getFichierUrlAttribute(): ?string
+    {
+        if (! $this->fichier_path) {
+            return null;
+        }
+        return route('factures-achat.fichier', $this);
     }
 
     public function estEnRetard(): bool

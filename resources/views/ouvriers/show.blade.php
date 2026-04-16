@@ -170,6 +170,29 @@
                     <div class="text-xs text-gray-400 mt-1">{{ number_format($utilises, 1) }} jour(s) utilisé(s)</div>
                 </div>
                 @endif
+
+                {{-- Récupération heures supplémentaires --}}
+                @if($heuresRecupAccum > 0 || $soldeRecup != 0)
+                @php
+                    $recupPct = $heuresRecupAccum > 0 ? min(100, round(($heuresRecupConso / $heuresRecupAccum) * 100)) : 0;
+                @endphp
+                <div class="bg-white rounded-xl border border-orange-200 p-4 col-span-2">
+                    <div class="text-xs text-orange-500 font-medium mb-1">Récup. heures sup {{ now()->year }}</div>
+                    <div class="flex items-end gap-2 mb-2">
+                        <span class="text-2xl font-bold {{ $soldeRecup > 0 ? 'text-orange-600' : 'text-gray-400' }}">
+                            {{ number_format($soldeRecup, 2) }} h
+                        </span>
+                        <span class="text-sm text-gray-400 mb-0.5">solde</span>
+                    </div>
+                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full {{ $recupPct >= 100 ? 'bg-green-400' : 'bg-orange-400' }}"
+                             style="width: {{ $recupPct }}%"></div>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">
+                        {{ number_format($heuresRecupAccum, 2) }} h accumulées · {{ number_format($heuresRecupConso, 2) }} h consommées
+                    </div>
+                </div>
+                @endif
             </div>
             @else
             {{-- Employés admin / direction : coût mensuel en frais généraux --}}

@@ -109,6 +109,7 @@ Route::middleware(['auth'])->group(function () {
     // Factures achat
     Route::get('factures-achat', [FactureAchatController::class, 'index'])->name('factures-achat.index');
     Route::get('factures-achat/{factureAchat}', [FactureAchatController::class, 'show'])->name('factures-achat.show');
+    Route::get('factures-achat/{factureAchat}/fichier', [FactureAchatController::class, 'fichier'])->name('factures-achat.fichier');
 
     // Ouvriers
     Route::get('ouvriers', [OuvrierController::class, 'index'])->name('ouvriers.index');

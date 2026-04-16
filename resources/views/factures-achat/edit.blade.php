@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">Modifier — {{ $facture->numero }}</x-slot>
 
-    <form method="POST" action="{{ route('factures-achat.update', $facture) }}" class="space-y-6">
+    <form method="POST" action="{{ route('factures-achat.update', $facture) }}" class="space-y-6" enctype="multipart/form-data">
         @csrf @method('PUT')
         @include('factures-achat._form')
         <div class="flex justify-between">
