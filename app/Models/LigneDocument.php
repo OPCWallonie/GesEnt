@@ -36,6 +36,11 @@ class LigneDocument extends Model
         return $this->belongsTo(Produit::class);
     }
 
+    public function catalogProduit()
+    {
+        return $this->belongsTo(CatalogProduit::class);
+    }
+
     // Calcule et met à jour montant_ht selon quantité, prix, remise
     public function calculerMontant(): float
     {

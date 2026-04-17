@@ -138,6 +138,41 @@
         </div>
     </x-slot>
 
+    {{-- Bandeau alertes prix fournisseur --}}
+    @if(!empty($lignesImpactees))
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+        <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+            </svg>
+            <div class="flex-1">
+                <h3 class="font-semibold text-amber-900 mb-2">
+                    {{ count($lignesImpactees) }} ligne(s) concernée(s) par un changement de prix fournisseur
+                </h3>
+                <div class="space-y-2 text-sm">
+                    @foreach($lignesImpactees as $info)
+                        <div class="flex items-center justify-between bg-white rounded px-3 py-2">
+                            <span class="font-medium text-gray-700 truncate">{{ $info['ligne']->designation }}</span>
+                            <span class="text-xs text-gray-500 whitespace-nowrap ml-3">
+                                Prix devis : {{ number_format($info['prix_devis'], 2, ',', ' ') }} €
+                                → Catalogue actuel : <strong>{{ number_format($info['prix_catalogue_actuel'], 2, ',', ' ') }} €</strong>
+                                <span class="{{ $info['variation_pct'] > 0 ? 'text-red-600' : 'text-green-600' }} font-semibold">
+                                    ({{ $info['variation_pct'] > 0 ? '+' : '' }}{{ number_format($info['variation_pct'], 1) }}%)
+                                </span>
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+                @if((string) $devis->statut !== 'archive')
+                    <p class="text-xs text-amber-700 mt-3">
+                        💡 Pensez à modifier le devis pour refléter les nouveaux prix avant conversion en BDC.
+                    </p>
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
         {{-- Colonne principale --}}

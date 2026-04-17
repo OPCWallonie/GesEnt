@@ -14,6 +14,8 @@ use Illuminate\Http\UploadedFile;
  */
 class CsvImporteur
 {
+    public function __construct(private PrixHistoriqueService $historiqueService) {}
+
     // ---------------------------------------------------------------
     // Mappings par fournisseur
     // Clé = champ interne, valeur = nom(s) de colonne CSV possible(s)
@@ -119,6 +121,13 @@ class CsvImporteur
                 : $prixCatalogue;
 
             try {
+                $produitExistant = CatalogProduit::where('fournisseur', $fournisseur)
+                    ->where('reference', $reference)
+                    ->select('id', 'fournisseur', 'reference', 'prix_catalogue')
+                    ->first();
+
+                $this->historiqueService->enregistrerSiChange($produitExistant, $prixCatalogue, 'csv');
+
                 $produit = CatalogProduit::updateOrCreate(
                     ['fournisseur' => $fournisseur, 'reference' => $reference],
                     [

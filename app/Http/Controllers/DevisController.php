@@ -10,6 +10,7 @@ use App\Models\EmailEnvoi;
 use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
+use App\Services\Catalog\DevisImpactService;
 use App\Services\DocumentService;
 use App\Services\MailConfigService;
 use App\Services\MailTemplateService;
@@ -41,7 +42,9 @@ class DevisController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('devis.index', compact('devis'));
+        $devisImpactes = app(DevisImpactService::class)->devisActifsImpactes();
+
+        return view('devis.index', compact('devis', 'devisImpactes'));
     }
 
     public function create(Request $request)
@@ -130,8 +133,9 @@ class DevisController extends Controller
         $parametres         = ParametresEntreprise::instance();
         $totauxTva          = $this->documentService->calculerTotauxTva($devis->lignes);
         $messageEmailDefaut = MailTemplateService::resoudre('devis', $devis);
+        $lignesImpactees    = app(DevisImpactService::class)->lignesImpactees($devis);
 
-        return view('devis.show', compact('devis', 'parametres', 'totauxTva', 'messageEmailDefaut'));
+        return view('devis.show', compact('devis', 'parametres', 'totauxTva', 'messageEmailDefaut', 'lignesImpactees'));
     }
 
     public function edit(Devis $devis)

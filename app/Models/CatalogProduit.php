@@ -27,6 +27,8 @@ class CatalogProduit extends Model
     ];
 
     // Fournisseurs pré-configurés (fallback si DB non disponible)
+    public const SEUIL_VARIATION_SIGNIFICATIVE = 3.0;
+
     public const FOURNISSEURS = [
         'desco'    => 'Desco',
         'vanmarke' => 'VanMarke',
@@ -49,6 +51,16 @@ class CatalogProduit extends Model
     public function scopeFournisseur(Builder $q, ?string $fournisseur): Builder
     {
         return $fournisseur ? $q->where('fournisseur', $fournisseur) : $q;
+    }
+
+    public function historiquePrix()
+    {
+        return $this->hasMany(CatalogPrixHistorique::class)->orderByDesc('detected_at');
+    }
+
+    public function dernierChangementPrix()
+    {
+        return $this->hasOne(CatalogPrixHistorique::class)->latestOfMany('detected_at');
     }
 
     public function getNomFournisseurAttribute(): string

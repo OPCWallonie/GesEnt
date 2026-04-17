@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CatalogConfig;
 use App\Models\CatalogProduit;
+use App\Models\CatalogPrixHistorique;
 use App\Services\Catalog\ApiCatalogService;
 use App\Services\Catalog\CsvImporteur;
 use Illuminate\Http\Request;
@@ -79,6 +80,54 @@ class CatalogController extends Controller
             'score'       => (float) ($p->usage_score ?? 0),
             'habituel'    => ($p->usage_score ?? 0) > 5,
         ]));
+    }
+
+    public function changementsPrix(Request $request)
+    {
+        $periode       = $request->get('periode', '30j');
+        $fournisseur   = $request->get('fournisseur');
+        $significatifs = $request->boolean('significatifs_uniquement', false);
+
+        $dateDebut = match($periode) {
+            '7j'  => now()->subDays(7),
+            '30j' => now()->subDays(30),
+            default => now()->subYear(),
+        };
+
+        $query = CatalogPrixHistorique::with('catalogProduit:id,designation,unite,marque,categorie')
+            ->where('detected_at', '>=', $dateDebut)
+            ->when($fournisseur, fn($q) => $q->where('fournisseur', $fournisseur))
+            ->when($significatifs, fn($q) => $q->significatifs())
+            ->orderByDesc('detected_at');
+
+        $changements = $query->paginate(50)->withQueryString();
+
+        $baseStats = CatalogPrixHistorique::where('detected_at', '>=', $dateDebut)
+            ->when($fournisseur, fn($q) => $q->where('fournisseur', $fournisseur));
+
+        $stats = [
+            'total'         => (clone $baseStats)->count(),
+            'significatifs' => (clone $baseStats)->significatifs()->count(),
+            'hausses'       => (clone $baseStats)->hausses()->count(),
+            'baisses'       => (clone $baseStats)->baisses()->count(),
+            'variation_moy' => (clone $baseStats)->avg('variation_pct'),
+        ];
+
+        $fournisseurs = CatalogPrixHistorique::select('fournisseur')
+            ->distinct()->orderBy('fournisseur')->pluck('fournisseur');
+
+        auth()->user()->update(['derniere_vue_changements_prix' => now()]);
+
+        return view('catalog.changements-prix', compact(
+            'changements', 'stats', 'fournisseurs',
+            'periode', 'fournisseur', 'significatifs'
+        ));
+    }
+
+    public function marquerChangementsLus()
+    {
+        auth()->user()->update(['derniere_vue_changements_prix' => now()]);
+        return back()->with('success', 'Changements de prix marqués comme lus.');
     }
 
     /**

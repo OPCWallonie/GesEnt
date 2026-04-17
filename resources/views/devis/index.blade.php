@@ -95,6 +95,12 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <x-badge :statut="$d->statut"/>
+                            @if(isset($devisImpactes[$d->id]))
+                                <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800"
+                                      title="{{ $devisImpactes[$d->id] }} ligne(s) avec prix fournisseur modifié">
+                                    ⚠️ {{ $devisImpactes[$d->id] }} prix changé{{ $devisImpactes[$d->id] > 1 ? 's' : '' }}
+                                </span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right font-medium">
                             {{ number_format($d->montant_ttc ?? 0, 2, ',', ' ') }} €

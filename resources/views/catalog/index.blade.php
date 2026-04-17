@@ -2,6 +2,22 @@
     <x-slot name="header">Tarifs fournisseurs</x-slot>
 
     <x-slot name="actions">
+        @php
+            $depuisUser = auth()->user()->derniere_vue_changements_prix ?? now()->subMonth();
+            $nbChangements = \App\Models\CatalogPrixHistorique::significatifs()
+                ->where('detected_at', '>', $depuisUser)
+                ->count();
+        @endphp
+        <a href="{{ route('catalog.changements-prix') }}"
+           class="relative inline-flex items-center gap-2 px-4 py-2 border border-orange-300 text-orange-700 text-sm font-medium rounded-lg hover:bg-orange-50">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            Changements de prix
+            @if($nbChangements > 0)
+                <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full bg-orange-100 text-orange-800">
+                    {{ $nbChangements }}
+                </span>
+            @endif
+        </a>
         @role('admin')
         <button @click="$dispatch('open-import')"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">

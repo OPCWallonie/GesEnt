@@ -18,6 +18,7 @@ class User extends Authenticatable
         'two_factor_secret', 'two_factor_enabled', 'two_factor_confirmed_at',
         'two_factor_recovery_codes',
         'two_factor_email_code', 'two_factor_email_code_expires_at',
+        'derniere_vue_changements_prix',
     ];
 
     protected $hidden = [
@@ -33,7 +34,8 @@ class User extends Authenticatable
             'two_factor_enabled'                => 'boolean',
             'two_factor_confirmed_at'           => 'datetime',
             'two_factor_recovery_codes'         => 'array',
-            'two_factor_email_code_expires_at'  => 'datetime',
+            'two_factor_email_code_expires_at'   => 'datetime',
+            'derniere_vue_changements_prix'       => 'datetime',
         ];
     }
 }

@@ -128,6 +128,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Catalogue
     Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
+    Route::get('/catalog/changements-prix', [CatalogController::class, 'changementsPrix'])->name('catalog.changements-prix');
+    Route::post('/catalog/changements-prix/marquer-lu', [CatalogController::class, 'marquerChangementsLus'])->name('catalog.changements-prix.marquer-lu');
 
     // Statistiques (consultation — tous les rôles)
     Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');

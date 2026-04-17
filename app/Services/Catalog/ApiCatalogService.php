@@ -248,6 +248,13 @@ class ApiCatalogService
         $prixCatalogue = (float) str_replace(',', '.', $mapped['prix']);
         $prixRevente   = $marge > 0 ? round($prixCatalogue * (1 + $marge / 100), 4) : $prixCatalogue;
 
+        $produitExistant = CatalogProduit::where('fournisseur', $fournisseur)
+            ->where('reference', $mapped['reference'])
+            ->select('id', 'fournisseur', 'reference', 'prix_catalogue')
+            ->first();
+
+        app(PrixHistoriqueService::class)->enregistrerSiChange($produitExistant, $prixCatalogue, 'api');
+
         $produit = CatalogProduit::updateOrCreate(
             ['fournisseur' => $fournisseur, 'reference' => $mapped['reference']],
             [
