@@ -94,7 +94,8 @@
                     <x-lignes-document
                         :lignes-initiales="isset($devisSource) ? $devisSource->lignes : collect()"
                         :taux-tva="$tauxTva"
-                        :tva-defaut="21"/>
+                        :tva-defaut="21"
+                        :client-id="$devisSource->client_id ?? null"/>
                 </div>
 
                 {{-- Notes --}}

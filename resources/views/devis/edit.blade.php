@@ -105,7 +105,8 @@
                     <x-lignes-document
                         :lignes-initiales="$devis->lignes"
                         :taux-tva="$tauxTva"
-                        :tva-defaut="21"/>
+                        :tva-defaut="21"
+                        :client-id="$devis->client_id"/>
                 </div>
 
                 {{-- Notes --}}

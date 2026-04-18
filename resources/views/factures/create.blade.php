@@ -149,7 +149,7 @@
             @php
                 $lignesInitiales = $bdcSource ? $bdcSource->toutesLesLignes() : collect();
             @endphp
-            <x-lignes-document :lignes-initiales="$lignesInitiales" :taux-tva="$tauxTva" :tva-defaut="21"/>
+            <x-lignes-document :lignes-initiales="$lignesInitiales" :taux-tva="$tauxTva" :tva-defaut="21" :client-id="$bdcSource->client_id ?? null"/>
         </div>
 
         <div class="flex justify-between">

@@ -32,6 +32,7 @@ use App\Http\Controllers\AbsenceCollectiveController;
 use App\Http\Controllers\RelanceScenariosController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VentesHistoriqueController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -156,6 +157,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/produits/search', [ProduitController::class, 'search'])->name('produits.search');
         Route::get('/api/produits/suggestions', [ProduitController::class, 'suggestions'])->name('produits.suggestions');
         Route::get('/api/catalog/search', [CatalogController::class, 'search'])->name('catalog.search');
+        Route::get('/api/ventes/historique', [VentesHistoriqueController::class, 'historique'])->name('ventes.historique');
         Route::get('/api/clients/search', [ClientController::class, 'apiSearch'])->name('clients.api-search');
         Route::get('/api/clients/{client}/chantiers', [ClientController::class, 'chantiers'])->name('clients.chantiers');
         Route::get('/api/chantiers/search', [ChantierController::class, 'apiSearch'])->name('chantiers.api-search');

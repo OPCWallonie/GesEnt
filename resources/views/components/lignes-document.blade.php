@@ -5,7 +5,7 @@
       $tauxTva : collection de TauxTva
       $tvaDefaut : taux par défaut (ex: 21)
 --}}
-@props(['lignesInitiales' => collect(), 'tauxTva', 'tvaDefaut' => 21])
+@props(['lignesInitiales' => collect(), 'tauxTva', 'tvaDefaut' => 21, 'clientId' => null])
 
 <div x-data="lignesDocument({{ json_encode($lignesInitiales->map(fn($l) => [
     'designation'        => $l->designation,
@@ -21,7 +21,7 @@
     'produit_id'         => $l->produit_id,
     'catalog_produit_id' => $l->catalog_produit_id ?? null,
     'produit_key'        => $l->produit_id ? 'p:' . $l->produit_id : ($l->catalog_produit_id ?? null ? 'c:' . ($l->catalog_produit_id ?? '') : ''),
-])->values()) }}, {{ $tvaDefaut }})">
+])->values()) }}, {{ $tvaDefaut }}, {{ $clientId ?? 'null' }})">
 
     {{-- En-tête tableau --}}
     <div class="hidden md:grid grid-cols-12 gap-2 px-3 py-2 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase">
@@ -150,6 +150,16 @@
 
                         {{-- Actions --}}
                         <div class="col-span-6 md:col-span-1 flex items-center justify-end gap-1">
+                            <button type="button"
+                                    @click="ouvrirHistorique(index)"
+                                    x-show="ligne.produit_id || ligne.catalog_produit_id || (ligne.designation && ligne.designation.length >= 3)"
+                                    class="text-gray-300 hover:text-indigo-500 p-0.5"
+                                    title="Déjà vendu ? Voir l'historique des prix">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </button>
                             <button type="button" @click="deplacerHaut(index)" :disabled="index === 0"
                                     class="text-gray-300 hover:text-gray-500 disabled:opacity-20">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
@@ -332,6 +342,200 @@
         </div>
     </div>
 
+    {{-- Pop-over historique des ventes --}}
+    <div x-show="historiqueOpen" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/50" @click="historiqueOpen = false"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[85vh]" @click.stop>
+
+            {{-- Header --}}
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold text-gray-900">Déjà vendu à ce client</h3>
+                    <p class="text-xs text-gray-500 mt-0.5 truncate"
+                       x-text="historiqueLigneIndex !== null ? (lignes[historiqueLigneIndex]?.designation || '') : ''"></p>
+                </div>
+                <button @click="historiqueOpen = false" class="text-gray-400 hover:text-gray-600 ml-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Bandeau prix catalogue actuel --}}
+            <template x-if="historiqueData && historiqueData.prix_catalogue_actuel !== null && historiqueData.prix_catalogue_actuel !== undefined">
+                <div class="px-6 py-2.5 bg-gray-50 border-b border-gray-100 text-xs text-gray-600">
+                    💶 Prix catalogue actuel :
+                    <span class="font-semibold text-gray-900" x-text="historiqueData.prix_catalogue_actuel.toFixed(2) + ' €'"></span>
+                </div>
+            </template>
+
+            {{-- Loading --}}
+            <div x-show="historiqueLoading" class="flex items-center justify-center py-12 text-sm text-gray-400">
+                Chargement…
+            </div>
+
+            {{-- Contenu --}}
+            <div x-show="!historiqueLoading && historiqueData" class="overflow-y-auto flex-1">
+
+                {{-- Stats ce client --}}
+                <template x-if="clientId && historiqueData && historiqueData.stats_ce_client && historiqueData.stats_ce_client.nb > 0">
+                    <div class="px-6 py-4 bg-blue-50 border-b border-blue-100">
+                        <div class="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">
+                            À ce client (<span x-text="historiqueData.stats_ce_client.nb"></span> vente<span x-text="historiqueData.stats_ce_client.nb > 1 ? 's' : ''"></span>)
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 text-sm">
+                            <div>
+                                <div class="text-xs text-gray-500">Prix min</div>
+                                <div class="font-semibold" x-text="historiqueData.stats_ce_client.prix_min.toFixed(2) + ' €'"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500">Prix moyen</div>
+                                <div class="font-semibold text-blue-700" x-text="historiqueData.stats_ce_client.prix_moy.toFixed(2) + ' €'"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500">Prix max</div>
+                                <div class="font-semibold" x-text="historiqueData.stats_ce_client.prix_max.toFixed(2) + ' €'"></div>
+                            </div>
+                            <div x-show="historiqueData.stats_ce_client.marge_moy_pct !== null">
+                                <div class="text-xs text-gray-500">Marge moy.</div>
+                                <div class="font-semibold text-indigo-700"
+                                     x-text="(historiqueData.stats_ce_client.marge_moy_pct > 0 ? '+' : '') + historiqueData.stats_ce_client.marge_moy_pct.toFixed(1) + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Ventes ce client --}}
+                <template x-if="historiqueData && historiqueData.ventes_ce_client && historiqueData.ventes_ce_client.length > 0">
+                    <div class="px-6 py-4">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Dernières ventes à ce client</h4>
+                        <div class="space-y-3">
+                            <template x-for="v in historiqueData.ventes_ce_client" :key="v.ligne_id">
+                                <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="inline-block px-2 py-0.5 text-xs rounded-full"
+                                              :class="v.document_type === 'facture' ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700'"
+                                              x-text="v.document_type === 'facture' ? 'FAC' : 'BDC'"></span>
+                                        <span class="font-mono text-xs text-gray-500" x-text="v.document_numero"></span>
+                                        <span class="text-xs text-gray-400"
+                                              x-text="new Date(v.date_document).toLocaleDateString('fr-BE') + ' · il y a ' + v.age_mois + ' mois'"></span>
+                                        <span x-show="v.chantier_nom" class="text-xs text-gray-500 ml-auto truncate" x-text="v.chantier_nom || ''"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-3 flex-wrap">
+                                                <div>
+                                                    <div class="text-xs text-gray-500">Prix d'alors</div>
+                                                    <div class="font-semibold text-gray-900" x-text="v.prix_unitaire.toFixed(2) + ' €'"></div>
+                                                </div>
+                                                <template x-if="v.contexte_marge">
+                                                    <div class="flex items-center gap-3 border-l border-gray-300 pl-3">
+                                                        <div>
+                                                            <div class="text-xs text-gray-500">Marge d'alors</div>
+                                                            <div class="font-semibold text-indigo-700"
+                                                                 x-text="(v.contexte_marge.marge_pct_epoque > 0 ? '+' : '') + v.contexte_marge.marge_pct_epoque.toFixed(1) + '%'"></div>
+                                                        </div>
+                                                        <div>
+                                                            <div class="text-xs text-gray-500">Catalogue</div>
+                                                            <div class="text-xs font-mono">
+                                                                <span x-text="v.contexte_marge.prix_catalogue_epoque.toFixed(2)"></span>
+                                                                <span class="text-gray-400">→</span>
+                                                                <span :class="classeEvolution(v.contexte_marge.evolution_catalogue_pct)"
+                                                                      class="font-semibold"
+                                                                      x-text="v.contexte_marge.prix_catalogue_actuel.toFixed(2) + ' (' + (v.contexte_marge.evolution_catalogue_pct > 0 ? '+' : '') + v.contexte_marge.evolution_catalogue_pct.toFixed(1) + '%)'"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col gap-1 flex-shrink-0">
+                                            <template x-if="v.contexte_marge">
+                                                <button @click="reprendreMarge(v.contexte_marge.prix_equivalent_actuel)"
+                                                        class="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap">
+                                                    Reprendre marge
+                                                    <span class="font-semibold ml-0.5" x-text="'(' + v.contexte_marge.prix_equivalent_actuel.toFixed(2) + ' €)'"></span>
+                                                </button>
+                                            </template>
+                                            <button @click="reprendrePrixBrut(v.prix_unitaire)"
+                                                    class="text-xs px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 whitespace-nowrap"
+                                                    x-text="v.contexte_marge ? 'Prix brut (' + v.prix_unitaire.toFixed(2) + ' €)' : 'Reprendre (' + v.prix_unitaire.toFixed(2) + ' €)'">
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Aucune vente à ce client --}}
+                <template x-if="clientId && historiqueData && (!historiqueData.ventes_ce_client || historiqueData.ventes_ce_client.length === 0)">
+                    <div class="px-6 py-4 text-sm text-gray-500 italic border-b border-gray-100">
+                        Ce produit n'a jamais été vendu à ce client.
+                    </div>
+                </template>
+
+                {{-- Ventes autres clients --}}
+                <template x-if="historiqueData && historiqueData.ventes_autres_clients && historiqueData.ventes_autres_clients.length > 0">
+                    <div class="px-6 py-4 border-t border-gray-100">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                            <span x-show="clientId">À d'autres clients (référence)</span>
+                            <span x-show="!clientId">Dernières ventes</span>
+                        </h4>
+                        <div class="space-y-2">
+                            <template x-for="v in historiqueData.ventes_autres_clients" :key="v.ligne_id">
+                                <div class="bg-white border border-gray-100 rounded-lg px-3 py-2 text-sm">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-medium text-gray-800 truncate" x-text="v.client_nom || '—'"></div>
+                                            <div class="text-xs text-gray-500 mt-0.5">
+                                                <span x-text="v.document_numero"></span> ·
+                                                <span x-text="new Date(v.date_document).toLocaleDateString('fr-BE')"></span>
+                                                <template x-if="v.contexte_marge">
+                                                    <span class="ml-1 text-indigo-600"
+                                                          x-text="'marge ' + (v.contexte_marge.marge_pct_epoque > 0 ? '+' : '') + v.contexte_marge.marge_pct_epoque.toFixed(1) + '%'"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div class="text-right flex-shrink-0">
+                                            <div class="font-semibold text-gray-700" x-text="v.prix_unitaire.toFixed(2) + ' €'"></div>
+                                            <template x-if="v.contexte_marge">
+                                                <div class="text-xs text-gray-400"
+                                                     x-text="'équiv. ' + v.contexte_marge.prix_equivalent_actuel.toFixed(2) + ' €'"></div>
+                                            </template>
+                                        </div>
+                                        <div class="flex flex-col gap-1 flex-shrink-0">
+                                            <template x-if="v.contexte_marge">
+                                                <button @click="reprendreMarge(v.contexte_marge.prix_equivalent_actuel)"
+                                                        class="text-xs px-2 py-1 border border-blue-300 text-blue-700 rounded hover:bg-blue-50 whitespace-nowrap">
+                                                    Marge
+                                                </button>
+                                            </template>
+                                            <button @click="reprendrePrixBrut(v.prix_unitaire)"
+                                                    class="text-xs px-2 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 whitespace-nowrap">
+                                                Brut
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Aucun résultat --}}
+                <template x-if="historiqueData && (!historiqueData.ventes_ce_client || historiqueData.ventes_ce_client.length === 0) && (!historiqueData.ventes_autres_clients || historiqueData.ventes_autres_clients.length === 0)">
+                    <div class="px-6 py-8 text-center text-gray-400 text-sm">
+                        Aucune vente antérieure pour ce produit sur les 24 derniers mois.
+                    </div>
+                </template>
+
+            </div>
+        </div>
+    </div>
+
     {{-- Totaux --}}
     <div class="p-4 bg-gray-50 rounded-b-xl">
         <div class="flex justify-end">
@@ -356,7 +560,7 @@
 </div>
 
 <script>
-function lignesDocument(lignesInitiales, tvaDefaut) {
+function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
     return {
         lignes: lignesInitiales.length > 0
             ? lignesInitiales.map(l => ({...l, montant_ht: parseFloat(l.montant_ht) || 0,
@@ -364,6 +568,15 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
                 catalog_produit_id: l.catalog_produit_id || null,
                 produit_key: l.produit_key || '' }))
             : [{ designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' }],
+
+        // Client actif (pour historique prix)
+        clientId: clientIdInitial,
+
+        // Historique des ventes
+        historiqueOpen: false,
+        historiqueLigneIndex: null,
+        historiqueData: null,
+        historiqueLoading: false,
 
         // Catalogue fournisseurs
         catalogOpen: false,
@@ -552,6 +765,14 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
                 });
             });
 
+            // Suivre le changement de client (combobox)
+            window.addEventListener('combobox-selected', (e) => {
+                if (e.detail.field === 'client_id') this.clientId = e.detail.id;
+            });
+            window.addEventListener('combobox-cleared', (e) => {
+                if (e.detail.field === 'client_id') this.clientId = null;
+            });
+
             // Écouter les suggestions cliquées depuis le bandeau "Produits habituels"
             window.addEventListener('ajouter-produit', (e) => {
                 const p = e.detail;
@@ -578,6 +799,55 @@ function lignesDocument(lignesInitiales, tvaDefaut) {
                 });
                 this.calculerLigne(this.lignes.length - 1);
             });
+        },
+
+        async ouvrirHistorique(index) {
+            const l = this.lignes[index];
+            if (!l.produit_id && !l.catalog_produit_id && (!l.designation || l.designation.length < 3)) return;
+
+            this.historiqueLigneIndex = index;
+            this.historiqueOpen       = true;
+            this.historiqueLoading    = true;
+            this.historiqueData       = null;
+
+            const params = new URLSearchParams();
+            if (l.produit_id)         params.set('produit_id', l.produit_id);
+            if (l.catalog_produit_id) params.set('catalog_produit_id', l.catalog_produit_id);
+            if (!l.produit_id && !l.catalog_produit_id) params.set('designation', l.designation);
+            if (this.clientId) params.set('client_id', this.clientId);
+
+            try {
+                const r = await fetch(`{{ route('ventes.historique') }}?` + params.toString(), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                this.historiqueData = await r.json();
+            } catch (e) {
+                this.historiqueData = { ventes_ce_client: [], ventes_autres_clients: [], stats_ce_client: { nb: 0 }, stats_toutes: { nb: 0 }, prix_catalogue_actuel: null };
+            } finally {
+                this.historiqueLoading = false;
+            }
+        },
+
+        reprendreMarge(prixEquivalent) {
+            if (this.historiqueLigneIndex === null) return;
+            this.lignes[this.historiqueLigneIndex].prix_unitaire = parseFloat(prixEquivalent);
+            this.calculerLigne(this.historiqueLigneIndex);
+            this.historiqueOpen = false;
+        },
+
+        reprendrePrixBrut(prix) {
+            if (this.historiqueLigneIndex === null) return;
+            this.lignes[this.historiqueLigneIndex].prix_unitaire = parseFloat(prix);
+            this.calculerLigne(this.historiqueLigneIndex);
+            this.historiqueOpen = false;
+        },
+
+        classeEvolution(evolutionPct) {
+            if (evolutionPct === null || evolutionPct === undefined) return '';
+            const abs = Math.abs(evolutionPct);
+            if (abs < 3)  return 'text-green-600';
+            if (abs < 10) return 'text-amber-600';
+            return 'text-red-600';
         },
 
         formatMontant(v) {

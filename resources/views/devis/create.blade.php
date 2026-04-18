@@ -104,7 +104,8 @@
                     <x-lignes-document
                         :lignes-initiales="collect()"
                         :taux-tva="$tauxTva"
-                        :tva-defaut="21"/>
+                        :tva-defaut="21"
+                        :client-id="$clientSelectionne?->id ?? null"/>
                 </div>
 
                 {{-- Notes --}}
