@@ -1,6 +1,7 @@
 <x-app-layout>
     <x-slot name="header">Nouvelle facture</x-slot>
 
+    <x-document-autosave document-type="facture">
     <form method="POST" action="{{ route('factures.store') }}" class="space-y-6">
         @csrf
 
@@ -160,4 +161,5 @@
             </button>
         </div>
     </form>
+    </x-document-autosave>
 </x-app-layout>

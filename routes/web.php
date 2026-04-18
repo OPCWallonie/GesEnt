@@ -33,6 +33,7 @@ use App\Http\Controllers\RelanceScenariosController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VentesHistoriqueController;
+use App\Http\Controllers\DocumentDraftController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -131,6 +132,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
     Route::get('/catalog/changements-prix', [CatalogController::class, 'changementsPrix'])->name('catalog.changements-prix');
     Route::post('/catalog/changements-prix/marquer-lu', [CatalogController::class, 'marquerChangementsLus'])->name('catalog.changements-prix.marquer-lu');
+    Route::get('/catalog/produit/{catalogProduit}', [CatalogController::class, 'show'])->name('catalog.show');
+
+    // API auto-save des documents (brouillons)
+    Route::prefix('api/drafts')->name('drafts.')->middleware('throttle:120,1')->group(function () {
+        Route::post('/save', [DocumentDraftController::class, 'save'])->name('save');
+        Route::get('/load', [DocumentDraftController::class, 'load'])->name('load');
+        Route::delete('/', [DocumentDraftController::class, 'destroy'])->name('destroy');
+    });
 
     // Statistiques (consultation — tous les rôles)
     Route::get('/statistiques', [StatistiquesController::class, 'index'])->name('statistiques.index');

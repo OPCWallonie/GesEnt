@@ -332,7 +332,15 @@
                                         <span class="text-xs font-medium text-gray-600" x-text="p.fournisseur"></span>
                                     </td>
                                     <td class="px-4 py-2.5 font-mono text-xs text-gray-500" x-text="p.reference"></td>
-                                    <td class="px-4 py-2.5 font-medium text-gray-900" x-text="p.designation"></td>
+                                    <td class="px-4 py-2.5 font-medium text-gray-900">
+                                        <span x-text="p.designation"></span>
+                                        <template x-if="p.nb_equivalents > 1">
+                                            <span class="ml-2 inline-block px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700"
+                                                  :title="`Disponible chez ${p.nb_equivalents} fournisseurs`">
+                                                📊 <span x-text="p.nb_equivalents"></span> fourn.
+                                            </span>
+                                        </template>
+                                    </td>
                                     <td class="px-4 py-2.5 text-right">
                                         <span class="font-semibold" x-text="p.prix.toFixed(2) + ' €'"></span>
                                         <span class="block text-xs text-gray-400" x-text="'TVA ' + p.taux_tva + '% / ' + p.unite"></span>
@@ -749,6 +757,28 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
         },
 
         init() {
+            // Restauration depuis l'auto-save
+            window.addEventListener('restaurer-lignes', (e) => {
+                const lignes = e.detail.lignes;
+                if (!lignes || lignes.length === 0) return;
+                this.lignes = lignes.map(l => ({
+                    designation:        l.designation || '',
+                    detail:             l.detail || '',
+                    unite:              l.unite || 'pièce',
+                    quantite:           parseFloat(l.quantite) || 0,
+                    prix_unitaire:      parseFloat(l.prix_unitaire) || 0,
+                    remise_valeur:      parseFloat(l.remise_valeur) || 0,
+                    remise_type:        l.remise_type || 'montant',
+                    taux_tva:           parseFloat(l.taux_tva) || tvaDefaut,
+                    est_section:        l.est_section === '1' || l.est_section === true,
+                    montant_ht:         parseFloat(l.montant_ht) || 0,
+                    produit_id:         l.produit_id ? parseInt(l.produit_id) : null,
+                    catalog_produit_id: l.catalog_produit_id ? parseInt(l.catalog_produit_id) : null,
+                    produit_key:        l.produit_key || '',
+                }));
+                this.lignes.forEach((_, i) => this.calculerLigne(i));
+            });
+
             // Écouter un kit complet (toutes ses lignes en une seule fois)
             window.addEventListener('inserer-kit', (e) => {
                 const kitLignes = e.detail.lignes;

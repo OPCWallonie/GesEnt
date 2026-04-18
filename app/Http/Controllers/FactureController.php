@@ -10,6 +10,7 @@ use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Models\Paiement;
+use App\Models\DocumentDraft;
 use App\Services\DocumentService;
 use App\Services\MailConfigService;
 use App\Services\MailTemplateService;
@@ -152,6 +153,8 @@ class FactureController extends Controller
             $this->odooSync->syncFacture($facture);
         }
 
+        DocumentDraft::pourUser(auth()->id())->where('document_type', 'facture')->whereNull('document_id')->delete();
+
         return redirect()->route('factures.show', $facture)
             ->with('success', "Facture {$facture->numero} créée.");
     }
@@ -248,6 +251,8 @@ class FactureController extends Controller
             return redirect()->route('factures.edit', $facture)
                 ->with('error', "Transition de statut impossible : {$ancienStatut} → {$nouveauStatut}.");
         }
+
+        DocumentDraft::pourUser(auth()->id())->where('document_type', 'facture')->where('document_id', $facture->id)->delete();
 
         return redirect()->route('factures.show', $facture)->with('success', 'Facture mise à jour.');
     }

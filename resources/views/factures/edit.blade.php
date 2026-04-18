@@ -1,6 +1,7 @@
 <x-app-layout>
     <x-slot name="header">Modifier — {{ $facture->numero }}</x-slot>
 
+    <x-document-autosave document-type="facture" :document-id="$facture->id">
     <form method="POST" action="{{ route('factures.update', $facture) }}" class="space-y-6">
         @csrf @method('PUT')
 
@@ -93,4 +94,5 @@
             </button>
         </div>
     </form>
+    </x-document-autosave>
 </x-app-layout>

@@ -7,6 +7,7 @@ use App\Models\CatalogProduit;
 use App\Models\CatalogPrixHistorique;
 use App\Services\Catalog\ApiCatalogService;
 use App\Services\Catalog\CsvImporteur;
+use App\Services\Catalog\EanMatchingService;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
@@ -48,6 +49,14 @@ class CatalogController extends Controller
         ));
     }
 
+    public function show(CatalogProduit $catalogProduit, EanMatchingService $eanService)
+    {
+        $equivalents = $eanService->equivalentsAutresFournisseurs($catalogProduit);
+        $historique  = $catalogProduit->historiquePrix()->orderByDesc('detected_at')->take(10)->get();
+
+        return view('catalog.show', compact('catalogProduit', 'equivalents', 'historique'));
+    }
+
     /**
      * Recherche AJAX pour l'autocomplétion dans les lignes de devis/BDC.
      */
@@ -67,18 +76,31 @@ class CatalogController extends Controller
             ->limit(15)
             ->get();
 
+        // Comptage d'équivalents par EAN (N+1 évité via GROUP BY)
+        $eans = $produits->pluck('ean')->filter()->unique();
+        $nbEquivalentsParEan = [];
+        if ($eans->isNotEmpty()) {
+            $nbEquivalentsParEan = CatalogProduit::whereIn('ean', $eans)
+                ->selectRaw('ean, COUNT(DISTINCT fournisseur) as nb')
+                ->groupBy('ean')
+                ->pluck('nb', 'ean')
+                ->toArray();
+        }
+
         return response()->json($produits->map(fn($p) => [
-            'id'          => $p->id,
-            'fournisseur' => $p->nom_fournisseur,
-            'reference'   => $p->reference,
-            'designation' => $p->designation . ($p->marque ? " ({$p->marque})" : ''),
-            'unite'       => $p->unite,
-            'prix'        => (float) $p->prix_revente,
-            'prix_base'   => (float) $p->prix_catalogue,
-            'taux_tva'    => (float) $p->taux_tva,
-            'en_stock'    => $p->en_stock,
-            'score'       => (float) ($p->usage_score ?? 0),
-            'habituel'    => ($p->usage_score ?? 0) > 5,
+            'id'             => $p->id,
+            'fournisseur'    => $p->nom_fournisseur,
+            'reference'      => $p->reference,
+            'designation'    => $p->designation . ($p->marque ? " ({$p->marque})" : ''),
+            'unite'          => $p->unite,
+            'prix'           => (float) $p->prix_revente,
+            'prix_base'      => (float) $p->prix_catalogue,
+            'taux_tva'       => (float) $p->taux_tva,
+            'en_stock'       => $p->en_stock,
+            'score'          => (float) ($p->usage_score ?? 0),
+            'habituel'       => ($p->usage_score ?? 0) > 5,
+            'ean'            => $p->ean,
+            'nb_equivalents' => $p->ean ? ($nbEquivalentsParEan[$p->ean] ?? 1) : 1,
         ]));
     }
 

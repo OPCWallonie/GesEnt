@@ -1,6 +1,7 @@
 <x-app-layout>
     <x-slot name="header">Modifier le devis {{ $devis->numero }}</x-slot>
 
+    <x-document-autosave document-type="devis" :document-id="$devis->id">
     <form method="POST" action="{{ route('devis.update', $devis) }}">
         @csrf
         @method('PUT')
@@ -233,4 +234,6 @@ function produitsHabituels() {
     };
 }
 </script>
+    </form>
+    </x-document-autosave>
 </x-app-layout>

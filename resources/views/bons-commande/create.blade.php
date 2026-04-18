@@ -1,6 +1,8 @@
 <x-app-layout>
     <x-slot name="header">Nouveau bon de commande</x-slot>
 
+    <x-document-autosave document-type="bon_commande">
+
     @isset($devisSource)
         <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800 flex items-center gap-2">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,4 +211,5 @@
             </div>
         </div>
     </form>
+    </x-document-autosave>
 </x-app-layout>

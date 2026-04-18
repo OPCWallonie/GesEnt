@@ -155,7 +155,7 @@
                             </td>
                             <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ $produit->reference }}</td>
                             <td class="px-4 py-3">
-                                <span class="font-medium text-gray-900">{{ $produit->designation }}</span>
+                                <a href="{{ route('catalog.show', $produit) }}" class="font-medium text-gray-900 hover:text-blue-600">{{ $produit->designation }}</a>
                                 @if($produit->ean)
                                     <span class="block text-xs text-gray-400">EAN: {{ $produit->ean }}</span>
                                 @endif

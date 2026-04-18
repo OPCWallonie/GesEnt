@@ -10,6 +10,7 @@ use App\Models\EmailEnvoi;
 use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
+use App\Models\DocumentDraft;
 use App\Services\DocumentService;
 use App\Services\MailConfigService;
 use App\Services\MailTemplateService;
@@ -108,6 +109,8 @@ class BonCommandeController extends Controller
             $this->usageService->enregistrerUtilisation($bdc);
             return $bdc;
         });
+
+        DocumentDraft::pourUser(auth()->id())->where('document_type', 'bon_commande')->whereNull('document_id')->delete();
 
         return redirect()->route('bons-commande.show', $bdc)
             ->with('success', "Bon de commande {$bdc->numero} créé.");
@@ -236,6 +239,8 @@ class BonCommandeController extends Controller
             $this->documentService->enregistrerLignes($bonCommande, $data['lignes']);
             $this->documentService->recalculerMontants($bonCommande);
         });
+
+        DocumentDraft::pourUser(auth()->id())->where('document_type', 'bon_commande')->where('document_id', $bonCommande->id)->delete();
 
         return redirect()->route('bons-commande.show', $bonCommande)->with('success', 'BDC mis à jour.');
     }

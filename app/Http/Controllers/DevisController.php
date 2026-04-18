@@ -10,6 +10,7 @@ use App\Models\EmailEnvoi;
 use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
+use App\Models\DocumentDraft;
 use App\Services\Catalog\DevisImpactService;
 use App\Services\DocumentService;
 use App\Services\MailConfigService;
@@ -123,6 +124,8 @@ class DevisController extends Controller
             return $devis;
         });
 
+        DocumentDraft::pourUser(auth()->id())->where('document_type', 'devis')->whereNull('document_id')->delete();
+
         return redirect()->route('devis.show', $devis)
             ->with('success', "Devis {$devis->numero} créé.");
     }
@@ -200,6 +203,8 @@ class DevisController extends Controller
             $this->documentService->recalculerMontants($devis);
             $this->usageService->enregistrerUtilisation($devis);
         });
+
+        DocumentDraft::pourUser(auth()->id())->where('document_type', 'devis')->where('document_id', $devis->id)->delete();
 
         return redirect()->route('devis.show', $devis)->with('success', 'Devis mis à jour.');
     }

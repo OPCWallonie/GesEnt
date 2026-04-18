@@ -1,6 +1,7 @@
 <x-app-layout>
     <x-slot name="header">Modifier BDC — {{ $bdc->numero }}</x-slot>
 
+    <x-document-autosave document-type="bon_commande" :document-id="$bdc->id">
     <form method="POST" action="{{ route('bons-commande.update', $bdc) }}" class="space-y-6">
         @csrf @method('PUT')
         <input type="hidden" name="devis_id" value="{{ $bdc->devis_id }}">
@@ -141,4 +142,5 @@
             </button>
         </div>
     </form>
+    </x-document-autosave>
 </x-app-layout>

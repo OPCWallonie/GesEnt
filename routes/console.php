@@ -32,3 +32,6 @@ Schedule::command('odoo:sync-achats')->everyFifteenMinutes();
 
 // Odoo — toutes les heures : pousser les factures de vente non synchronisées
 Schedule::command('odoo:sync-factures')->hourly();
+
+// Tous les jours à 4h : supprimer les brouillons de documents > 7 jours
+Schedule::command('gesent:nettoyer-drafts')->dailyAt('04:00');
