@@ -36,12 +36,16 @@
     </div>
 
     {{-- Lignes --}}
-    <template x-for="(ligne, index) in lignes" :key="index">
+    <div x-ref="lignesSortable" class="lignes-sortable-container">
+    <template x-for="(ligne, index) in lignes" :key="ligne._uid ?? index">
         <div class="border-b border-gray-100 hover:bg-gray-50" :class="ligne.est_section ? 'bg-blue-50' : ''">
 
             {{-- Ligne titre/section --}}
             <template x-if="ligne.est_section">
                 <div class="flex items-center gap-2 px-3 py-2">
+                    <div class="ligne-drag-handle flex items-center justify-center text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing select-none flex-shrink-0" title="Glisser pour réorganiser">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7 2a2 2 0 012 2v12a2 2 0 01-4 0V4a2 2 0 012-2zM13 2a2 2 0 012 2v12a2 2 0 01-4 0V4a2 2 0 012-2z"/></svg>
+                    </div>
                     <input type="hidden" :name="`lignes[${index}][est_section]`" value="1">
                     <input :name="`lignes[${index}][designation]`" x-model="ligne.designation"
                            placeholder="Titre de section…"
@@ -165,6 +169,9 @@
 
                         {{-- Actions --}}
                         <div class="col-span-6 md:col-span-1 flex items-center justify-end gap-1">
+                            <div class="ligne-drag-handle text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing select-none p-0.5" title="Glisser pour réorganiser">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7 2a2 2 0 012 2v12a2 2 0 01-4 0V4a2 2 0 012-2zM13 2a2 2 0 012 2v12a2 2 0 01-4 0V4a2 2 0 012-2z"/></svg>
+                            </div>
                             <button type="button"
                                     @click="ouvrirHistorique(index)"
                                     x-show="ligne.produit_id || ligne.catalog_produit_id || (ligne.designation && ligne.designation.length >= 3)"
@@ -200,6 +207,7 @@
             </template>
         </div>
     </template>
+    </div>{{-- /.lignes-sortable-container --}}
 
     {{-- Boutons ajout --}}
     <div class="flex gap-3 p-3 border-b border-gray-100">
@@ -582,15 +590,28 @@
     </div>
 </div>
 
+<style>
+@media (hover: hover) and (pointer: fine) {
+    .ligne-drag-handle { opacity: 0; transition: opacity 150ms; }
+    .lignes-sortable-container > div:hover .ligne-drag-handle { opacity: 1; }
+}
+@media (hover: none), (pointer: coarse) {
+    .ligne-drag-handle { opacity: 1; }
+}
+.sortable-ghost   { opacity: 0.4; background-color: rgb(239 246 255); }
+.sortable-drag    { opacity: 0.9; box-shadow: 0 10px 25px -5px rgba(0,0,0,.1); cursor: grabbing; }
+.sortable-chosen  { background-color: rgb(239 246 255); }
+</style>
+
 <script>
 function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
     return {
         lignes: lignesInitiales.length > 0
-            ? lignesInitiales.map(l => ({...l, montant_ht: parseFloat(l.montant_ht) || 0,
+            ? lignesInitiales.map(l => ({...l, _uid: crypto.randomUUID(), montant_ht: parseFloat(l.montant_ht) || 0,
                 produit_id: l.produit_id || null,
                 catalog_produit_id: l.catalog_produit_id || null,
                 produit_key: l.produit_key || '' }))
-            : [{ designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' }],
+            : [{ _uid: crypto.randomUUID(), designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' }],
 
         // Client actif (pour historique prix)
         clientId: clientIdInitial,
@@ -640,7 +661,7 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
         },
 
         nouvelleLigneVide() {
-            return { designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' };
+            return { _uid: crypto.randomUUID(), designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' };
         },
 
         ajouterLigne() {
@@ -648,7 +669,7 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
         },
 
         ajouterSection() {
-            this.lignes.push({ designation: '', detail: '', unite: '—', quantite: 0, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: true, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' });
+            this.lignes.push({ _uid: crypto.randomUUID(), designation: '', detail: '', unite: '—', quantite: 0, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: true, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' });
         },
 
         supprimerLigne(index) {
@@ -739,6 +760,7 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
                 : parseFloat(produit.prix) || 0;
 
             this.lignes.push({
+                _uid:               crypto.randomUUID(),
                 designation:        produit.designation,
                 detail:             produit.reference ? `Réf. ${produit.reference} — ${produit.fournisseur}` : '',
                 unite:              produit.unite,
@@ -762,6 +784,7 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
                 const lignes = e.detail.lignes;
                 if (!lignes || lignes.length === 0) return;
                 this.lignes = lignes.map(l => ({
+                    _uid:               crypto.randomUUID(),
                     designation:        l.designation || '',
                     detail:             l.detail || '',
                     unite:              l.unite || 'pièce',
@@ -793,6 +816,7 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
 
                 kitLignes.forEach(l => {
                     this.lignes.push({
+                        _uid:               crypto.randomUUID(),
                         designation:        l.designation,
                         detail:             l.detail || '',
                         unite:              l.unite || (l.est_section ? '—' : 'pièce'),
@@ -831,6 +855,32 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
                 });
             }
 
+            // Initialiser le drag & drop SortableJS
+            this.$nextTick(() => {
+                const container = this.$refs.lignesSortable;
+                if (!container || typeof Sortable === 'undefined') return;
+
+                Sortable.create(container, {
+                    handle: '.ligne-drag-handle',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass:   'sortable-drag',
+                    filter: 'input, textarea, select, button',
+                    preventOnFilter: false,
+
+                    onEnd: (evt) => {
+                        const { oldIndex, newIndex } = evt;
+                        if (oldIndex === newIndex) return;
+                        const ligneDeplacee = this.lignes.splice(oldIndex, 1)[0];
+                        this.lignes.splice(newIndex, 0, ligneDeplacee);
+                        // Notifier l'auto-save qu'il y a eu un changement
+                        const f = this.$root.closest('form');
+                        if (f) f.dispatchEvent(new Event('input', { bubbles: true }));
+                    },
+                });
+            });
+
             // Écouter les suggestions cliquées depuis le bandeau "Produits habituels"
             window.addEventListener('ajouter-produit', (e) => {
                 const p = e.detail;
@@ -841,6 +891,7 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
                     : parseFloat(p.prix || p.prix_unitaire) || 0;
 
                 this.lignes.push({
+                    _uid:               crypto.randomUUID(),
                     designation:        p.designation,
                     detail:             p.reference ? `Réf. ${p.reference}${p.fournisseur ? ' — ' + p.fournisseur : ''}` : '',
                     unite:              p.unite || 'pièce',

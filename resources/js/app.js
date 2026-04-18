@@ -1,8 +1,10 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
+import Sortable from 'sortablejs';
 
 window.Alpine = Alpine;
+window.Sortable = Sortable;
 
 // Composant recherche live (Ajax, debounce 300ms) pour les pages index
 Alpine.data('liveSearch', () => ({

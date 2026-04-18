@@ -4,22 +4,12 @@ namespace App\Services\Catalog;
 
 use App\Models\CatalogConfig;
 use App\Models\CatalogProduit;
-use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
-/**
- * Importeur CSV générique pour les catalogues fournisseurs.
- *
- * Chaque fournisseur a son propre mapping de colonnes.
- * Le CSV peut être encodé en UTF-8 ou Windows-1252 (latin1).
- */
 class CsvImporteur
 {
     public function __construct(private PrixHistoriqueService $historiqueService) {}
 
-    // ---------------------------------------------------------------
-    // Mappings par fournisseur
-    // Clé = champ interne, valeur = nom(s) de colonne CSV possible(s)
-    // ---------------------------------------------------------------
     private const MAPPINGS = [
         'desco' => [
             'reference'        => ['artikelnummer', 'article', 'code', 'ref', 'artnr', 'artikelcode'],
@@ -75,36 +65,99 @@ class CsvImporteur
 
     public function importer(string $fournisseur, string $cheminFichier, float $margePct = 0): array
     {
-        $mapping = self::MAPPINGS[$fournisseur] ?? self::MAPPINGS['autre'];
+        $extension = strtolower(pathinfo($cheminFichier, PATHINFO_EXTENSION));
 
+        return match ($extension) {
+            'xlsx', 'xls' => $this->importerExcel($fournisseur, $cheminFichier, $margePct),
+            default       => $this->importerCsv($fournisseur, $cheminFichier, $margePct),
+        };
+    }
+
+    private function importerCsv(string $fournisseur, string $cheminFichier, float $margePct): array
+    {
         $handle = fopen($cheminFichier, 'r');
         $this->skipBom($handle);
-
         $separateur = $this->detecterSeparateur($cheminFichier);
-        $entetes     = null;
-        $colMap      = [];
-        $inseres     = 0;
-        $mis_a_jour  = 0;
-        $ignores     = 0;
-        $erreurs     = [];
+
+        $headers = null;
+        $rows    = [];
 
         while (($ligne = fgetcsv($handle, 0, $separateur)) !== false) {
-            // Nettoyer l'encodage Windows-1252 éventuel
             $ligne = array_map(fn($v) => mb_convert_encoding($v, 'UTF-8', 'UTF-8,ISO-8859-1'), $ligne);
             $ligne = array_map('trim', $ligne);
 
-            // Première ligne non vide = entêtes
-            if ($entetes === null) {
-                $entetes = array_map('strtolower', $ligne);
-                $colMap  = $this->construireMapping($entetes, $mapping);
+            if ($headers === null) {
+                $headers = array_map('strtolower', $ligne);
                 continue;
             }
-
             if (count($ligne) < 2 || array_filter($ligne) === []) continue;
 
+            $rows[] = $ligne;
+        }
+        fclose($handle);
+
+        return $this->importerDepuisRows($fournisseur, $headers ?? [], $rows, $margePct);
+    }
+
+    private function importerExcel(string $fournisseur, string $cheminFichier, float $margePct): array
+    {
+        try {
+            $reader = IOFactory::createReaderForFile($cheminFichier);
+            $reader->setReadDataOnly(true);
+
+            $spreadsheet = $reader->load($cheminFichier);
+            $sheet       = $spreadsheet->getActiveSheet();
+
+            $headers = null;
+            $rows    = [];
+
+            foreach ($sheet->getRowIterator() as $row) {
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
+
+                $ligne = [];
+                foreach ($cellIterator as $cell) {
+                    $value   = $cell->getValue();
+                    $ligne[] = is_null($value) ? '' : trim((string) $value);
+                }
+
+                if ($headers === null) {
+                    $headers = array_map('strtolower', $ligne);
+                    continue;
+                }
+                if (count(array_filter($ligne)) === 0) continue;
+
+                $rows[] = $ligne;
+            }
+
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet, $reader);
+
+            return $this->importerDepuisRows($fournisseur, $headers ?? [], $rows, $margePct);
+
+        } catch (\Exception $e) {
+            return [
+                'inseres'    => 0,
+                'mis_a_jour' => 0,
+                'ignores'    => 0,
+                'erreurs'    => ["Erreur lecture Excel : " . $e->getMessage()],
+            ];
+        }
+    }
+
+    private function importerDepuisRows(string $fournisseur, array $headers, array $rows, float $margePct): array
+    {
+        $mapping    = self::MAPPINGS[$fournisseur] ?? self::MAPPINGS['autre'];
+        $colMap     = $this->construireMapping($headers, $mapping);
+        $inseres    = 0;
+        $mis_a_jour = 0;
+        $ignores    = 0;
+        $erreurs    = [];
+
+        foreach ($rows as $ligneBrute) {
             $row = array_combine(
-                array_slice($entetes, 0, count($ligne)),
-                $ligne
+                array_slice($headers, 0, count($ligneBrute)),
+                $ligneBrute
             );
 
             $reference   = $this->extraire($row, $colMap, 'reference');
@@ -156,19 +209,14 @@ class CsvImporteur
             }
         }
 
-        fclose($handle);
-
-        // Mettre à jour les stats du fournisseur
         CatalogConfig::updateOrCreate(['fournisseur' => $fournisseur], [
             'nom_affichage' => CatalogProduit::FOURNISSEURS[$fournisseur] ?? ucfirst($fournisseur),
-            'derniere_sync' => now(),
             'nb_produits'   => CatalogProduit::where('fournisseur', $fournisseur)->count(),
+            'derniere_sync' => now(),
         ]);
 
         return compact('inseres', 'mis_a_jour', 'ignores', 'erreurs');
     }
-
-    // ------------------------------------------------------------------
 
     private function construireMapping(array $entetes, array $mapping): array
     {
@@ -187,7 +235,6 @@ class CsvImporteur
     private function extraire(array $row, array $colMap, string $champ, string $defaut = ''): string
     {
         if (!isset($colMap[$champ])) return $defaut;
-        $entetes = array_keys($row);
         $idx     = $colMap[$champ];
         $valeurs = array_values($row);
         return $valeurs[$idx] ?? $defaut;

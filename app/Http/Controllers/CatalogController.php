@@ -165,15 +165,8 @@ class CatalogController extends Controller
 
         $marge = (float)($data['marge'] ?? 0);
 
-        // Pour Excel : convertir en CSV d'abord si possible
         $fichier = $request->file('fichier');
         $chemin  = $fichier->getPathname();
-
-        // Si c'est un Excel, on ne peut pas le traiter directement sans phpspreadsheet
-        // On informe l'utilisateur d'exporter en CSV depuis Excel
-        if (in_array($fichier->getClientOriginalExtension(), ['xls', 'xlsx'])) {
-            return back()->with('error', 'Les fichiers Excel ne sont pas supportés directement. Ouvrez le fichier dans Excel et exportez-le en CSV (séparateur ; ou ,) avant de l\'importer.');
-        }
 
         $resultat = $importeur->importer($data['fournisseur'], $chemin, $marge);
 

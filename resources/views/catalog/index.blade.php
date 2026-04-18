@@ -372,10 +372,10 @@
                     @endif
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Fichier CSV</label>
-                    <input type="file" name="fichier" accept=".csv,.txt" required
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Fichier catalogue</label>
+                    <input type="file" name="fichier" accept=".csv,.txt,.xlsx,.xls" required
                            class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                    <p class="text-xs text-gray-400 mt-1">Format CSV (séparateur ; ou ,), encodage UTF-8 ou Windows-1252. Max 20 Mo.</p>
+                    <p class="text-xs text-gray-400 mt-1">Formats acceptés : CSV (séparateur ; ou ,), Excel (.xlsx, .xls). Max 20 Mo.</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Marge de revente (%)</label>
