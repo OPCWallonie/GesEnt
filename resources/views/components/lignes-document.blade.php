@@ -107,22 +107,37 @@
 
                         {{-- Quantité --}}
                         <div class="col-span-6 md:col-span-1">
-                            <input type="number" :name="`lignes[${index}][quantite]`" x-model.number="ligne.quantite"
-                                   step="0.01" min="0" @input="calculerLigne(index)"
+                            <input type="text" :name="`lignes[${index}][quantite]`" x-model="ligne.quantite"
+                                   @input="calculerLigne(index)"
+                                   @blur="appliquerCalcul(index, 'quantite', $event.target.value)"
+                                   @keydown.enter.prevent="$event.target.blur()"
+                                   :class="{ 'border-red-400 ring-red-200 ring-2': expressionErreur && expressionErreur.index === index && expressionErreur.champ === 'quantite' }"
+                                   inputmode="decimal"
+                                   title="Calcul autorisé : 12*2.5, (3+5)*2.4, 15-0.8, 25% …"
                                    class="w-full text-sm border-gray-300 rounded px-2 py-1.5 text-right">
                         </div>
 
                         {{-- Prix unitaire --}}
                         <div class="col-span-6 md:col-span-1">
-                            <input type="number" :name="`lignes[${index}][prix_unitaire]`" x-model.number="ligne.prix_unitaire"
-                                   step="0.0001" min="0" @input="calculerLigne(index)"
+                            <input type="text" :name="`lignes[${index}][prix_unitaire]`" x-model="ligne.prix_unitaire"
+                                   @input="calculerLigne(index)"
+                                   @blur="appliquerCalcul(index, 'prix_unitaire', $event.target.value)"
+                                   @keydown.enter.prevent="$event.target.blur()"
+                                   :class="{ 'border-red-400 ring-red-200 ring-2': expressionErreur && expressionErreur.index === index && expressionErreur.champ === 'prix_unitaire' }"
+                                   inputmode="decimal"
+                                   title="Calcul autorisé : 45*1.15, 60-12, 100*(1-15%) …"
                                    class="w-full text-sm border-gray-300 rounded px-2 py-1.5 text-right">
                         </div>
 
                         {{-- Remise --}}
                         <div class="col-span-6 md:col-span-2 flex gap-1">
-                            <input type="number" :name="`lignes[${index}][remise_valeur]`" x-model.number="ligne.remise_valeur"
-                                   step="0.01" min="0" @input="calculerLigne(index)"
+                            <input type="text" :name="`lignes[${index}][remise_valeur]`" x-model="ligne.remise_valeur"
+                                   @input="calculerLigne(index)"
+                                   @blur="appliquerCalcul(index, 'remise_valeur', $event.target.value)"
+                                   @keydown.enter.prevent="$event.target.blur()"
+                                   :class="{ 'border-red-400 ring-red-200 ring-2': expressionErreur && expressionErreur.index === index && expressionErreur.champ === 'remise_valeur' }"
+                                   inputmode="decimal"
+                                   title="Calcul autorisé : 120*25%, 50+10, 30 …"
                                    class="w-full text-sm border-gray-300 rounded px-2 py-1.5 text-right">
                             <select :name="`lignes[${index}][remise_type]`" x-model="ligne.remise_type"
                                     @change="calculerLigne(index)"
@@ -177,7 +192,7 @@
                     {{-- Détail (ligne secondaire) --}}
                     <div class="md:ml-0">
                         <textarea :name="`lignes[${index}][detail]`" x-model="ligne.detail"
-                                  placeholder="Détails, description complémentaire…"
+                                  placeholder="Détails, description complémentaire… (les calculs Qté/Prix/Remise apparaissent ici)"
                                   rows="1"
                                   class="w-full text-xs border-gray-200 rounded px-2 py-1 text-gray-500 bg-gray-50 resize-none focus:ring-1 focus:ring-blue-300"></textarea>
                     </div>
@@ -578,6 +593,9 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
         historiqueData: null,
         historiqueLoading: false,
 
+        // Flash erreur expression arithmétique (réinitialisé après 2s)
+        expressionErreur: null,
+
         // Catalogue fournisseurs
         catalogOpen: false,
         catalogQ: '',
@@ -773,6 +791,16 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
                 if (e.detail.field === 'client_id') this.clientId = null;
             });
 
+            // Forcer l'évaluation des expressions avant soumission du formulaire
+            const form = this.$root.closest('form');
+            if (form) {
+                form.addEventListener('submit', () => {
+                    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                        document.activeElement.blur();
+                    }
+                });
+            }
+
             // Écouter les suggestions cliquées depuis le bandeau "Produits habituels"
             window.addEventListener('ajouter-produit', (e) => {
                 const p = e.detail;
@@ -848,6 +876,71 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
             if (abs < 3)  return 'text-green-600';
             if (abs < 10) return 'text-amber-600';
             return 'text-red-600';
+        },
+
+        // ----- Calculatrice intégrée -----
+
+        evaluerExpression(input) {
+            if (input === null || input === undefined) return null;
+            if (typeof input === 'number') return isFinite(input) ? input : null;
+            const str = String(input).trim();
+            if (str === '') return null;
+            let expr = str.replace(/,/g, '.');
+            if (!/^[\d+\-*/%().\s]+$/.test(expr)) return null;
+            // "25%" standalone → "(25/100)", "X % Y" avec espaces reste modulo
+            expr = expr.replace(/(\d+(?:\.\d+)?)\s*%(?!\s*\d)/g, '($1/100)');
+            if (/^-?\d+(?:\.\d+)?$/.test(expr.trim())) {
+                const n = parseFloat(expr);
+                return isFinite(n) ? n : null;
+            }
+            try {
+                // eslint-disable-next-line no-new-func
+                const result = new Function('return (' + expr + ')')();
+                if (typeof result !== 'number' || !isFinite(result)) return null;
+                return Math.round(result * 10000) / 10000;
+            } catch (e) {
+                return null;
+            }
+        },
+
+        estExpression(input) {
+            if (typeof input !== 'string') return false;
+            return /[+\-*/%()]/.test(input.replace(/^-/, ''));
+        },
+
+        formatNombreSimple(n) {
+            if (Number.isInteger(n)) return String(n);
+            return parseFloat(n.toFixed(4)).toString();
+        },
+
+        appliquerCalcul(index, champ, raw) {
+            const ligne = this.lignes[index];
+            if (!ligne || ligne.est_section) return;
+            const rawStr = String(raw || '').trim();
+            if (rawStr === '' || !this.estExpression(rawStr)) {
+                this.calculerLigne(index);
+                return;
+            }
+            const resultat = this.evaluerExpression(rawStr);
+            if (resultat === null) {
+                this.expressionErreur = { index, champ };
+                setTimeout(() => {
+                    if (this.expressionErreur && this.expressionErreur.index === index && this.expressionErreur.champ === champ) {
+                        this.expressionErreur = null;
+                    }
+                }, 2000);
+                return;
+            }
+            const libellesChamp = { quantite: 'Qté', prix_unitaire: 'Prix', remise_valeur: 'Remise' };
+            const libelle = libellesChamp[champ] || champ;
+            const exprFormatee = rawStr.replace(/\s+/g, ' ').trim();
+            ligne[champ] = resultat;
+            const traceCalcul = `${libelle} : ${exprFormatee} = ${this.formatNombreSimple(resultat)}`;
+            const detailActuel = (ligne.detail || '').trim();
+            const regexTraceExistante = new RegExp(`${libelle} : [^\\n]*(\\n|$)`, 'g');
+            const detailNettoye = detailActuel.replace(regexTraceExistante, '').trim();
+            ligne.detail = detailNettoye ? `${detailNettoye}\n${traceCalcul}` : traceCalcul;
+            this.calculerLigne(index);
         },
 
         formatMontant(v) {

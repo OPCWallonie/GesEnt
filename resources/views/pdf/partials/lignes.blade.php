@@ -24,7 +24,7 @@
                     <td style="padding: 5px 8px; border-bottom: 1px solid #e5e7eb;">
                         <strong>{{ $ligne->designation }}</strong>
                         @if($ligne->detail)
-                            <br><span style="color: #6b7280; font-size: 9px;">{{ $ligne->detail }}</span>
+                            <br><span style="color: #6b7280; font-size: 9px; white-space: pre-line;">{{ $ligne->detail }}</span>
                         @endif
                     </td>
                     <td align="center" style="padding: 5px 8px; border-bottom: 1px solid #e5e7eb;">{{ $ligne->unite }}</td>
