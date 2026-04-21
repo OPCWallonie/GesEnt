@@ -54,12 +54,17 @@ class CatalogController extends Controller
 
     public function show(CatalogProduit $catalogProduit, EanMatchingService $eanService, BadgeVolatiliteService $badgeService, ComparaisonFournisseursService $comparaison)
     {
-        $equivalents    = $eanService->equivalentsAutresFournisseurs($catalogProduit);
-        $historique     = $catalogProduit->historiquePrix()->orderByDesc('detected_at')->take(10)->get();
+        $params          = \App\Models\ParametresEntreprise::instance();
+        $equivalents     = $eanService->equivalentsAutresFournisseurs($catalogProduit);
+        $historique      = $catalogProduit->historiquePrix()->orderByDesc('detected_at')->take(10)->get();
+        $historiqueSparkline = $catalogProduit->historiquePrix()
+            ->where('detected_at', '>=', now()->subMonths((int) $params->volatilite_fenetre_mois))
+            ->orderBy('detected_at')
+            ->get();
         $volatiliteBadge = $badgeService->composer($catalogProduit);
-        $alternatives   = $comparaison->toutesAlternatives($catalogProduit);
+        $alternatives    = $comparaison->toutesAlternatives($catalogProduit);
 
-        return view('catalog.show', compact('catalogProduit', 'equivalents', 'historique', 'volatiliteBadge', 'alternatives'));
+        return view('catalog.show', compact('catalogProduit', 'equivalents', 'historique', 'historiqueSparkline', 'volatiliteBadge', 'alternatives'));
     }
 
     public function updateVolatiliteFlag(Request $request, CatalogProduit $catalogProduit, VolatiliteService $volatilite)
@@ -136,12 +141,17 @@ class CatalogController extends Controller
 
     public function showVolatilite(CatalogProduit $catalogProduit, BadgeVolatiliteService $badgeService, ComparaisonFournisseursService $comparaison)
     {
-        $badge        = $badgeService->composer($catalogProduit);
-        $alternatives = $comparaison->toutesAlternatives($catalogProduit);
+        $params                  = \App\Models\ParametresEntreprise::instance();
+        $badge                   = $badgeService->composer($catalogProduit);
+        $alternativesAvantageuses = $comparaison->alternativesAvantageuses($catalogProduit);
+        $toutesAlternatives      = $comparaison->toutesAlternatives($catalogProduit);
 
         return response()->json([
-            'badge'        => $badge->toArray(),
-            'alternatives' => $alternatives->map(fn($a) => $a->toArray())->values(),
+            'badge'                     => $badge->toArray(),
+            'alternatives_avantageuses' => $alternativesAvantageuses->map(fn($a) => $a->toArray())->values(),
+            'toutes_alternatives'       => $toutesAlternatives->map(fn($a) => $a->toArray())->values(),
+            'seuil_pertinence_eur'      => (float) $params->volatilite_seuil_ligne_devis_eur,
+            'module_actif'              => (bool) $params->volatilite_active,
         ]);
     }
 

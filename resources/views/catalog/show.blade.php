@@ -150,7 +150,7 @@
 
             @php
                 // Sparkline SVG inline (prix depuis historique)
-                $sparkPoints = $historique->sortBy('detected_at')->values();
+                $sparkPoints = $historiqueSparkline;
             @endphp
             @if($sparkPoints->count() >= 2)
             @php

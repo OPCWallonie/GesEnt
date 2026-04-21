@@ -46,9 +46,38 @@ class CatalogVolatiliteEndpointTest extends TestCase
             ->getJson(route('catalog.volatilite', $produit));
 
         $response->assertOk()
-            ->assertJsonStructure(['badge', 'alternatives'])
+            ->assertJsonStructure(['badge', 'toutes_alternatives'])
             ->assertJsonPath('badge.classe', 'b')
             ->assertJsonPath('badge.niveau', 'warning');
+    }
+
+    public function test_endpoint_volatilite_retourne_toutes_les_cles_attendues(): void
+    {
+        $produit = CatalogProduit::create([
+            'fournisseur'               => 'vanmarke',
+            'reference'                 => 'END-002',
+            'designation'               => 'Produit endpoint complet',
+            'prix_catalogue'            => 20.00,
+            'prix_revente'              => 20.00,
+            'taux_tva'                  => 21,
+            'unite'                     => 'pièce',
+            'volatilite_classe'         => 'c',
+            'volatilite_tendance_pct'   => 5.0,
+            'volatilite_calculee_at'    => now(),
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('catalog.volatilite', $produit));
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'badge',
+                'alternatives_avantageuses',
+                'toutes_alternatives',
+                'seuil_pertinence_eur',
+                'module_actif',
+            ])
+            ->assertJsonPath('module_actif', true);
     }
 
     public function test_search_inclut_volatilite_dans_json(): void
