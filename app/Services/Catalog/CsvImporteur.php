@@ -2,6 +2,7 @@
 
 namespace App\Services\Catalog;
 
+use App\Events\CatalogProduitsImportes;
 use App\Models\CatalogConfig;
 use App\Models\CatalogProduit;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -153,6 +154,7 @@ class CsvImporteur
         $mis_a_jour = 0;
         $ignores    = 0;
         $erreurs    = [];
+        $idsAffectes = [];
 
         foreach ($rows as $ligneBrute) {
             $row = array_combine(
@@ -203,10 +205,18 @@ class CsvImporteur
                 );
 
                 $produit->wasRecentlyCreated ? $inseres++ : $mis_a_jour++;
+                $idsAffectes[] = $produit->id;
             } catch (\Exception $e) {
                 $erreurs[] = "Réf {$reference} : " . $e->getMessage();
                 $ignores++;
             }
+        }
+
+        if (!empty($idsAffectes)) {
+            event(new CatalogProduitsImportes(
+                produitIds: $idsAffectes,
+                source: 'csv',
+            ));
         }
 
         CatalogConfig::updateOrCreate(['fournisseur' => $fournisseur], [

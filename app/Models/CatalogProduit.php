@@ -15,15 +15,24 @@ class CatalogProduit extends Model
         'categorie', 'sous_categorie', 'marque', 'ean',
         'en_stock', 'quantite_stock', 'delai_livraison',
         'donnees_brutes', 'derniere_sync',
+        'volatilite_classe', 'volatilite_amplitude_pct', 'volatilite_tendance_pct',
+        'volatilite_position_relative', 'volatilite_nb_changements',
+        'volatilite_signal_relatif', 'volatilite_signal_absolu',
+        'volatilite_groupe_comparaison', 'volatilite_calculee_at',
+        'volatilite_flag_manuel',
     ];
 
     protected $casts = [
-        'prix_catalogue'  => 'decimal:4',
-        'prix_revente'    => 'decimal:4',
-        'taux_tva'        => 'decimal:2',
-        'en_stock'        => 'boolean',
-        'donnees_brutes'  => 'array',
-        'derniere_sync'   => 'datetime',
+        'prix_catalogue'               => 'decimal:4',
+        'prix_revente'                 => 'decimal:4',
+        'taux_tva'                     => 'decimal:2',
+        'en_stock'                     => 'boolean',
+        'donnees_brutes'               => 'array',
+        'derniere_sync'                => 'datetime',
+        'volatilite_signal_relatif'    => 'boolean',
+        'volatilite_signal_absolu'     => 'boolean',
+        'volatilite_calculee_at'       => 'datetime',
+        'volatilite_nb_changements'    => 'integer',
     ];
 
     // Fournisseurs pré-configurés (fallback si DB non disponible)

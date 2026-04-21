@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Events\CatalogProduitsImportes;
+use App\Listeners\RecalculerVolatiliteListener;
 use App\Models\ParametresEntreprise;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,6 +15,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Event::listen(CatalogProduitsImportes::class, RecalculerVolatiliteListener::class);
         // Forcer HTTPS en production
         if (config('app.env') === 'production') {
             \Illuminate\Support\Facades\URL::forceScheme('https');

@@ -8,6 +8,7 @@ use App\Models\CatalogPrixHistorique;
 use App\Services\Catalog\ApiCatalogService;
 use App\Services\Catalog\CsvImporteur;
 use App\Services\Catalog\EanMatchingService;
+use App\Services\Catalog\Volatilite\VolatiliteService;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
@@ -55,6 +56,19 @@ class CatalogController extends Controller
         $historique  = $catalogProduit->historiquePrix()->orderByDesc('detected_at')->take(10)->get();
 
         return view('catalog.show', compact('catalogProduit', 'equivalents', 'historique'));
+    }
+
+    public function updateVolatiliteFlag(Request $request, CatalogProduit $catalogProduit, VolatiliteService $volatilite)
+    {
+        $data = $request->validate([
+            'volatilite_flag_manuel' => 'required|in:auto,toujours_alerter,jamais_alerter',
+        ]);
+
+        $catalogProduit->update($data);
+        $volatilite->recalculerProduit($catalogProduit->fresh());
+
+        return redirect()->route('catalog.show', $catalogProduit)
+            ->with('success', 'Comportement de volatilité mis à jour.');
     }
 
     /**

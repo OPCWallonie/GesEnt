@@ -17,6 +17,7 @@
                         'email'        => 'Email',
                         'securite'     => 'Sécurité',
                         'rh'           => 'RH & Formation',
+                        'catalogue'    => 'Catalogue',
                     ];
                 @endphp
                 @foreach($tabs as $id => $label)
@@ -782,6 +783,183 @@
                 </div>
 
             </div>
+
+            {{-- ════════════════════════════════════
+                 Onglet CATALOGUE
+                 ════════════════════════════════════ --}}
+            <div x-show="onglet === 'catalogue'" class="space-y-6">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+                    <h2 class="font-semibold text-gray-700 border-b pb-2">Détection de volatilité catalogue</h2>
+
+                    {{-- Toggle global --}}
+                    <div class="flex items-center gap-3">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="volatilite_active" value="1"
+                                   @checked(old('volatilite_active', $parametres->volatilite_active ?? true))
+                                   class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <div>
+                            <span class="text-sm font-medium text-gray-700">Module de volatilité actif</span>
+                            <p class="text-xs text-gray-400">Désactiver n'efface pas les données calculées — elles restent informatives.</p>
+                        </div>
+                    </div>
+
+                    {{-- Section Calcul --}}
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-600 mb-3">Calcul</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fenêtre d'analyse</label>
+                                <select name="volatilite_fenetre_mois"
+                                        class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                    @foreach([12 => '12 mois (1 an)', 24 => '24 mois (2 ans)', 36 => '36 mois (3 ans)', 60 => '60 mois (5 ans)'] as $val => $label)
+                                        <option value="{{ $val }}" @selected(old('volatilite_fenetre_mois', $parametres->volatilite_fenetre_mois ?? 24) == $val)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="text-xs text-gray-400 mt-1">Période analysée pour calculer les indicateurs.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Changements minimum pour classifier</label>
+                                <input type="number" name="volatilite_min_changements_pour_classer"
+                                       value="{{ old('volatilite_min_changements_pour_classer', $parametres->volatilite_min_changements_pour_classer ?? 3) }}"
+                                       min="1" max="50" placeholder="3"
+                                       class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                <p class="text-xs text-gray-400 mt-1">Sous ce seuil → classe "insuffisant" (silencieux).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Section Classes --}}
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-600 mb-3">Seuils de classification</h3>
+                        <div class="space-y-4">
+
+                            {{-- Stable --}}
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <p class="text-xs font-semibold text-green-700 mb-2">Classe STABLE — amplitude faible</p>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Amplitude max pour "stable" (%)</label>
+                                    <input type="number" name="volatilite_seuil_stable_amplitude_pct" step="0.1"
+                                           value="{{ old('volatilite_seuil_stable_amplitude_pct', $parametres->volatilite_seuil_stable_amplitude_pct ?? 2) }}"
+                                           placeholder="2.00" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                    <p class="text-xs text-gray-400 mt-1">Si (max-min)/moy × 100 est inférieur à ce seuil, le produit est stable.</p>
+                                </div>
+                            </div>
+
+                            {{-- Classe a --}}
+                            <div class="bg-yellow-50 rounded-lg p-4">
+                                <p class="text-xs font-semibold text-yellow-700 mb-2">Classe A — anomalie isolée récente</p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Variation récente déclenchante (%)</label>
+                                        <input type="number" name="volatilite_seuil_a_variation_pct" step="0.1"
+                                               value="{{ old('volatilite_seuil_a_variation_pct', $parametres->volatilite_seuil_a_variation_pct ?? 8) }}"
+                                               placeholder="8.00" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                        <p class="text-xs text-gray-400 mt-1">|variation| >= ce % dans les 3 derniers mois.</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Changements anciens max</label>
+                                        <input type="number" name="volatilite_seuil_a_max_changements_anciens"
+                                               value="{{ old('volatilite_seuil_a_max_changements_anciens', $parametres->volatilite_seuil_a_max_changements_anciens ?? 3) }}"
+                                               placeholder="3" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                        <p class="text-xs text-gray-400 mt-1">Historique "calme" avant les 3 derniers mois.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Classe b --}}
+                            <div class="bg-orange-50 rounded-lg p-4">
+                                <p class="text-xs font-semibold text-orange-700 mb-2">Classe B — augmentation/baisse constante</p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Pente annuelle déclenchante (%)</label>
+                                        <input type="number" name="volatilite_seuil_b_pente_annuelle_pct" step="0.1"
+                                               value="{{ old('volatilite_seuil_b_pente_annuelle_pct', $parametres->volatilite_seuil_b_pente_annuelle_pct ?? 10) }}"
+                                               placeholder="10.00" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                        <p class="text-xs text-gray-400 mt-1">|tendance 12m| >= ce % avec bonne régularité.</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">R² minimum (régularité)</label>
+                                        <input type="number" name="volatilite_seuil_b_r2_min" step="0.01" min="0" max="1"
+                                               value="{{ old('volatilite_seuil_b_r2_min', $parametres->volatilite_seuil_b_r2_min ?? 0.700) }}"
+                                               placeholder="0.700" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                        <p class="text-xs text-gray-400 mt-1">Coefficient de détermination R² de la tendance linéaire (0 à 1).</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Classe c --}}
+                            <div class="bg-red-50 rounded-lg p-4">
+                                <p class="text-xs font-semibold text-red-700 mb-2">Classe C — yoyo structurel</p>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nb changements déclenchant</label>
+                                        <input type="number" name="volatilite_seuil_c_nb_changements"
+                                               value="{{ old('volatilite_seuil_c_nb_changements', $parametres->volatilite_seuil_c_nb_changements ?? 4) }}"
+                                               placeholder="4" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                        <p class="text-xs text-gray-400 mt-1">Nombre de changements sur la fenêtre complète.</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Amplitude déclenchante (%)</label>
+                                        <input type="number" name="volatilite_seuil_c_amplitude_pct" step="0.1"
+                                               value="{{ old('volatilite_seuil_c_amplitude_pct', $parametres->volatilite_seuil_c_amplitude_pct ?? 10) }}"
+                                               placeholder="10.00" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                        <p class="text-xs text-gray-400 mt-1">(max-min)/moy × 100 >= ce % pour yoyo.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Section Signaux d'alerte --}}
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-600 mb-3">Signaux d'alerte</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Garde-fou absolu (%)</label>
+                                <input type="number" name="volatilite_garde_fou_absolu_pct" step="0.1"
+                                       value="{{ old('volatilite_garde_fou_absolu_pct', $parametres->volatilite_garde_fou_absolu_pct ?? 15) }}"
+                                       placeholder="15.00" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                <p class="text-xs text-gray-400 mt-1">|tendance 12m| >= ce % → signal absolu, même si tout le secteur monte ensemble.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Écart vs groupe déclenchant (%)</label>
+                                <input type="number" name="volatilite_signal_relatif_ecart_pct" step="0.1"
+                                       value="{{ old('volatilite_signal_relatif_ecart_pct', $parametres->volatilite_signal_relatif_ecart_pct ?? 5) }}"
+                                       placeholder="5.00" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                <p class="text-xs text-gray-400 mt-1">|tendance - médiane du groupe| >= ce % → signal relatif.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Section Affichage devis --}}
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-600 mb-3">Affichage en saisie de devis</h3>
+                        <div class="max-w-xs">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Seuil de pertinence par ligne (€)</label>
+                            <input type="number" name="volatilite_seuil_ligne_devis_eur" step="1" min="0"
+                                   value="{{ old('volatilite_seuil_ligne_devis_eur', $parametres->volatilite_seuil_ligne_devis_eur ?? 200) }}"
+                                   placeholder="200.00" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                            <p class="text-xs text-gray-400 mt-1">Un badge volatilité n'apparaîtra que si le montant de la ligne dépasse ce seuil (utilisé dans la prochaine version).</p>
+                        </div>
+                    </div>
+
+                    {{-- Bouton recalcul --}}
+                    <div class="border-t pt-4">
+                        <form method="POST" action="{{ route('parametres.recalculer-volatilite') }}"
+                              onsubmit="return confirm('Le recalcul peut prendre une à deux minutes selon la taille du catalogue. Continuer ?')">
+                            @csrf
+                            <button type="submit"
+                                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                                Recalculer tout le catalogue maintenant
+                            </button>
+                            <p class="text-xs text-gray-400 mt-1">Lance le moteur de volatilité sur l'ensemble du catalogue (2 passes). Opération synchrone.</p>
+                        </form>
+                    </div>
+                </div>
+            </div>{{-- /onglet catalogue --}}
 
             {{-- ════ Bouton sauvegarder (toujours visible) ════ --}}
             <div class="flex justify-end mt-6">

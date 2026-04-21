@@ -25,6 +25,19 @@ class ParametresEntreprise extends Model
         'mail_template_devis', 'mail_template_facture', 'mail_template_bdc', 'mail_template_relance',
         'opc', 'opc_numero_affiliation',
         'cle_repartition_frais',
+        'volatilite_active',
+        'volatilite_fenetre_mois',
+        'volatilite_min_changements_pour_classer',
+        'volatilite_seuil_stable_amplitude_pct',
+        'volatilite_seuil_a_variation_pct',
+        'volatilite_seuil_a_max_changements_anciens',
+        'volatilite_seuil_b_pente_annuelle_pct',
+        'volatilite_seuil_b_r2_min',
+        'volatilite_seuil_c_nb_changements',
+        'volatilite_seuil_c_amplitude_pct',
+        'volatilite_garde_fou_absolu_pct',
+        'volatilite_signal_relatif_ecart_pct',
+        'volatilite_seuil_ligne_devis_eur',
     ];
 
     public const CLES_REPARTITION = [
@@ -49,6 +62,7 @@ class ParametresEntreprise extends Model
         'odoo_mapping'                => 'array',
         'deux_facteurs_obligatoires'  => 'boolean',
         'mail_password'               => 'encrypted',
+        'volatilite_active'           => 'boolean',
     ];
 
     protected $hidden = ['ai_api_key', 'peppol_api_key', 'odoo_api_key'];
