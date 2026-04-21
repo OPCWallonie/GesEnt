@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\States\Devis\DevisStatut;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\ModelStates\HasStates;
 
@@ -60,6 +61,11 @@ class Devis extends Model
     public function bonCommande()
     {
         return $this->hasOne(BonCommande::class);
+    }
+
+    public function analyseIa(): HasOne
+    {
+        return $this->hasOne(DevisAnalyseIa::class);
     }
 
     public function emailEnvois()

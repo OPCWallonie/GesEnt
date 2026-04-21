@@ -237,6 +237,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('devis/{devis}/dupliquer', [DevisController::class, 'dupliquer'])->name('devis.dupliquer');
         Route::post('devis/{devis}/convertir-bdc', [DevisController::class, 'convertirEnBdc'])->name('devis.convertir-bdc');
         Route::post('devis/{devis}/sauvegarder-kit', [DevisController::class, 'sauvegarderCommeKit'])->name('devis.sauvegarder-kit');
+        Route::post('devis/{devis}/analyser-ia', [\App\Http\Controllers\DevisAnalyseIaController::class, 'analyser'])->name('devis.analyser-ia');
+        Route::delete('devis/{devis}/analyser-ia', [\App\Http\Controllers\DevisAnalyseIaController::class, 'invalider'])->name('devis.analyser-ia.invalider');
 
         // Kits (CRUD complet)
         Route::resource('kits', KitController::class);
