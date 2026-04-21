@@ -38,6 +38,9 @@ class ParametresEntreprise extends Model
         'volatilite_garde_fou_absolu_pct',
         'volatilite_signal_relatif_ecart_pct',
         'volatilite_seuil_ligne_devis_eur',
+        'volatilite_cross_seuil_prix_pct',
+        'volatilite_cross_seuil_position',
+        'volatilite_cross_seuil_tendance_pp',
     ];
 
     public const CLES_REPARTITION = [

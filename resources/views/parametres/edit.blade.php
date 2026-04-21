@@ -946,6 +946,35 @@
                         </div>
                     </div>
 
+                    {{-- Section Comparaison cross-fournisseur --}}
+                    <div class="border-t pt-4">
+                        <h3 class="text-sm font-semibold text-gray-600 mb-3">Comparaison cross-fournisseur (même EAN)</h3>
+                        <p class="text-xs text-gray-400 mb-3">Seuils pour signaler qu'un autre fournisseur propose le même produit à de meilleures conditions.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Écart de prix minimal (%)</label>
+                                <input type="number" name="volatilite_cross_seuil_prix_pct" step="0.5" min="0" max="100"
+                                       value="{{ old('volatilite_cross_seuil_prix_pct', $parametres->volatilite_cross_seuil_prix_pct ?? 5.00) }}"
+                                       placeholder="5.00" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                <p class="text-xs text-gray-400 mt-1">Signal « prix inférieur » si l'autre fourn. est au moins X% moins cher.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Écart de position relative</label>
+                                <input type="number" name="volatilite_cross_seuil_position" step="0.05" min="0" max="1"
+                                       value="{{ old('volatilite_cross_seuil_position', $parametres->volatilite_cross_seuil_position ?? 0.30) }}"
+                                       placeholder="0.30" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                <p class="text-xs text-gray-400 mt-1">Signal « position inférieure » si la position est inférieure de X dans [0–1].</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Écart de tendance (pp)</label>
+                                <input type="number" name="volatilite_cross_seuil_tendance_pp" step="1" min="0" max="100"
+                                       value="{{ old('volatilite_cross_seuil_tendance_pp', $parametres->volatilite_cross_seuil_tendance_pp ?? 10.00) }}"
+                                       placeholder="10.00" class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                                <p class="text-xs text-gray-400 mt-1">Signal « tendance favorable » si la tendance est inférieure de X points de pourcentage.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Bouton recalcul --}}
                     <div class="border-t pt-4">
                         <form method="POST" action="{{ route('parametres.recalculer-volatilite') }}"

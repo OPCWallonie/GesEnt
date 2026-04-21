@@ -8,6 +8,8 @@ use App\Models\CatalogPrixHistorique;
 use App\Services\Catalog\ApiCatalogService;
 use App\Services\Catalog\CsvImporteur;
 use App\Services\Catalog\EanMatchingService;
+use App\Services\Catalog\Volatilite\BadgeVolatiliteService;
+use App\Services\Catalog\Volatilite\ComparaisonFournisseursService;
 use App\Services\Catalog\Volatilite\VolatiliteService;
 use Illuminate\Http\Request;
 
@@ -50,12 +52,14 @@ class CatalogController extends Controller
         ));
     }
 
-    public function show(CatalogProduit $catalogProduit, EanMatchingService $eanService)
+    public function show(CatalogProduit $catalogProduit, EanMatchingService $eanService, BadgeVolatiliteService $badgeService, ComparaisonFournisseursService $comparaison)
     {
-        $equivalents = $eanService->equivalentsAutresFournisseurs($catalogProduit);
-        $historique  = $catalogProduit->historiquePrix()->orderByDesc('detected_at')->take(10)->get();
+        $equivalents    = $eanService->equivalentsAutresFournisseurs($catalogProduit);
+        $historique     = $catalogProduit->historiquePrix()->orderByDesc('detected_at')->take(10)->get();
+        $volatiliteBadge = $badgeService->composer($catalogProduit);
+        $alternatives   = $comparaison->toutesAlternatives($catalogProduit);
 
-        return view('catalog.show', compact('catalogProduit', 'equivalents', 'historique'));
+        return view('catalog.show', compact('catalogProduit', 'equivalents', 'historique', 'volatiliteBadge', 'alternatives'));
     }
 
     public function updateVolatiliteFlag(Request $request, CatalogProduit $catalogProduit, VolatiliteService $volatilite)
@@ -101,21 +105,44 @@ class CatalogController extends Controller
                 ->toArray();
         }
 
-        return response()->json($produits->map(fn($p) => [
-            'id'             => $p->id,
-            'fournisseur'    => $p->nom_fournisseur,
-            'reference'      => $p->reference,
-            'designation'    => $p->designation . ($p->marque ? " ({$p->marque})" : ''),
-            'unite'          => $p->unite,
-            'prix'           => (float) $p->prix_revente,
-            'prix_base'      => (float) $p->prix_catalogue,
-            'taux_tva'       => (float) $p->taux_tva,
-            'en_stock'       => $p->en_stock,
-            'score'          => (float) ($p->usage_score ?? 0),
-            'habituel'       => ($p->usage_score ?? 0) > 5,
-            'ean'            => $p->ean,
-            'nb_equivalents' => $p->ean ? ($nbEquivalentsParEan[$p->ean] ?? 1) : 1,
-        ]));
+        $badgeService = app(BadgeVolatiliteService::class);
+        $params       = \App\Models\ParametresEntreprise::instance();
+
+        return response()->json($produits->map(function ($p) use ($nbEquivalentsParEan, $badgeService, $params) {
+            $volatilite = null;
+            if ($params->volatilite_active && $p->volatilite_calculee_at && $p->volatilite_classe && $p->volatilite_classe !== 'insuffisant') {
+                $badge      = $badgeService->composer($p);
+                $volatilite = $badge->visible() ? $badge->toArray() : null;
+            }
+
+            return [
+                'id'             => $p->id,
+                'fournisseur'    => $p->nom_fournisseur,
+                'reference'      => $p->reference,
+                'designation'    => $p->designation . ($p->marque ? " ({$p->marque})" : ''),
+                'unite'          => $p->unite,
+                'prix'           => (float) $p->prix_revente,
+                'prix_base'      => (float) $p->prix_catalogue,
+                'taux_tva'       => (float) $p->taux_tva,
+                'en_stock'       => $p->en_stock,
+                'score'          => (float) ($p->usage_score ?? 0),
+                'habituel'       => ($p->usage_score ?? 0) > 5,
+                'ean'            => $p->ean,
+                'nb_equivalents' => $p->ean ? ($nbEquivalentsParEan[$p->ean] ?? 1) : 1,
+                'volatilite'     => $volatilite,
+            ];
+        }));
+    }
+
+    public function showVolatilite(CatalogProduit $catalogProduit, BadgeVolatiliteService $badgeService, ComparaisonFournisseursService $comparaison)
+    {
+        $badge        = $badgeService->composer($catalogProduit);
+        $alternatives = $comparaison->toutesAlternatives($catalogProduit);
+
+        return response()->json([
+            'badge'        => $badge->toArray(),
+            'alternatives' => $alternatives->map(fn($a) => $a->toArray())->values(),
+        ]);
     }
 
     public function changementsPrix(Request $request)

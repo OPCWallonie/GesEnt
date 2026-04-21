@@ -107,7 +107,8 @@
                         :lignes-initiales="$devis->lignes"
                         :taux-tva="$tauxTva"
                         :tva-defaut="21"
-                        :client-id="$devis->client_id"/>
+                        :client-id="$devis->client_id"
+                        :volatilite-par-produit="$volatiliteData['badgesParProduit'] ?? []"/>
                 </div>
 
                 {{-- Notes --}}

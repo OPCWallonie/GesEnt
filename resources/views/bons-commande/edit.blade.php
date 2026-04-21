@@ -132,7 +132,7 @@
             <div class="px-5 py-4 border-b border-gray-100">
                 <h2 class="font-semibold text-gray-700">Lignes de prestations</h2>
             </div>
-            <x-lignes-document :lignes-initiales="$bdc->lignes" :taux-tva="$tauxTva" :tva-defaut="21" :client-id="$bdc->client_id"/>
+            <x-lignes-document :lignes-initiales="$bdc->lignes" :taux-tva="$tauxTva" :tva-defaut="21" :client-id="$bdc->client_id" :volatilite-par-produit="$volatiliteData['badgesParProduit'] ?? []"/>
         </div>
 
         <div class="flex justify-between">

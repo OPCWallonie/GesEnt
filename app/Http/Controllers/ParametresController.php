@@ -90,6 +90,9 @@ class ParametresController extends Controller
             'volatilite_garde_fou_absolu_pct'            => 'nullable|numeric|min:0|max:100',
             'volatilite_signal_relatif_ecart_pct'        => 'nullable|numeric|min:0|max:100',
             'volatilite_seuil_ligne_devis_eur'           => 'nullable|numeric|min:0|max:1000000',
+            'volatilite_cross_seuil_prix_pct'            => 'nullable|numeric|min:0|max:100',
+            'volatilite_cross_seuil_position'            => 'nullable|numeric|min:0|max:1',
+            'volatilite_cross_seuil_tendance_pp'         => 'nullable|numeric|min:0|max:100',
         ]);
 
         $parametres = ParametresEntreprise::instance();

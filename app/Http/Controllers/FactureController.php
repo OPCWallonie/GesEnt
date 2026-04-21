@@ -11,6 +11,7 @@ use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Models\Paiement;
 use App\Models\DocumentDraft;
+use App\Services\Catalog\Volatilite\VolatiliteDocumentHelper;
 use App\Services\DocumentService;
 use App\Services\MailConfigService;
 use App\Services\MailTemplateService;
@@ -167,7 +168,9 @@ class FactureController extends Controller
         $messageEmailDefaut = MailTemplateService::resoudre('facture', $facture);
         $scenarios          = \App\Models\RelanceScenario::orderByDesc('est_defaut')->orderBy('nom')->get();
 
-        return view('factures.show', compact('facture', 'parametres', 'totauxTva', 'messageEmailDefaut', 'scenarios'));
+        $volatiliteData = app(VolatiliteDocumentHelper::class)->preparerPourDocument($facture);
+
+        return view('factures.show', compact('facture', 'parametres', 'totauxTva', 'messageEmailDefaut', 'scenarios', 'volatiliteData'));
     }
 
     public function edit(Facture $facture)
@@ -179,8 +182,9 @@ class FactureController extends Controller
         $facture->load('lignes');
         $modesPaiement = ModePaiement::actif()->orderBy('nom')->get();
         $tauxTva       = TauxTva::orderBy('taux')->get();
+        $volatiliteData = app(VolatiliteDocumentHelper::class)->preparerPourDocument($facture);
 
-        return view('factures.edit', compact('facture', 'modesPaiement', 'tauxTva'));
+        return view('factures.edit', compact('facture', 'modesPaiement', 'tauxTva', 'volatiliteData'));
     }
 
     public function update(Request $request, Facture $facture)
