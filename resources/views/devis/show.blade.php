@@ -229,6 +229,52 @@
                 @endif
             </div>
 
+            {{-- 💡 Analyse volatilité IA --}}
+            @hasanyrole('admin|comptable')
+            @php $analyseIa = $devis->analyseIa; @endphp
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        💡 Analyse volatilité
+                        @if($analyseIa)
+                            <span class="text-xs font-normal text-gray-400">
+                                générée le {{ $analyseIa->genere_at->format('d/m/Y à H:i') }}
+                                · {{ $analyseIa->provider }} / {{ $analyseIa->modele }}
+                            </span>
+                        @endif
+                    </h2>
+                    @if($analyseIa)
+                        <form method="POST" action="{{ route('devis.analyser-ia.invalider', $devis) }}" class="inline">
+                            @csrf @method('DELETE')
+                            <button type="submit"
+                                    class="text-xs text-gray-500 hover:text-gray-700"
+                                    onclick="return confirm('Supprimer l\'analyse actuelle ? Vous pourrez la régénérer.')">
+                                ↻ Relancer
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                @if(!$analyseIa)
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm text-gray-600">
+                            Lancez une analyse IA pour obtenir des recommandations sur les produits à enjeu de ce devis.
+                        </p>
+                        <form method="POST" action="{{ route('devis.analyser-ia', $devis) }}">
+                            @csrf
+                            <button type="submit"
+                                    class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                                    onclick="this.disabled=true; this.form.submit();">
+                                Analyser avec IA
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <x-analyse-ia-devis :analyse="\App\Services\Catalog\Volatilite\DTO\AnalyseIaDevisDTO::fromArray($analyseIa->analyse)" />
+                @endif
+            </div>
+            @endhasanyrole
+
             {{-- Lignes --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200">

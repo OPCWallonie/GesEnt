@@ -133,7 +133,7 @@ class DevisController extends Controller
 
     public function show(Devis $devis)
     {
-        $devis->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande', 'emailEnvois.sender');
+        $devis->load('client', 'chantier', 'modePaiement', 'lignes', 'bonCommande', 'emailEnvois.sender', 'analyseIa');
         $parametres         = ParametresEntreprise::instance();
         $totauxTva          = $this->documentService->calculerTotauxTva($devis->lignes);
         $messageEmailDefaut = MailTemplateService::resoudre('devis', $devis);
