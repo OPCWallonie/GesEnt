@@ -2,42 +2,49 @@
     <x-slot name="header">{{ $avoir->numero }}</x-slot>
 
     <x-slot name="actions">
-        @if($peppolMode !== 'desactive' && \App\Models\ParametresEntreprise::instance()->peppolActif())
-            @if(!$avoir->peppol_envoye_at)
-                <form method="POST" action="{{ route('avoirs.envoyer-peppol', $avoir) }}"
-                      onsubmit="return confirm('Envoyer cet avoir via Peppol ?')">
-                    @csrf
+        <x-barre-actions>
+            <x-slot name="primaires">
+                <a href="{{ route('avoirs.pdf', $avoir) }}" target="_blank"
+                   class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    PDF
+                </a>
+            </x-slot>
+
+            <x-slot name="secondaires">
+                @if($peppolMode !== 'desactive' && \App\Models\ParametresEntreprise::instance()->peppolActif())
+                    @if(!$avoir->peppol_envoye_at)
+                        <form method="POST" action="{{ route('avoirs.envoyer-peppol', $avoir) }}"
+                              onsubmit="return confirm('Envoyer cet avoir via Peppol ?')">
+                            @csrf
+                            <button type="submit"
+                                    class="w-full inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                                Envoyer via Peppol
+                            </button>
+                        </form>
+                    @else
+                        <span class="inline-flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 text-green-700 text-xs rounded-lg">
+                            Peppol envoyé {{ $avoir->peppol_envoye_at->format('d/m/Y') }}
+                        </span>
+                    @endif
+                @endif
+                <a href="{{ route('factures.show', $avoir->facture_id) }}"
+                   class="w-full inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                    ← Facture {{ $avoir->facture->numero }}
+                </a>
+                <form method="POST" action="{{ route('avoirs.destroy', $avoir) }}"
+                      onsubmit="return confirm('Supprimer définitivement cet avoir ?')">
+                    @csrf @method('DELETE')
                     <button type="submit"
-                            class="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                        </svg>
-                        Envoyer via Peppol
+                            class="w-full inline-flex items-center gap-2 px-3 py-2 border border-red-300 text-red-500 text-sm rounded-lg hover:bg-red-50">
+                        Supprimer
                     </button>
                 </form>
-            @else
-                <span class="inline-flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 text-green-700 text-xs rounded-lg">
-                    Peppol envoyé {{ $avoir->peppol_envoye_at->format('d/m/Y') }}
-                </span>
-            @endif
-        @endif
-        <a href="{{ route('avoirs.pdf', $avoir) }}" target="_blank"
-           class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-            PDF
-        </a>
-        <a href="{{ route('factures.show', $avoir->facture_id) }}"
-           class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
-            ← Facture {{ $avoir->facture->numero }}
-        </a>
-        <form method="POST" action="{{ route('avoirs.destroy', $avoir) }}"
-              onsubmit="return confirm('Supprimer définitivement cet avoir ?')">
-            @csrf @method('DELETE')
-            <button type="submit"
-                    class="inline-flex items-center gap-2 px-3 py-2 border border-red-300 text-red-500 text-sm rounded-lg hover:bg-red-50">
-                Supprimer
-            </button>
-        </form>
+            </x-slot>
+        </x-barre-actions>
     </x-slot>
 
     <div class="max-w-3xl grid grid-cols-1 lg:grid-cols-3 gap-6">
