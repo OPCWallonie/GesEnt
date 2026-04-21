@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ParametresEntreprise;
+use App\Services\Catalog\Volatilite\VolatiliteService;
 use App\Services\MailConfigService;
 use App\Services\OdooService;
 use Illuminate\Http\Request;
@@ -75,6 +76,20 @@ class ParametresController extends Controller
             'mail_template_relance'  => 'nullable|string',
             'opc'                    => 'nullable|string|max:100',
             'opc_numero_affiliation' => 'nullable|string|max:50',
+            // Volatilité catalogue
+            'volatilite_active'                         => 'nullable|boolean',
+            'volatilite_fenetre_mois'                   => 'nullable|integer|min:6|max:120',
+            'volatilite_min_changements_pour_classer'   => 'nullable|integer|min:1|max:50',
+            'volatilite_seuil_stable_amplitude_pct'     => 'nullable|numeric|min:0|max:100',
+            'volatilite_seuil_a_variation_pct'          => 'nullable|numeric|min:0|max:100',
+            'volatilite_seuil_a_max_changements_anciens'=> 'nullable|integer|min:0|max:100',
+            'volatilite_seuil_b_pente_annuelle_pct'     => 'nullable|numeric|min:0|max:100',
+            'volatilite_seuil_b_r2_min'                 => 'nullable|numeric|min:0|max:1',
+            'volatilite_seuil_c_nb_changements'         => 'nullable|integer|min:1|max:100',
+            'volatilite_seuil_c_amplitude_pct'          => 'nullable|numeric|min:0|max:100',
+            'volatilite_garde_fou_absolu_pct'            => 'nullable|numeric|min:0|max:100',
+            'volatilite_signal_relatif_ecart_pct'        => 'nullable|numeric|min:0|max:100',
+            'volatilite_seuil_ligne_devis_eur'           => 'nullable|numeric|min:0|max:1000000',
         ]);
 
         $parametres = ParametresEntreprise::instance();
@@ -123,6 +138,7 @@ class ParametresController extends Controller
         // Cases à cocher (absentes du POST si décochées)
         $data['odoo_actif']                   = $request->boolean('odoo_actif');
         $data['deux_facteurs_obligatoires']   = $request->boolean('deux_facteurs_obligatoires');
+        $data['volatilite_active']            = $request->boolean('volatilite_active');
 
         // peppol_gere_par par défaut = gesent
         $data['peppol_gere_par'] = $data['peppol_gere_par'] ?? 'gesent';
@@ -140,6 +156,18 @@ class ParametresController extends Controller
         $parametres->update($data);
 
         return redirect()->route('parametres.edit')->with('success', 'Paramètres sauvegardés.');
+    }
+
+    public function recalculerVolatilite(VolatiliteService $service)
+    {
+        try {
+            $nb = $service->recalculerTous();
+            return redirect()->route('parametres.edit')
+                ->with('success', "Recalcul terminé — {$nb} produits traités.");
+        } catch (\Throwable $e) {
+            return redirect()->route('parametres.edit')
+                ->with('error', 'Erreur lors du recalcul : ' . $e->getMessage());
+        }
     }
 
     public function testerOdoo(OdooService $odoo)

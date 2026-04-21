@@ -121,6 +121,53 @@
         </div>
         @endif
 
+        {{-- Comportement volatilité --}}
+        @hasanyrole('admin|comptable')
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="text-sm font-semibold text-gray-700 mb-4">Comportement volatilité</h2>
+
+            @if($catalogProduit->volatilite_calculee_at)
+                <div class="flex flex-wrap gap-3 mb-4 text-xs text-gray-600">
+                    <span class="px-2 py-0.5 rounded-full
+                        {{ match($catalogProduit->volatilite_classe) {
+                            'stable'     => 'bg-green-100 text-green-700',
+                            'a'          => 'bg-yellow-100 text-yellow-700',
+                            'b'          => 'bg-orange-100 text-orange-700',
+                            'c'          => 'bg-red-100 text-red-700',
+                            'insuffisant'=> 'bg-gray-100 text-gray-500',
+                            default      => 'bg-gray-100 text-gray-400',
+                        } }}">
+                        Classe : {{ strtoupper($catalogProduit->volatilite_classe ?? '—') }}
+                    </span>
+                    @if($catalogProduit->volatilite_tendance_pct !== null)
+                        <span>Tendance 12m : {{ number_format($catalogProduit->volatilite_tendance_pct, 1) }}%</span>
+                    @endif
+                    @if($catalogProduit->volatilite_amplitude_pct !== null)
+                        <span>Amplitude : {{ number_format($catalogProduit->volatilite_amplitude_pct, 1) }}%</span>
+                    @endif
+                    <span>Calculé : {{ $catalogProduit->volatilite_calculee_at->format('d/m/Y H:i') }}</span>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('catalog.volatilite-flag', $catalogProduit) }}" class="flex items-end gap-3">
+                @csrf @method('PATCH')
+                <div class="flex-1 max-w-xs">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Override manuel</label>
+                    <select name="volatilite_flag_manuel"
+                            class="w-full rounded-lg border-gray-300 shadow-sm text-sm">
+                        <option value="auto" @selected($catalogProduit->volatilite_flag_manuel === 'auto')>Automatique (selon calculs)</option>
+                        <option value="toujours_alerter" @selected($catalogProduit->volatilite_flag_manuel === 'toujours_alerter')>Toujours alerter</option>
+                        <option value="jamais_alerter" @selected($catalogProduit->volatilite_flag_manuel === 'jamais_alerter')>Jamais alerter</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Force le comportement d'alerte indépendamment des calculs automatiques.</p>
+                </div>
+                <button type="submit" class="px-3 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800">
+                    Appliquer
+                </button>
+            </form>
+        </div>
+        @endhasanyrole
+
         {{-- Historique des prix --}}
         @if($historique->isNotEmpty())
         <div class="bg-white rounded-xl border border-gray-200 p-6">

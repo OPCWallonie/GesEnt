@@ -2,8 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Console\Commands\RecalculerVolatilite;
 use App\Models\Avoir;
 use App\Models\BonCommande;
+use App\Models\CatalogPrixHistorique;
+use App\Models\CatalogProduit;
 use App\Models\Chantier;
 use App\Models\Client;
 use App\Models\Devis;
@@ -285,6 +288,9 @@ class DemoSeeder extends Seeder
         JournalChantier::create(['chantier_id' => $chantiers[2]->id, 'user_id' => $admin->id, 'type' => 'note', 'titre' => 'Découverte plomberie', 'contenu' => 'Démolition ancienne salle de bain OK. Découverte tuyauterie plomb à remplacer.', 'created_at' => now()->subWeeks(3)]);
         JournalChantier::create(['chantier_id' => $chantiers[3]->id, 'user_id' => $admin->id, 'type' => 'note', 'titre' => 'Réception provisoire', 'contenu' => 'Chantier terminé. Réception provisoire OK. PV signé par le bourgmestre.', 'created_at' => now()->subMonths(3)]);
 
+        // --- CATALOGUE VOLATILITÉ (données de démo pour le module Lot Va) ---
+        $this->seederVolatilite();
+
         $this->command->info('Base de démonstration créée avec succès !');
         $this->command->table(
             ['Compte', 'Email', 'Mot de passe', 'Rôle'],
@@ -294,6 +300,202 @@ class DemoSeeder extends Seeder
                 ['Lecture', 'lecture@gesent.be', 'Demo2026!', 'lecture'],
             ]
         );
+    }
+
+    // ---------------------------------------------------------------
+    // Données de démo volatilité (Lot Va)
+    // ---------------------------------------------------------------
+
+    private function seederVolatilite(): void
+    {
+        $this->command->info('Création des produits catalogue de démonstration (volatilité)...');
+
+        // ── Cluster 1 : Plomberie cuivre ─ VanMarke (5 produits, ≥5 pour groupe sous_categorie)
+        // Produit 1 : stable (4 micro-variations ≤1.5%)
+        $p1 = $this->creerProduitCatalog('vanmarke', 'CUIVRE-12', 'Tube cuivre 12mm', 'Plomberie', 'Tubes cuivre', 4.20);
+        $this->genererHistoriquePrix($p1, 4.10, [
+            ['mois' => 24, 'pct' => 0.5],
+            ['mois' => 18, 'pct' => 1.2],
+            ['mois' => 12, 'pct' => -0.3],
+            ['mois' =>  6, 'pct' => 1.0],
+        ]);
+
+        // Produit 2 : classe b, signal absolu (12 hausses régulières ~5%)
+        $p2 = $this->creerProduitCatalog('vanmarke', 'CUIVRE-22', 'Tube cuivre 22mm', 'Plomberie', 'Tubes cuivre', 8.50);
+        $this->genererHistoriquePrix($p2, 5.00, [
+            ['mois' => 22, 'pct' => 4.5],
+            ['mois' => 20, 'pct' => 5.0],
+            ['mois' => 18, 'pct' => 4.8],
+            ['mois' => 16, 'pct' => 5.2],
+            ['mois' => 14, 'pct' => 4.6],
+            ['mois' => 12, 'pct' => 5.1],
+            ['mois' => 10, 'pct' => 4.9],
+            ['mois' =>  8, 'pct' => 5.3],
+            ['mois' =>  6, 'pct' => 4.7],
+            ['mois' =>  4, 'pct' => 5.0],
+            ['mois' =>  2, 'pct' => 4.8],
+            ['mois' =>  1, 'pct' => 5.1],
+        ]);
+
+        // Produit 3 : classe a (anomalie isolée récente, fond historiquement stable)
+        $p3 = $this->creerProduitCatalog('vanmarke', 'CUIVRE-28', 'Tube cuivre 28mm', 'Plomberie', 'Tubes cuivre', 14.80);
+        $this->genererHistoriquePrix($p3, 13.00, [
+            ['mois' => 22, 'pct' =>  1.5],
+            ['mois' => 16, 'pct' => -0.8],
+            ['mois' => 10, 'pct' =>  1.2],
+            ['mois' =>  1, 'pct' => 13.5],
+        ]);
+
+        // Produit 4 : classe c (yoyo)
+        $p4 = $this->creerProduitCatalog('vanmarke', 'CUIVRE-35', 'Tube cuivre 35mm', 'Plomberie', 'Tubes cuivre', 22.00);
+        $this->genererHistoriquePrix($p4, 21.00, [
+            ['mois' => 14, 'pct' =>  8.0],
+            ['mois' => 12, 'pct' => -6.0],
+            ['mois' => 10, 'pct' =>  7.0],
+            ['mois' =>  8, 'pct' => -5.0],
+            ['mois' =>  6, 'pct' =>  9.0],
+            ['mois' =>  4, 'pct' => -7.0],
+            ['mois' =>  2, 'pct' =>  8.0],
+            ['mois' =>  1, 'pct' => -3.0],
+        ]);
+
+        // Produit 5 : insuffisant (aucun changement)
+        $this->creerProduitCatalog('vanmarke', 'CUIVRE-42', 'Tube cuivre 42mm', 'Plomberie', 'Tubes cuivre', 28.00);
+
+        // ── Cluster 2 : Profilés IPE ─ Wasco (test garde-fou absolu, 3 produits + complément)
+        // Les 3 montent ensemble ~+20% → signal relatif false, signal absolu true
+        $p6 = $this->creerProduitCatalog('wasco', 'IPE-100', 'Profilé IPE 100', 'Métallerie', 'Profilés IPE', 45.00);
+        $this->genererHistoriquePrix($p6, 38.14, [
+            ['mois' => 12, 'pct' => 4.5],
+            ['mois' =>  9, 'pct' => 4.8],
+            ['mois' =>  6, 'pct' => 4.6],
+            ['mois' =>  3, 'pct' => 4.7],
+        ]);
+
+        $p7 = $this->creerProduitCatalog('wasco', 'IPE-120', 'Profilé IPE 120', 'Métallerie', 'Profilés IPE', 58.00);
+        $this->genererHistoriquePrix($p7, 48.33, [
+            ['mois' => 12, 'pct' => 5.0],
+            ['mois' =>  9, 'pct' => 5.2],
+            ['mois' =>  6, 'pct' => 4.9],
+            ['mois' =>  3, 'pct' => 5.1],
+        ]);
+
+        $p8 = $this->creerProduitCatalog('wasco', 'IPE-140', 'Profilé IPE 140', 'Métallerie', 'Profilés IPE', 72.00);
+        $this->genererHistoriquePrix($p8, 58.97, [
+            ['mois' => 12, 'pct' => 5.5],
+            ['mois' =>  9, 'pct' => 5.0],
+            ['mois' =>  6, 'pct' => 5.3],
+            ['mois' =>  3, 'pct' => 5.2],
+        ]);
+
+        // Compléter le groupe Wasco/Profilés IPE à ≥5 pour valider le signal relatif
+        $p8b = $this->creerProduitCatalog('wasco', 'IPE-160', 'Profilé IPE 160', 'Métallerie', 'Profilés IPE', 88.00);
+        $this->genererHistoriquePrix($p8b, 73.55, [
+            ['mois' => 12, 'pct' => 4.8],
+            ['mois' =>  9, 'pct' => 5.0],
+            ['mois' =>  6, 'pct' => 4.6],
+            ['mois' =>  3, 'pct' => 5.2],
+        ]);
+        $p8c = $this->creerProduitCatalog('wasco', 'IPE-180', 'Profilé IPE 180', 'Métallerie', 'Profilés IPE', 105.00);
+        $this->genererHistoriquePrix($p8c, 87.50, [
+            ['mois' => 12, 'pct' => 4.6],
+            ['mois' =>  9, 'pct' => 5.1],
+            ['mois' =>  6, 'pct' => 5.0],
+            ['mois' =>  3, 'pct' => 4.8],
+        ]);
+
+        // ── Cluster 3 : EAN cross-fournisseur ─ Vis inox A4 6×80 (EAN partagé)
+        $ean1 = '4011200012345';
+        $pVis1 = $this->creerProduitCatalog('vanmarke', 'VIS-INOX-680-VM', 'Vis inox A4 6x80', 'Visserie', 'Vis inox', 0.45, $ean1);
+        $this->genererHistoriquePrix($pVis1, 0.44, [
+            ['mois' => 20, 'pct' =>  0.5],
+            ['mois' => 12, 'pct' => -0.4],
+            ['mois' =>  6, 'pct' =>  0.8],
+        ]);
+
+        $pVis2 = $this->creerProduitCatalog('wasco', 'VIS-INOX-680-WA', 'Vis inox A4 6x80', 'Visserie', 'Vis inox', 0.52, $ean1);
+        $this->genererHistoriquePrix($pVis2, 0.38, [
+            ['mois' => 12, 'pct' => 4.5],
+            ['mois' =>  9, 'pct' => 4.2],
+            ['mois' =>  6, 'pct' => 4.8],
+            ['mois' =>  3, 'pct' => 4.6],
+        ]);
+
+        // ── Cluster 4 : EAN cross-fournisseur ─ Robinet d'arrêt 1/2" (EAN partagé)
+        $ean2 = '4011200067890';
+        $pRob1 = $this->creerProduitCatalog('vanmarke', 'ROB-1-2-VM', 'Robinet arrêt 1/2"', 'Plomberie', 'Robinetterie', 18.00, $ean2);
+        $this->genererHistoriquePrix($pRob1, 14.00, [
+            ['mois' => 20, 'pct' => 10.0],
+            ['mois' => 14, 'pct' => -8.0],
+            ['mois' =>  8, 'pct' =>  9.0],
+            ['mois' =>  4, 'pct' => -7.0],
+            ['mois' =>  1, 'pct' =>  8.5],
+        ]);
+
+        // Fournisseur "autre" → clé 'ems' disponible, on utilise un autre fournisseur neutre
+        $pRob2 = $this->creerProduitCatalog('ems', 'ROB-1-2-EMS', 'Robinet arrêt 1/2"', 'Plomberie', 'Robinetterie', 16.00, $ean2);
+        $this->genererHistoriquePrix($pRob2, 21.00, [
+            ['mois' => 18, 'pct' => -5.0],
+            ['mois' => 12, 'pct' => -4.0],
+            ['mois' =>  6, 'pct' => -4.5],
+            ['mois' =>  2, 'pct' => -3.0],
+        ]);
+
+        $this->command->info('Produits catalogue de démo créés. Lancement du recalcul volatilité (2 passes)...');
+
+        $this->call(RecalculerVolatilite::class, ['--passe' => 2]);
+    }
+
+    private function creerProduitCatalog(
+        string $fournisseur,
+        string $reference,
+        string $designation,
+        string $categorie,
+        string $sousCategorie,
+        float $prix,
+        ?string $ean = null
+    ): CatalogProduit {
+        return CatalogProduit::firstOrCreate(
+            ['fournisseur' => $fournisseur, 'reference' => $reference],
+            [
+                'designation'   => $designation,
+                'categorie'     => $categorie,
+                'sous_categorie'=> $sousCategorie,
+                'prix_catalogue'=> $prix,
+                'prix_revente'  => $prix,
+                'taux_tva'      => 21,
+                'unite'         => 'pièce',
+                'ean'           => $ean,
+                'en_stock'      => true,
+                'derniere_sync' => now(),
+            ]
+        );
+    }
+
+    private function genererHistoriquePrix(CatalogProduit $produit, float $prixDepart, array $variations): void
+    {
+        $prixCourant = $prixDepart;
+        foreach ($variations as $v) {
+            $prixAvant = $prixCourant;
+            $prixApres = round($prixAvant * (1 + $v['pct'] / 100), 4);
+
+            CatalogPrixHistorique::create([
+                'catalog_produit_id' => $produit->id,
+                'fournisseur'        => $produit->fournisseur,
+                'reference'          => $produit->reference,
+                'prix_avant'         => $prixAvant,
+                'prix_apres'         => $prixApres,
+                'variation_pct'      => $v['pct'],
+                'est_significatif'   => abs($v['pct']) >= 3,
+                'source'             => 'csv',
+                'detected_at'        => now()->subMonths($v['mois']),
+            ]);
+
+            $prixCourant = $prixApres;
+        }
+
+        // Aligner le prix_catalogue sur le dernier prix de l'historique
+        $produit->update(['prix_catalogue' => $prixCourant]);
     }
 
     // ---------------------------------------------------------------

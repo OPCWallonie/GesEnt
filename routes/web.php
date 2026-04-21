@@ -306,6 +306,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/api/fournisseurs/quick-create', [FournisseurController::class, 'quickCreate'])->name('fournisseurs.quick-create');
 
         // Catalogue
+        Route::patch('/catalog/produit/{catalogProduit}/volatilite-flag', [CatalogController::class, 'updateVolatiliteFlag'])->name('catalog.volatilite-flag');
         Route::post('/catalog/import', [CatalogController::class, 'import'])->name('catalog.import');
         Route::post('/catalog/sync', [CatalogController::class, 'sync'])->name('catalog.sync');
         Route::post('/catalog/config', [CatalogController::class, 'updateConfig'])->name('catalog.config');
@@ -371,6 +372,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/parametres', [ParametresController::class, 'update'])->name('parametres.update');
         Route::post('/parametres/tester-odoo', [ParametresController::class, 'testerOdoo'])->name('parametres.tester-odoo');
         Route::post('/parametres/tester-email', [ParametresController::class, 'testerEmail'])->name('parametres.tester-email');
+        Route::post('/parametres/recalculer-volatilite', [ParametresController::class, 'recalculerVolatilite'])->name('parametres.recalculer-volatilite');
         Route::post('/odoo/test', function (Request $request, \App\Services\OdooService $odoo) {
             $saved  = \App\Models\ParametresEntreprise::instance();
             $apiKey = $request->filled('api_key')
