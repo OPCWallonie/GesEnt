@@ -37,75 +37,69 @@ class BadgeVolatiliteService
     public function pertinentPourLigne(CatalogProduit $produit, float $montantLigne): bool
     {
         $params = ParametresEntreprise::instance();
-
-        if (! $params->volatilite_active) {
-            return false;
-        }
-
+        if (! $params->volatilite_active) return false;
         $classe = $produit->volatilite_classe;
-        if (!$classe || $classe === 'insuffisant' || $classe === 'stable') {
-            return false;
-        }
-
-        if ($montantLigne < (float) $params->volatilite_seuil_ligne_devis_eur) {
-            return false;
-        }
-
-        return (bool) $produit->volatilite_signal_absolu || (bool) $produit->volatilite_signal_relatif;
+        if (!$classe || $classe === 'insuffisant' || $classe === 'stable') return false;
+        return $montantLigne >= (float) $params->volatilite_seuil_ligne_devis_eur;
     }
 
     private function badgeClasseA(CatalogProduit $produit, bool $signalFort): VolatiliteBadgeDTO
     {
-        // Requête la variation la plus forte dans les 3 derniers mois
-        $variationMax = CatalogPrixHistorique::where('catalog_produit_id', $produit->id)
+        $plusForte = CatalogPrixHistorique::where('catalog_produit_id', $produit->id)
             ->where('detected_at', '>=', now()->subMonths(3))
             ->orderByRaw('ABS(variation_pct) DESC')
-            ->value('variation_pct');
+            ->first();
 
-        if ($variationMax !== null) {
-            $signe   = (float) $variationMax >= 0 ? '+' : '';
-            $message = "Variation ponctuelle : {$signe}" . number_format((float) $variationMax, 1) . '%';
+        if ($plusForte !== null) {
+            $variation = (float) $plusForte->variation_pct;
+            $nMois     = max(1, (int) round(now()->diffInMonths(Carbon::parse($plusForte->detected_at))));
+            $mot       = $variation >= 0 ? 'Hausse' : 'Baisse';
+            $signe     = $variation >= 0 ? '+' : '';
+            $message   = sprintf('⚡ %s récente inhabituelle (%s%s%% il y a %d mois)',
+                $mot, $signe, number_format($variation, 1, ',', ''), $nMois);
         } else {
-            $message = 'Variation ponctuelle détectée';
+            $message = '⚡ Variation récente inhabituelle';
         }
 
-        return new VolatiliteBadgeDTO(
-            classe:     'a',
-            niveau:     'warning',
-            icone:      '⚠️',
-            message:    $message,
-            signalFort: $signalFort,
-        );
+        return new VolatiliteBadgeDTO(classe: 'a', niveau: 'warning', icone: '⚡', message: $message, signalFort: $signalFort);
     }
 
     private function badgeClasseB(CatalogProduit $produit, bool $signalFort): VolatiliteBadgeDTO
     {
-        $tendance = (float) ($produit->volatilite_tendance_pct ?? 0);
-        $hausse   = $tendance >= 0;
-        $signe    = $hausse ? '+' : '';
+        $tendance        = (float) ($produit->volatilite_tendance_pct ?? 0);
+        $tendanceArrondie = (int) round($tendance);
+        $hausse           = $tendance >= 0;
 
-        return new VolatiliteBadgeDTO(
-            classe:     'b',
-            niveau:     $hausse ? 'warning' : 'opportunite',
-            icone:      $hausse ? '📈' : '📉',
-            message:    ($hausse ? 'Hausse continue' : 'Baisse en cours')
-                        . ' : ' . $signe . number_format($tendance, 1) . '% sur 12 mois',
-            signalFort: $signalFort,
-        );
+        if ($hausse) {
+            $message = sprintf('📈 En hausse régulière (+%d%%/an). Envisager de stocker pour un chantier long.', $tendanceArrondie);
+            $niveau  = 'warning';
+            $icone   = '📈';
+        } else {
+            $message = sprintf('📉 En baisse régulière (%d%%/an). Bon moment pour acheter.', $tendanceArrondie);
+            $niveau  = 'opportunite';
+            $icone   = '📉';
+        }
+
+        return new VolatiliteBadgeDTO(classe: 'b', niveau: $niveau, icone: $icone, message: $message, signalFort: $signalFort);
     }
 
     private function badgeClasseC(CatalogProduit $produit, bool $signalFort): VolatiliteBadgeDTO
     {
-        $amplitude = $produit->volatilite_amplitude_pct !== null
-            ? number_format((float) $produit->volatilite_amplitude_pct, 1)
-            : '?';
+        $position = $produit->volatilite_position_relative !== null
+            ? (float) $produit->volatilite_position_relative
+            : 0.5;
 
-        return new VolatiliteBadgeDTO(
-            classe:     'c',
-            niveau:     'warning',
-            icone:      '🔄',
-            message:    "Prix instable · amplitude {$amplitude}%",
-            signalFort: $signalFort,
-        );
+        if ($position < 0.33) {
+            $message = '🎢 Prix fluctuant, actuellement bas. Bon timing.';
+            $niveau  = 'opportunite';
+        } elseif ($position <= 0.66) {
+            $message = '🎢 Prix fluctuant, dans la moyenne.';
+            $niveau  = 'info';
+        } else {
+            $message = '🎢 Prix fluctuant, actuellement haut. Attendre si possible.';
+            $niveau  = 'warning';
+        }
+
+        return new VolatiliteBadgeDTO(classe: 'c', niveau: $niveau, icone: '🎢', message: $message, signalFort: $signalFort);
     }
 }

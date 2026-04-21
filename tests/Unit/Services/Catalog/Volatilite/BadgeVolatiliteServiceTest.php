@@ -64,8 +64,8 @@ class BadgeVolatiliteServiceTest extends TestCase
         $this->assertTrue($badge->visible());
         $this->assertSame('warning', $badge->niveau);
         $this->assertSame('📈', $badge->icone);
-        $this->assertStringContainsString('+12.5%', $badge->message);
-        $this->assertStringContainsString('Hausse continue', $badge->message);
+        $this->assertStringContainsString('+13%', $badge->message);
+        $this->assertStringContainsString('hausse régulière', $badge->message);
     }
 
     public function test_classe_b_baisse_retourne_niveau_opportunite(): void
@@ -77,20 +77,42 @@ class BadgeVolatiliteServiceTest extends TestCase
         $this->assertTrue($badge->visible());
         $this->assertSame('opportunite', $badge->niveau);
         $this->assertSame('📉', $badge->icone);
-        $this->assertStringContainsString('-8.0%', $badge->message);
-        $this->assertStringContainsString('Baisse en cours', $badge->message);
+        $this->assertStringContainsString('-8%', $badge->message);
+        $this->assertStringContainsString('baisse régulière', $badge->message);
     }
 
-    public function test_classe_c_retourne_niveau_warning_avec_amplitude(): void
+    public function test_classe_c_position_basse_retourne_opportunite(): void
     {
-        $produit = $this->creerProduit('c', amplitudePct: 18.3);
+        $produit = $this->creerProduit('c', positionRelative: 0.20);
+
+        $badge = $this->service->composer($produit);
+
+        $this->assertTrue($badge->visible());
+        $this->assertSame('opportunite', $badge->niveau);
+        $this->assertSame('🎢', $badge->icone);
+        $this->assertStringContainsString('bas', $badge->message);
+    }
+
+    public function test_classe_c_position_haute_retourne_warning(): void
+    {
+        $produit = $this->creerProduit('c', positionRelative: 0.80);
 
         $badge = $this->service->composer($produit);
 
         $this->assertTrue($badge->visible());
         $this->assertSame('warning', $badge->niveau);
-        $this->assertSame('🔄', $badge->icone);
-        $this->assertStringContainsString('18.3%', $badge->message);
+        $this->assertSame('🎢', $badge->icone);
+        $this->assertStringContainsString('haut', $badge->message);
+    }
+
+    public function test_classe_c_position_moyenne_retourne_info(): void
+    {
+        $produit = $this->creerProduit('c', positionRelative: 0.50);
+
+        $badge = $this->service->composer($produit);
+
+        $this->assertTrue($badge->visible());
+        $this->assertSame('info', $badge->niveau);
     }
 
     public function test_classe_a_retourne_message_avec_variation_historique(): void
@@ -112,8 +134,9 @@ class BadgeVolatiliteServiceTest extends TestCase
 
         $this->assertTrue($badge->visible());
         $this->assertSame('warning', $badge->niveau);
-        $this->assertSame('⚠️', $badge->icone);
-        $this->assertStringContainsString('+12.0%', $badge->message);
+        $this->assertSame('⚡', $badge->icone);
+        $this->assertStringContainsString('Hausse', $badge->message);
+        $this->assertStringContainsString('12,0%', $badge->message);
     }
 
     public function test_signal_fort_vrai_si_signal_absolu(): void
@@ -171,9 +194,16 @@ class BadgeVolatiliteServiceTest extends TestCase
         $this->assertFalse($this->service->pertinentPourLigne($produit, 50.0));
     }
 
-    public function test_pertinent_pour_ligne_true_si_signal_et_montant_ok(): void
+    public function test_pertinent_pour_ligne_true_si_classe_volatile_et_montant_ok(): void
     {
-        $produit = $this->creerProduit('b', signalAbsolu: true);
+        $produit = $this->creerProduit('b');
+
+        $this->assertTrue($this->service->pertinentPourLigne($produit, 300.0));
+    }
+
+    public function test_pertinent_pour_ligne_true_meme_sans_signal_fort(): void
+    {
+        $produit = $this->creerProduit('c', signalRelatif: false, signalAbsolu: false);
 
         $this->assertTrue($this->service->pertinentPourLigne($produit, 300.0));
     }
@@ -189,25 +219,27 @@ class BadgeVolatiliteServiceTest extends TestCase
 
     private function creerProduit(
         ?string $classe,
-        ?float  $tendancePct   = 5.0,
-        ?float  $amplitudePct  = 10.0,
-        bool    $signalRelatif = false,
-        bool    $signalAbsolu  = false,
+        ?float  $tendancePct      = 5.0,
+        ?float  $amplitudePct     = 10.0,
+        bool    $signalRelatif    = false,
+        bool    $signalAbsolu     = false,
+        ?float  $positionRelative = null,
     ): CatalogProduit {
         return CatalogProduit::create([
-            'fournisseur'                => 'vanmarke',
-            'reference'                  => 'BADGE-' . uniqid(),
-            'designation'                => 'Test badge',
-            'prix_catalogue'             => 20.00,
-            'prix_revente'               => 20.00,
-            'taux_tva'                   => 21,
-            'unite'                      => 'pièce',
-            'volatilite_classe'          => $classe,
-            'volatilite_tendance_pct'    => $tendancePct,
-            'volatilite_amplitude_pct'   => $amplitudePct,
-            'volatilite_signal_relatif'  => $signalRelatif,
-            'volatilite_signal_absolu'   => $signalAbsolu,
-            'volatilite_calculee_at'     => now(),
+            'fournisseur'                    => 'vanmarke',
+            'reference'                      => 'BADGE-' . uniqid(),
+            'designation'                    => 'Test badge',
+            'prix_catalogue'                 => 20.00,
+            'prix_revente'                   => 20.00,
+            'taux_tva'                       => 21,
+            'unite'                          => 'pièce',
+            'volatilite_classe'              => $classe,
+            'volatilite_tendance_pct'        => $tendancePct,
+            'volatilite_amplitude_pct'       => $amplitudePct,
+            'volatilite_signal_relatif'      => $signalRelatif,
+            'volatilite_signal_absolu'       => $signalAbsolu,
+            'volatilite_position_relative'   => $positionRelative,
+            'volatilite_calculee_at'         => now(),
         ]);
     }
 }
