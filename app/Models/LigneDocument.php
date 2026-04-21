@@ -44,7 +44,12 @@ class LigneDocument extends Model
     // Calcule et met à jour montant_ht selon quantité, prix, remise
     public function calculerMontant(): float
     {
-        $brut = $this->prix_unitaire * $this->quantite;
+        return $this->calculerMontantAvecPrix((float) $this->prix_unitaire);
+    }
+
+    public function calculerMontantAvecPrix(float $prixUnitaire): float
+    {
+        $brut = $prixUnitaire * $this->quantite;
 
         $remise = match ($this->remise_type) {
             'pourcentage' => $brut * ($this->remise_valeur / 100),

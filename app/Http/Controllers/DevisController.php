@@ -12,6 +12,7 @@ use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Models\DocumentDraft;
 use App\Services\Catalog\DevisImpactService;
+use App\Services\Catalog\Volatilite\VolatiliteDocumentHelper;
 use App\Services\DocumentService;
 use App\Services\MailConfigService;
 use App\Services\MailTemplateService;
@@ -137,8 +138,9 @@ class DevisController extends Controller
         $totauxTva          = $this->documentService->calculerTotauxTva($devis->lignes);
         $messageEmailDefaut = MailTemplateService::resoudre('devis', $devis);
         $lignesImpactees    = app(DevisImpactService::class)->lignesImpactees($devis);
+        $volatiliteData     = app(VolatiliteDocumentHelper::class)->preparerPourDocument($devis);
 
-        return view('devis.show', compact('devis', 'parametres', 'totauxTva', 'messageEmailDefaut', 'lignesImpactees'));
+        return view('devis.show', compact('devis', 'parametres', 'totauxTva', 'messageEmailDefaut', 'lignesImpactees', 'volatiliteData'));
     }
 
     public function edit(Devis $devis)
@@ -154,8 +156,9 @@ class DevisController extends Controller
         $chantiers     = $devis->client
             ? $devis->client->chantiers()->where('statut', 'actif')->get(['id', 'nom'])
             : collect();
+        $volatiliteData = app(VolatiliteDocumentHelper::class)->preparerPourDocument($devis);
 
-        return view('devis.edit', compact('devis', 'clients', 'modesPaiement', 'tauxTva', 'chantiers'));
+        return view('devis.edit', compact('devis', 'clients', 'modesPaiement', 'tauxTva', 'chantiers', 'volatiliteData'));
     }
 
     public function update(Request $request, Devis $devis)

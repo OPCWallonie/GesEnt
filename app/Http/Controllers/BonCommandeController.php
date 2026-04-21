@@ -11,6 +11,7 @@ use App\Models\ModePaiement;
 use App\Models\ParametresEntreprise;
 use App\Models\TauxTva;
 use App\Models\DocumentDraft;
+use App\Services\Catalog\Volatilite\VolatiliteDocumentHelper;
 use App\Services\DocumentService;
 use App\Services\MailConfigService;
 use App\Services\MailTemplateService;
@@ -123,11 +124,14 @@ class BonCommandeController extends Controller
         $totaux             = $bonCommande->montantTotalAvecAvenants();
         $messageEmailDefaut = MailTemplateService::resoudre('bdc', $bonCommande);
 
+        $volatiliteData = app(VolatiliteDocumentHelper::class)->preparerPourDocument($bonCommande);
+
         return view('bons-commande.show', [
             'bdc'                => $bonCommande,
             'parametres'         => $parametres,
             'totaux'             => $totaux,
             'messageEmailDefaut' => $messageEmailDefaut,
+            'volatiliteData'     => $volatiliteData,
         ]);
     }
 
@@ -190,7 +194,9 @@ class BonCommandeController extends Controller
             ? $bonCommande->client->chantiers()->where('statut', 'actif')->get(['id', 'nom'])
             : collect();
 
-        return view('bons-commande.edit', ['bdc' => $bonCommande, 'clients' => $clients, 'modesPaiement' => $modesPaiement, 'tauxTva' => $tauxTva, 'chantiers' => $chantiers]);
+        $volatiliteData = app(VolatiliteDocumentHelper::class)->preparerPourDocument($bonCommande);
+
+        return view('bons-commande.edit', ['bdc' => $bonCommande, 'clients' => $clients, 'modesPaiement' => $modesPaiement, 'tauxTva' => $tauxTva, 'chantiers' => $chantiers, 'volatiliteData' => $volatiliteData]);
     }
 
     public function update(Request $request, BonCommande $bonCommande)

@@ -5,23 +5,32 @@
       $tauxTva : collection de TauxTva
       $tvaDefaut : taux par défaut (ex: 21)
 --}}
-@props(['lignesInitiales' => collect(), 'tauxTva', 'tvaDefaut' => 21, 'clientId' => null])
+@props(['lignesInitiales' => collect(), 'tauxTva', 'tvaDefaut' => 21, 'clientId' => null, 'volatiliteParProduit' => []])
 
-<div x-data="lignesDocument({{ json_encode($lignesInitiales->map(fn($l) => [
-    'designation'        => $l->designation,
-    'detail'             => $l->detail ?? '',
-    'unite'              => $l->unite,
-    'quantite'           => $l->quantite,
-    'prix_unitaire'      => $l->prix_unitaire,
-    'remise_valeur'      => $l->remise_valeur,
-    'remise_type'        => $l->remise_type,
-    'taux_tva'           => $l->taux_tva,
-    'est_section'        => $l->est_section,
-    'montant_ht'         => $l->montant_ht,
-    'produit_id'         => $l->produit_id,
-    'catalog_produit_id' => $l->catalog_produit_id ?? null,
-    'produit_key'        => $l->produit_id ? 'p:' . $l->produit_id : ($l->catalog_produit_id ?? null ? 'c:' . ($l->catalog_produit_id ?? '') : ''),
-])->values()) }}, {{ $tvaDefaut }}, {{ $clientId ?? 'null' }})">
+@php
+$lignesJson = $lignesInitiales->map(function($l) use ($volatiliteParProduit) {
+    $cpId = $l->catalog_produit_id ?? null;
+    $vol  = $cpId && isset($volatiliteParProduit[$cpId]) ? $volatiliteParProduit[$cpId]->toArray() : null;
+    return [
+        'designation'        => $l->designation,
+        'detail'             => $l->detail ?? '',
+        'unite'              => $l->unite,
+        'quantite'           => $l->quantite,
+        'prix_unitaire'      => $l->prix_unitaire,
+        'remise_valeur'      => $l->remise_valeur,
+        'remise_type'        => $l->remise_type,
+        'taux_tva'           => $l->taux_tva,
+        'est_section'        => $l->est_section,
+        'montant_ht'         => $l->montant_ht,
+        'produit_id'         => $l->produit_id,
+        'catalog_produit_id' => $cpId,
+        'ligne_id'           => $l->id ?? null,
+        'produit_key'        => $l->produit_id ? 'p:' . $l->produit_id : ($cpId ? 'c:' . $cpId : ''),
+        'volatilite'         => $vol,
+    ];
+})->values();
+@endphp
+<div x-data="lignesDocument({{ json_encode($lignesJson) }}, {{ $tvaDefaut }}, {{ $clientId ?? 'null' }})">
 
     {{-- En-tête tableau --}}
     <div class="hidden md:grid grid-cols-12 gap-2 px-3 py-2 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase">
@@ -87,6 +96,16 @@
                                         <div class="flex-1 min-w-0">
                                             <div class="font-medium truncate" x-text="s.designation"></div>
                                             <div class="text-xs text-gray-400" x-text="(s.fournisseur ? s.fournisseur + (s.reference ? ' — ' + s.reference : '') + ' · ' : '') + (s.prix || s.prix_unitaire || 0).toFixed(2) + ' € / ' + (s.unite || 'pièce') + ' — TVA ' + s.taux_tva + '%'"></div>
+                                            <template x-if="s.volatilite && s.volatilite.niveau">
+                                                <span :class="{
+                                                    'bg-amber-100 text-amber-800 border-amber-200': s.volatilite.niveau === 'warning',
+                                                    'bg-green-100 text-green-800 border-green-200': s.volatilite.niveau === 'opportunite',
+                                                    'bg-blue-100  text-blue-800  border-blue-200' : s.volatilite.niveau === 'info',
+                                                }" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded border mt-0.5">
+                                                    <span x-text="s.volatilite.icone"></span>
+                                                    <span x-text="s.volatilite.message"></span>
+                                                </span>
+                                            </template>
                                         </div>
                                         <div class="flex items-center gap-1 flex-shrink-0">
                                             <span x-show="s.habituel"
@@ -203,6 +222,30 @@
                                   rows="1"
                                   class="w-full text-xs border-gray-200 rounded px-2 py-1 text-gray-500 bg-gray-50 resize-none focus:ring-1 focus:ring-blue-300"></textarea>
                     </div>
+
+                    {{-- Badge volatilité compact + bandeau alternatives --}}
+                    <template x-if="ligne.volatilite && ligne.volatilite.niveau">
+                        <div class="flex items-center gap-2 flex-wrap mt-1">
+                            <span :class="{
+                                'bg-amber-100 text-amber-800 border-amber-200': ligne.volatilite.niveau === 'warning',
+                                'bg-green-100 text-green-800 border-green-200': ligne.volatilite.niveau === 'opportunite',
+                                'bg-blue-100  text-blue-800  border-blue-200' : ligne.volatilite.niveau === 'info',
+                            }" class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded border">
+                                <span x-text="ligne.volatilite.icone"></span>
+                                <span x-text="ligne.volatilite.message"></span>
+                                <template x-if="ligne.volatilite.signal_fort">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60 ml-0.5"></span>
+                                </template>
+                            </span>
+                            <template x-if="ligne.alternatives && ligne.alternatives.length > 0">
+                                <button type="button"
+                                        @click="ouvrirAlternatives(index)"
+                                        class="text-xs text-indigo-600 hover:text-indigo-800 underline">
+                                    <span x-text="ligne.alternatives.length + ' alternative' + (ligne.alternatives.length > 1 ? 's' : '') + ' fournisseur'"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </template>
                 </div>
             </template>
         </div>
@@ -567,6 +610,76 @@
         </div>
     </div>
 
+    {{-- Modal alternatives fournisseurs --}}
+    <div x-show="alternativesOpen" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/50" @click="alternativesOpen = false"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[80vh]" @click.stop>
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <div>
+                    <h3 class="font-semibold text-gray-900">Alternatives fournisseurs</h3>
+                    <p class="text-xs text-gray-500 mt-0.5"
+                       x-text="alternativesLigneIndex !== null ? (lignes[alternativesLigneIndex]?.designation || '') : ''"></p>
+                </div>
+                <button @click="alternativesOpen = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="overflow-y-auto flex-1 px-6 py-4 space-y-3">
+                <template x-if="!alternativesData || alternativesData.length === 0">
+                    <p class="text-sm text-gray-400 text-center py-8">Aucune alternative avantageuse trouvée.</p>
+                </template>
+                <template x-for="(alt, i) in (alternativesData || [])" :key="i">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700" x-text="alt.nom_fournisseur"></span>
+                                    <span class="font-mono text-xs text-gray-500" x-text="alt.reference"></span>
+                                    <span x-show="!alt.en_stock" class="text-xs text-red-500">Rupture</span>
+                                </div>
+                                <div class="text-sm font-medium text-gray-800 mt-1 truncate" x-text="alt.designation"></div>
+                                <div class="flex items-center gap-3 mt-2 flex-wrap">
+                                    <template x-if="alt.signal_prix_inferieur">
+                                        <span class="text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded">
+                                            💰 Prix inférieur (<span x-text="alt.ecart_prix_pct.toFixed(1) + '%'"></span>)
+                                        </span>
+                                    </template>
+                                    <template x-if="alt.signal_tendance_favorable">
+                                        <span class="text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded">
+                                            📉 Tendance plus favorable
+                                        </span>
+                                    </template>
+                                    <template x-if="alt.signal_position_inferieure">
+                                        <span class="text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded">
+                                            📊 Position basse dans sa fourchette
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end gap-2 flex-shrink-0">
+                                <div class="text-right">
+                                    <div class="font-semibold text-gray-900" x-text="alt.prix_catalogue.toFixed(2) + ' €'"></div>
+                                    <div x-show="alt.ecart_prix_pct !== 0"
+                                         :class="alt.ecart_prix_pct < 0 ? 'text-green-600' : 'text-red-500'"
+                                         class="text-xs"
+                                         x-text="(alt.ecart_prix_pct > 0 ? '+' : '') + alt.ecart_prix_pct.toFixed(1) + '%'"></div>
+                                </div>
+                                <template x-if="alternativesLigneIndex !== null && lignes[alternativesLigneIndex] && lignes[alternativesLigneIndex].ligne_id">
+                                    <button type="button"
+                                            @click="swapFournisseur(alternativesLigneIndex, alt.produit_id)"
+                                            class="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 whitespace-nowrap">
+                                        Utiliser ce fournisseur
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
     {{-- Totaux --}}
     <div class="p-4 bg-gray-50 rounded-b-xl">
         <div class="flex justify-end">
@@ -610,8 +723,11 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
             ? lignesInitiales.map(l => ({...l, _uid: crypto.randomUUID(), montant_ht: parseFloat(l.montant_ht) || 0,
                 produit_id: l.produit_id || null,
                 catalog_produit_id: l.catalog_produit_id || null,
-                produit_key: l.produit_key || '' }))
-            : [{ _uid: crypto.randomUUID(), designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' }],
+                ligne_id: l.ligne_id || null,
+                produit_key: l.produit_key || '',
+                volatilite: l.volatilite || null,
+                alternatives: null }))
+            : [{ _uid: crypto.randomUUID(), designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, ligne_id: null, produit_key: '', volatilite: null, alternatives: null }],
 
         // Client actif (pour historique prix)
         clientId: clientIdInitial,
@@ -631,6 +747,11 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
         catalogFournisseur: '',
         catalogResults: [],
         catalogLoading: false,
+
+        // Alternatives fournisseurs
+        alternativesOpen: false,
+        alternativesLigneIndex: null,
+        alternativesData: null,
 
         get totalHt() {
             return this.lignes.filter(l => !l.est_section).reduce((s, l) => s + l.montant_ht, 0);
@@ -661,7 +782,7 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
         },
 
         nouvelleLigneVide() {
-            return { _uid: crypto.randomUUID(), designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, produit_key: '' };
+            return { _uid: crypto.randomUUID(), designation: '', detail: '', unite: 'pièce', quantite: 1, prix_unitaire: 0, remise_valeur: 0, remise_type: 'montant', taux_tva: tvaDefaut, est_section: false, montant_ht: 0, produit_id: null, catalog_produit_id: null, ligne_id: null, produit_key: '', volatilite: null, alternatives: null };
         },
 
         ajouterLigne() {
@@ -715,17 +836,21 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
             l.detail             = produit.description || (produit.reference ? `Réf. ${produit.reference}${produit.fournisseur ? ' — ' + produit.fournisseur : ''}` : '');
             l.unite              = produit.unite || 'pièce';
             l.taux_tva           = parseFloat(produit.taux_tva) || tvaDefaut;
+            l.volatilite         = produit.volatilite || null;
+            l.alternatives       = null;
 
             if (produit.source === 'catalogue') {
                 const prixBase = parseFloat(produit.prix_base) || parseFloat(produit.prix) || 0;
                 l.prix_unitaire      = coeff > 0 && prixBase > 0 ? Math.round(prixBase * (1 + coeff / 100) * 100) / 100 : parseFloat(produit.prix) || 0;
                 l.catalog_produit_id = produit.id;
                 l.produit_id         = null;
+                l.ligne_id           = null;
                 l.produit_key        = 'c:' + produit.id;
             } else {
                 l.prix_unitaire      = parseFloat(produit.prix_unitaire || produit.prix) || 0;
                 l.produit_id         = produit.id;
                 l.catalog_produit_id = null;
+                l.ligne_id           = null;
                 l.produit_key        = 'p:' + produit.id;
             }
 
@@ -736,6 +861,54 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
             this.catalogOpen = true;
             this.catalogQ = '';
             this.catalogResults = [];
+        },
+
+        async ouvrirAlternatives(index) {
+            const l = this.lignes[index];
+            if (!l.catalog_produit_id) return;
+
+            this.alternativesLigneIndex = index;
+            this.alternativesData       = l.alternatives || null;
+
+            if (!this.alternativesData) {
+                try {
+                    const r = await fetch(`/api/catalog/produit/${l.catalog_produit_id}/volatilite`);
+                    const data = await r.json();
+                    this.alternativesData = (data.alternatives || []).filter(a => a.nb_signaux > 0);
+                    l.alternatives = this.alternativesData;
+                } catch (e) {
+                    this.alternativesData = [];
+                }
+            }
+
+            this.alternativesOpen = true;
+        },
+
+        async swapFournisseur(index, nouveauProduitId) {
+            const l = this.lignes[index];
+            if (!l.ligne_id) return;
+
+            try {
+                const r = await fetch(`/api/lignes-document/${l.ligne_id}/swap-fournisseur`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({ catalog_produit_id: nouveauProduitId }),
+                });
+                const data = await r.json();
+                if (data.success) {
+                    if (data.avertissement) {
+                        alert('Swap réussi. ' + data.avertissement);
+                    }
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Erreur lors du changement de fournisseur.');
+                }
+            } catch (e) {
+                alert('Erreur réseau lors du changement de fournisseur.');
+            }
         },
 
         async rechercherCatalogue() {
@@ -773,7 +946,10 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
                 montant_ht:         prix,
                 produit_id:         null,
                 catalog_produit_id: produit.id,
+                ligne_id:           null,
                 produit_key:        'c:' + produit.id,
+                volatilite:         produit.volatilite || null,
+                alternatives:       null,
             });
             this.catalogOpen = false;
         },
@@ -797,7 +973,10 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
                     montant_ht:         parseFloat(l.montant_ht) || 0,
                     produit_id:         l.produit_id ? parseInt(l.produit_id) : null,
                     catalog_produit_id: l.catalog_produit_id ? parseInt(l.catalog_produit_id) : null,
+                    ligne_id:           l.ligne_id ? parseInt(l.ligne_id) : null,
                     produit_key:        l.produit_key || '',
+                    volatilite:         null,
+                    alternatives:       null,
                 }));
                 this.lignes.forEach((_, i) => this.calculerLigne(i));
             });
@@ -829,7 +1008,10 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
                         montant_ht:         l.est_section ? 0 : (parseFloat(l.montant_ht) || 0),
                         produit_id:         l.produit_id || null,
                         catalog_produit_id: l.catalog_produit_id || null,
+                        ligne_id:           null,
                         produit_key:        l.produit_key || '',
+                        volatilite:         null,
+                        alternatives:       null,
                     });
                     if (!l.est_section) {
                         this.calculerLigne(this.lignes.length - 1);
@@ -904,7 +1086,10 @@ function lignesDocument(lignesInitiales, tvaDefaut, clientIdInitial) {
                     montant_ht:         prix,
                     produit_id:         p.source === 'interne' ? p.id : null,
                     catalog_produit_id: p.source === 'catalogue' ? p.id : null,
+                    ligne_id:           null,
                     produit_key:        (p.source === 'interne' ? 'p:' : 'c:') + p.id,
+                    volatilite:         p.volatilite || null,
+                    alternatives:       null,
                 });
                 this.calculerLigne(this.lignes.length - 1);
             });

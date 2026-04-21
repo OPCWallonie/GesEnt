@@ -34,6 +34,7 @@ use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VentesHistoriqueController;
 use App\Http\Controllers\DocumentDraftController;
+use App\Http\Controllers\SwapFournisseurController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -133,6 +134,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/catalog/changements-prix', [CatalogController::class, 'changementsPrix'])->name('catalog.changements-prix');
     Route::post('/catalog/changements-prix/marquer-lu', [CatalogController::class, 'marquerChangementsLus'])->name('catalog.changements-prix.marquer-lu');
     Route::get('/catalog/produit/{catalogProduit}', [CatalogController::class, 'show'])->name('catalog.show');
+    Route::get('/api/catalog/produit/{catalogProduit}/volatilite', [CatalogController::class, 'showVolatilite'])->name('catalog.volatilite');
 
     // API auto-save des documents (brouillons)
     Route::prefix('api/drafts')->name('drafts.')->middleware('throttle:120,1')->group(function () {
@@ -307,6 +309,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Catalogue
         Route::patch('/catalog/produit/{catalogProduit}/volatilite-flag', [CatalogController::class, 'updateVolatiliteFlag'])->name('catalog.volatilite-flag');
+        Route::post('/api/lignes-document/{ligneDocument}/swap-fournisseur', [SwapFournisseurController::class, 'swap'])->name('lignes-document.swap-fournisseur');
         Route::post('/catalog/import', [CatalogController::class, 'import'])->name('catalog.import');
         Route::post('/catalog/sync', [CatalogController::class, 'sync'])->name('catalog.sync');
         Route::post('/catalog/config', [CatalogController::class, 'updateConfig'])->name('catalog.config');
