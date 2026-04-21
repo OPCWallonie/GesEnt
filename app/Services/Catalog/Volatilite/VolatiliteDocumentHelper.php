@@ -47,18 +47,19 @@ class VolatiliteDocumentHelper
             ->map(fn($group) => $group->sum('montant_ht'));
 
         foreach ($produits as $id => $produit) {
+            // Dimension 1 : badge (soumis au filtre de pertinence seuil €)
             $montant = (float) ($montantsParProduit[$id] ?? 0);
-
-            if (! $this->badgeService->pertinentPourLigne($produit, $montant)) continue;
-
-            $badge = $this->badgeService->composer($produit);
-            if ($badge->visible()) {
-                $badgesParProduit[$id] = $badge;
-
-                $alternatives = $this->comparaisonService->alternativesAvantageuses($produit);
-                if ($alternatives->isNotEmpty()) {
-                    $alternativesParProduit[$id] = $alternatives;
+            if ($this->badgeService->pertinentPourLigne($produit, $montant)) {
+                $badge = $this->badgeService->composer($produit);
+                if ($badge->visible()) {
+                    $badgesParProduit[$id] = $badge;
                 }
+            }
+
+            // Dimension 2 : alternatives EAN (indépendant du filtre badge)
+            $alternatives = $this->comparaisonService->alternativesAvantageuses($produit);
+            if ($alternatives->isNotEmpty()) {
+                $alternativesParProduit[$id] = $alternatives;
             }
         }
 

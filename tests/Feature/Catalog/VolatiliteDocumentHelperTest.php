@@ -66,6 +66,72 @@ class VolatiliteDocumentHelperTest extends TestCase
         $this->assertEmpty($data['badgesParProduit']);
     }
 
+    public function test_alternatives_retournees_meme_si_produit_stable(): void
+    {
+        $ean = 'EAN-' . uniqid();
+
+        // Produit stable sur le devis
+        $produitRef = CatalogProduit::create([
+            'fournisseur'               => 'vanmarke',
+            'reference'                 => 'STABLE-' . uniqid(),
+            'designation'               => 'Produit stable',
+            'prix_catalogue'            => 100.00,
+            'prix_revente'              => 100.00,
+            'taux_tva'                  => 21,
+            'unite'                     => 'pièce',
+            'ean'                       => $ean,
+            'volatilite_classe'         => 'stable',
+            'volatilite_tendance_pct'   => 0.0,
+            'volatilite_calculee_at'    => now(),
+        ]);
+
+        // Alternative moins chère avec même EAN (signal prix déclenché)
+        CatalogProduit::create([
+            'fournisseur'               => 'altra',
+            'reference'                 => 'ALT-' . uniqid(),
+            'designation'               => 'Produit alternatif',
+            'prix_catalogue'            => 80.00,
+            'prix_revente'              => 80.00,
+            'taux_tva'                  => 21,
+            'unite'                     => 'pièce',
+            'ean'                       => $ean,
+            'volatilite_classe'         => 'b',
+            'volatilite_tendance_pct'   => -5.0,
+            'volatilite_calculee_at'    => now(),
+        ]);
+
+        $client = Client::create(['nom' => 'Client alt', 'actif' => true]);
+        $devis  = Devis::create([
+            'numero'        => 'DEV-' . uniqid(),
+            'client_id'     => $client->id,
+            'statut'        => 'brouillon',
+            'date_document' => now(),
+        ]);
+
+        LigneDocument::create([
+            'documentable_type'  => Devis::class,
+            'documentable_id'    => $devis->id,
+            'catalog_produit_id' => $produitRef->id,
+            'ordre'              => 1,
+            'est_section'        => false,
+            'designation'        => $produitRef->designation,
+            'unite'              => $produitRef->unite,
+            'quantite'           => 2,
+            'prix_unitaire'      => 100.00,
+            'remise_valeur'      => 0,
+            'remise_type'        => 'montant',
+            'taux_tva'           => 21,
+            'montant_ht'         => 200.00,
+        ]);
+
+        $data = $this->helper->preparerPourDocument($devis);
+
+        // Badge absent car produit stable
+        $this->assertEmpty($data['badgesParProduit']);
+        // Alternatives présentes malgré l'absence de badge
+        $this->assertNotEmpty($data['alternativesParProduit']);
+    }
+
     // ── Helpers ──
 
     private function creerDevisAvecLigne(
