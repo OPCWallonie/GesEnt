@@ -139,6 +139,59 @@ class VolatiliteServiceIntegrationTest extends TestCase
         $this->assertNotNull($produit->volatilite_calculee_at);
     }
 
+    public function test_flag_toujours_alerter_force_signaux_meme_si_insuffisant(): void
+    {
+        $produit = CatalogProduit::create([
+            'fournisseur'            => 'vanmarke',
+            'reference'              => 'FLAG-TOUJOURS-001',
+            'designation'            => 'Produit flag toujours alerter',
+            'prix_catalogue'         => 10.00,
+            'prix_revente'           => 10.00,
+            'taux_tva'               => 21,
+            'unite'                  => 'pièce',
+            'volatilite_flag_manuel' => 'toujours_alerter',
+        ]);
+        // Aucun historique → classe sera 'insuffisant'
+
+        $this->service->recalculerProduit($produit);
+
+        $produit->refresh();
+        $this->assertSame('insuffisant', $produit->volatilite_classe);
+        $this->assertTrue((bool) $produit->volatilite_signal_relatif, 'Signal relatif doit être true via flag toujours_alerter');
+        $this->assertTrue((bool) $produit->volatilite_signal_absolu, 'Signal absolu doit être true via flag toujours_alerter');
+    }
+
+    public function test_flag_jamais_alerter_force_signaux_false_meme_sur_produit_volatil(): void
+    {
+        $produit = CatalogProduit::create([
+            'fournisseur'            => 'vanmarke',
+            'reference'              => 'FLAG-JAMAIS-001',
+            'designation'            => 'Produit flag jamais alerter',
+            'prix_catalogue'         => 10.00,
+            'prix_revente'           => 10.00,
+            'taux_tva'               => 21,
+            'unite'                  => 'pièce',
+            'volatilite_flag_manuel' => 'jamais_alerter',
+        ]);
+
+        // Historique de forte hausse → tendance >> garde-fou absolu (15%)
+        $this->creerHistoriquePourProduit($produit, 5.00, [
+            ['mois' => 22, 'pct' => 5.0],
+            ['mois' => 18, 'pct' => 5.0],
+            ['mois' => 14, 'pct' => 5.0],
+            ['mois' => 10, 'pct' => 5.0],
+            ['mois' =>  6, 'pct' => 5.0],
+            ['mois' =>  2, 'pct' => 5.0],
+        ]);
+
+        $this->service->recalculerProduit($produit);
+
+        $produit->refresh();
+        $this->assertNotEquals('insuffisant', $produit->volatilite_classe);
+        $this->assertFalse((bool) $produit->volatilite_signal_relatif, 'Signal relatif doit être false via flag jamais_alerter');
+        $this->assertFalse((bool) $produit->volatilite_signal_absolu, 'Signal absolu doit être false via flag jamais_alerter');
+    }
+
     public function test_module_inactif_ne_recalcule_pas(): void
     {
         $params = ParametresEntreprise::instance();
