@@ -2,140 +2,146 @@
     <x-slot name="header">Devis {{ $devis->numero }}</x-slot>
 
     <x-slot name="actions">
-        <div class="flex items-center gap-2">
-            @if((string) $devis->statut === 'valide' && !$devis->bonCommande)
-                <form method="POST" action="{{ route('devis.convertir-bdc', $devis) }}">
-                    @csrf
-                    <button type="submit"
-                            class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                        </svg>
-                        Convertir en BDC
-                    </button>
-                </form>
-            @endif
-            <a href="{{ route('devis.pdf', $devis) }}" target="_blank"
-               class="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                PDF
-            </a>
-            {{-- Dupliquer --}}
-            <form method="POST" action="{{ route('devis.dupliquer', $devis) }}"
-                  onsubmit="return confirm('Dupliquer ce devis en un nouveau brouillon ?')">
-                @csrf
-                <button type="submit"
-                        class="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                    </svg>
-                    Dupliquer
-                </button>
-            </form>
-            {{-- Sauvegarder comme kit --}}
-            <div x-data="{ open: false }">
-                <button type="button" @click="open = true"
-                        class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                    </svg>
-                    Sauvegarder comme kit
-                </button>
-                <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div @click.outside="open = false" class="bg-white rounded-xl shadow-xl p-6 w-96 space-y-4">
-                        <h3 class="font-semibold text-gray-800">Créer un kit depuis ce devis</h3>
-                        <p class="text-sm text-gray-500">Les {{ $devis->lignes->count() }} lignes de ce devis seront sauvegardées comme modèle réutilisable.</p>
-                        <form method="POST" action="{{ route('devis.sauvegarder-kit', $devis) }}">
-                            @csrf
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom du kit *</label>
-                                    <input type="text" name="nom" required placeholder="Ex: Salle de bain standard"
-                                           class="w-full rounded-lg border-gray-300 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
-                                    <input type="text" name="categorie" placeholder="Ex: Sanitaire, Chauffage, Toiture…"
-                                           class="w-full rounded-lg border-gray-300 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                    <textarea name="description" rows="2" placeholder="Courte description du contenu…"
-                                              class="w-full rounded-lg border-gray-300 text-sm"></textarea>
-                                </div>
-                                <div class="flex gap-3 pt-2">
-                                    <button type="button" @click="open = false"
-                                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
-                                        Annuler
-                                    </button>
-                                    <button type="submit"
-                                            class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
-                                        Créer le kit
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            {{-- Bouton Envoyer par email --}}
-            <div x-data="{ open: false }">
-                <button @click="open = true"
-                        class="border border-indigo-300 text-indigo-600 hover:bg-indigo-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    Envoyer
-                </button>
-                <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div @click.outside="open = false" class="bg-white rounded-xl shadow-xl p-6 w-[480px] space-y-4">
-                        <h3 class="font-semibold text-gray-800">Envoyer le devis par email</h3>
-                        <form method="POST" action="{{ route('devis.envoyer', $devis) }}" class="space-y-3">
-                            @csrf
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Destinataire *</label>
-                                <input type="email" name="email" required
-                                       value="{{ $devis->client->email ?? '' }}"
-                                       class="w-full rounded-lg border-gray-300 text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Message (optionnel)</label>
-                                <textarea name="message" rows="5"
-                                          class="w-full rounded-lg border-gray-300 text-sm">{{ $messageEmailDefaut ?? '' }}</textarea>
-                            </div>
-                            <p class="text-xs text-gray-400">Le PDF du devis sera joint automatiquement.</p>
-                            <div class="flex gap-3 pt-1">
-                                <button type="button" @click="open = false"
-                                        class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">Annuler</button>
-                                <button type="submit"
-                                        class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Envoyer</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            @if((string) $devis->statut !== 'archive')
-                <a href="{{ route('devis.edit', $devis) }}"
+        <x-barre-actions>
+            <x-slot name="primaires">
+                <a href="{{ route('devis.pdf', $devis) }}" target="_blank"
                    class="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
-                    Modifier
+                    PDF
                 </a>
-            @endif
-            <form method="POST" action="{{ route('devis.destroy', $devis) }}"
-                  onsubmit="return confirm('Supprimer définitivement ce devis ?')">
-                @csrf
-                @method('DELETE')
-                <button type="submit"
-                        class="border border-red-300 text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                    Supprimer
-                </button>
-            </form>
-        </div>
+                @if((string) $devis->statut !== 'archive')
+                    <a href="{{ route('devis.edit', $devis) }}"
+                       class="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Modifier
+                    </a>
+                @endif
+            </x-slot>
+
+            <x-slot name="secondaires">
+                @if((string) $devis->statut === 'valide' && !$devis->bonCommande)
+                    <form method="POST" action="{{ route('devis.convertir-bdc', $devis) }}">
+                        @csrf
+                        <button type="submit"
+                                class="w-full bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            Convertir en BDC
+                        </button>
+                    </form>
+                @endif
+                {{-- Dupliquer --}}
+                <form method="POST" action="{{ route('devis.dupliquer', $devis) }}"
+                      onsubmit="return confirm('Dupliquer ce devis en un nouveau brouillon ?')">
+                    @csrf
+                    <button type="submit"
+                            class="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Dupliquer
+                    </button>
+                </form>
+                {{-- Sauvegarder comme kit --}}
+                <div x-data="{ open: false }">
+                    <button type="button" @click="open = true"
+                            class="w-full inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                        Sauvegarder comme kit
+                    </button>
+                    <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                        <div @click.outside="open = false" class="bg-white rounded-xl shadow-xl p-6 w-96 space-y-4">
+                            <h3 class="font-semibold text-gray-800">Créer un kit depuis ce devis</h3>
+                            <p class="text-sm text-gray-500">Les {{ $devis->lignes->count() }} lignes de ce devis seront sauvegardées comme modèle réutilisable.</p>
+                            <form method="POST" action="{{ route('devis.sauvegarder-kit', $devis) }}">
+                                @csrf
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom du kit *</label>
+                                        <input type="text" name="nom" required placeholder="Ex: Salle de bain standard"
+                                               class="w-full rounded-lg border-gray-300 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+                                        <input type="text" name="categorie" placeholder="Ex: Sanitaire, Chauffage, Toiture…"
+                                               class="w-full rounded-lg border-gray-300 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                        <textarea name="description" rows="2" placeholder="Courte description du contenu…"
+                                                  class="w-full rounded-lg border-gray-300 text-sm"></textarea>
+                                    </div>
+                                    <div class="flex gap-3 pt-2">
+                                        <button type="button" @click="open = false"
+                                                class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                                            Annuler
+                                        </button>
+                                        <button type="submit"
+                                                class="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                            Créer le kit
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {{-- Bouton Envoyer par email --}}
+                <div x-data="{ open: false }">
+                    <button @click="open = true"
+                            class="w-full border border-indigo-300 text-indigo-600 hover:bg-indigo-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        Envoyer
+                    </button>
+                    <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                        <div @click.outside="open = false" class="bg-white rounded-xl shadow-xl p-6 w-[480px] space-y-4">
+                            <h3 class="font-semibold text-gray-800">Envoyer le devis par email</h3>
+                            <form method="POST" action="{{ route('devis.envoyer', $devis) }}" class="space-y-3">
+                                @csrf
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Destinataire *</label>
+                                    <input type="email" name="email" required
+                                           value="{{ $devis->client->email ?? '' }}"
+                                           class="w-full rounded-lg border-gray-300 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Message (optionnel)</label>
+                                    <textarea name="message" rows="5"
+                                              class="w-full rounded-lg border-gray-300 text-sm">{{ $messageEmailDefaut ?? '' }}</textarea>
+                                </div>
+                                <p class="text-xs text-gray-400">Le PDF du devis sera joint automatiquement.</p>
+                                <div class="flex gap-3 pt-1">
+                                    <button type="button" @click="open = false"
+                                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">Annuler</button>
+                                    <button type="submit"
+                                            class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">Envoyer</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {{-- Supprimer --}}
+                <form method="POST" action="{{ route('devis.destroy', $devis) }}"
+                      onsubmit="return confirm('Supprimer définitivement ce devis ?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                            class="w-full border border-red-300 text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Supprimer
+                    </button>
+                </form>
+            </x-slot>
+        </x-barre-actions>
     </x-slot>
 
     {{-- Bandeau alertes prix fournisseur --}}

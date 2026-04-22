@@ -9,16 +9,25 @@
         @endif
     </x-slot>
     <x-slot name="actions">
-        @if($facture->statut !== 'payee')
-            <button x-data @click="$dispatch('open-modal', 'marquer-payee')"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
-                ✓ Marquer payée
-            </button>
-            <a href="{{ route('factures-achat.edit', $facture) }}"
-               class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
-                Modifier
-            </a>
-        @endif
+        <x-barre-actions>
+            <x-slot name="primaires">
+                @if($facture->statut !== 'payee')
+                    <a href="{{ route('factures-achat.edit', $facture) }}"
+                       class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                        Modifier
+                    </a>
+                @endif
+            </x-slot>
+
+            <x-slot name="secondaires">
+                @if($facture->statut !== 'payee')
+                    <button x-data @click="$dispatch('open-modal', 'marquer-payee')"
+                            class="w-full inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
+                        ✓ Marquer payée
+                    </button>
+                @endif
+            </x-slot>
+        </x-barre-actions>
     </x-slot>
 
     {{-- Encadré Peppol --}}
