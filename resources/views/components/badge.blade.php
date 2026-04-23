@@ -6,6 +6,7 @@ $statut = (string) $statut;
 
 $colors = [
     'brouillon'   => 'bg-gray-100 text-gray-700',
+    'emis'        => 'bg-blue-100 text-blue-800',
     'en_attente'  => 'bg-yellow-100 text-yellow-800',
     'valide'      => 'bg-blue-100 text-blue-800',
     'en_cours'    => 'bg-indigo-100 text-indigo-800',
@@ -21,6 +22,7 @@ $colors = [
 ];
 $labels = [
     'brouillon'   => 'Brouillon',
+    'emis'        => 'Émis',
     'en_attente'  => 'En attente',
     'valide'      => 'Validé',
     'en_cours'    => 'En cours',
