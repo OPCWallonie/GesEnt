@@ -31,6 +31,16 @@ class Avoir extends Model
         'odoo_synced_at'   => 'datetime',
     ];
 
+    public function scopeSansArchives($query)
+    {
+        return $query->where('statut', '!=', 'archive');
+    }
+
+    public function scopeUniquementArchives($query)
+    {
+        return $query->where('statut', 'archive');
+    }
+
     public function estBrouillon(): bool
     {
         return $this->statut instanceof \App\States\Avoir\Brouillon;

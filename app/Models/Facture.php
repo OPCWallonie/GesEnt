@@ -170,6 +170,16 @@ class Facture extends Model
             ->get($this->nb_relances); // index = nb already sent
     }
 
+    public function scopeSansArchives($query)
+    {
+        return $query->where('statut', '!=', 'archive');
+    }
+
+    public function scopeUniquementArchives($query)
+    {
+        return $query->where('statut', 'archive');
+    }
+
     public function estBrouillon(): bool
     {
         return $this->statut instanceof \App\States\Facture\Brouillon;

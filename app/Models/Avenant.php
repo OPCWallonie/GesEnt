@@ -40,6 +40,16 @@ class Avenant extends Model
         return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
+    public function scopeSansArchives($query)
+    {
+        return $query->where('statut', '!=', 'archive');
+    }
+
+    public function scopeUniquementArchives($query)
+    {
+        return $query->where('statut', 'archive');
+    }
+
     public function peutEtreModifie(): bool
     {
         return $this->statut !== 'archive';

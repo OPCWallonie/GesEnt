@@ -35,18 +35,26 @@ class DevisController extends Controller
 
     public function index(Request $request)
     {
-        $devis = Devis::with('client', 'chantier')
+        $filtreArchives = $request->get('archives', 'exclude');
+
+        $query = Devis::with('client', 'chantier')
             ->when($request->q, fn($q, $s) => $q->whereHas('client', fn($q) => $q->where('nom', 'like', '%' . like_escape($s) . '%'))
                 ->orWhere('numero', 'like', '%' . like_escape($s) . '%'))
             ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
-            ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
-            ->orderByDesc('date_document')
-            ->paginate(20)
-            ->withQueryString();
+            ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c));
+
+        $query = match ($filtreArchives) {
+            'only'    => $query->uniquementArchives(),
+            'include' => $query,
+            default   => $query->sansArchives(),
+        };
+
+        $devis      = $query->orderByDesc('date_document')->paginate(20)->withQueryString();
+        $nbArchives = Devis::uniquementArchives()->count();
 
         $devisImpactes = app(DevisImpactService::class)->devisActifsImpactes();
 
-        return view('devis.index', compact('devis', 'devisImpactes'));
+        return view('devis.index', compact('devis', 'devisImpactes', 'filtreArchives', 'nbArchives'));
     }
 
     public function create(Request $request)

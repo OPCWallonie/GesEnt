@@ -104,6 +104,16 @@ class FactureAchat extends Model
         return ['chantier_id', 'bon_commande_id', 'categorie', 'notes', 'date_echeance'];
     }
 
+    public function scopeSansArchives($query)
+    {
+        return $query->where('statut', '!=', 'archive');
+    }
+
+    public function scopeUniquementArchives($query)
+    {
+        return $query->where('statut', 'archive');
+    }
+
     public function peutEtreModifie(): bool
     {
         return $this->statut !== 'archive';

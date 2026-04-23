@@ -126,6 +126,16 @@ class BonCommande extends Model
         return max(0, $totaux['ttc'] - $this->montantFacture());
     }
 
+    public function scopeSansArchives($query)
+    {
+        return $query->where('statut', '!=', 'archive');
+    }
+
+    public function scopeUniquementArchives($query)
+    {
+        return $query->where('statut', 'archive');
+    }
+
     public function peutEtreModifie(): bool
     {
         return $this->factures->isEmpty() && (string) $this->statut !== 'archive';

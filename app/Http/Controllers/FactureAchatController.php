@@ -16,21 +16,28 @@ class FactureAchatController extends Controller
 
     public function index(Request $request)
     {
-        $factures = FactureAchat::with('fournisseur', 'chantier')
+        $filtreArchives = $request->get('archives', 'exclude');
+
+        $query = FactureAchat::with('fournisseur', 'chantier')
             ->when($request->q, fn($q, $s) => $q->where('numero', 'like', '%' . like_escape($s) . '%')
                 ->orWhereHas('fournisseur', fn($q) => $q->where('nom', 'like', '%' . like_escape($s) . '%'))
                 ->orWhere('reference_fournisseur', 'like', '%' . like_escape($s) . '%'))
             ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
             ->when($request->categorie, fn($q, $c) => $q->where('categorie', $c))
-            ->when($request->fournisseur_id, fn($q, $f) => $q->where('fournisseur_id', $f))
-            ->orderByDesc('date_document')
-            ->paginate(20)
-            ->withQueryString();
+            ->when($request->fournisseur_id, fn($q, $f) => $q->where('fournisseur_id', $f));
 
+        $query = match ($filtreArchives) {
+            'only'    => $query->uniquementArchives(),
+            'include' => $query,
+            default   => $query->sansArchives(),
+        };
+
+        $factures     = $query->orderByDesc('date_document')->paginate(20)->withQueryString();
+        $nbArchives   = FactureAchat::uniquementArchives()->count();
         $totalEnCours = FactureAchat::where('statut', 'en_attente')->sum('montant_ttc');
         $fournisseurs = Fournisseur::actif()->orderBy('nom')->get();
 
-        return view('factures-achat.index', compact('factures', 'totalEnCours', 'fournisseurs'));
+        return view('factures-achat.index', compact('factures', 'totalEnCours', 'fournisseurs', 'filtreArchives', 'nbArchives'));
     }
 
     public function create(Request $request)

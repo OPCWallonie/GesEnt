@@ -40,11 +40,23 @@
                 <option value="{{ $f->id }}" @selected(request('fournisseur_id') == $f->id)>{{ $f->nom }}</option>
             @endforeach
         </select>
+        <select name="archives" class="rounded-lg border-gray-300 shadow-sm text-sm">
+            <option value="exclude" {{ $filtreArchives === 'exclude' ? 'selected' : '' }}>Archivées : masquer</option>
+            <option value="include" {{ $filtreArchives === 'include' ? 'selected' : '' }}>Archivées : inclure</option>
+            <option value="only" {{ $filtreArchives === 'only' ? 'selected' : '' }}>Archivées uniquement ({{ $nbArchives }})</option>
+        </select>
         <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Filtrer</button>
-        @if(request()->anyFilled(['q', 'statut', 'categorie', 'fournisseur_id']))
+        @if(request()->anyFilled(['q', 'statut', 'categorie', 'fournisseur_id']) || $filtreArchives !== 'exclude')
             <a href="{{ route('factures-achat.index') }}" class="px-4 py-2 text-gray-500 text-sm hover:text-gray-700">Effacer</a>
         @endif
     </form>
+
+    @if($filtreArchives === 'only')
+        <div class="mb-4 p-3 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-600 flex items-center gap-2">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1.343 9.142A2 2 0 008.334 19h7.332a2 2 0 001.991-1.858L19 8M10 12h4"/></svg>
+            Affichage des factures d'achat archivées uniquement — documents en lecture seule conservés à des fins légales.
+        </div>
+    @endif
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -62,7 +74,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-100">
                 @forelse($factures as $fa)
-                    <tr class="hover:bg-gray-50 {{ $fa->estEnRetard() ? 'bg-red-50' : '' }}">
+                    <tr class="hover:bg-gray-50 {{ $fa->statut === 'archive' ? 'opacity-60' : ($fa->estEnRetard() ? 'bg-red-50' : '') }}">
                         <td class="px-5 py-4">
                             <a href="{{ route('factures-achat.show', $fa) }}" class="font-mono font-medium text-gray-900 hover:text-blue-600">
                                 {{ $fa->numero }}
@@ -96,7 +108,9 @@
                             {{ number_format($fa->montant_ttc, 2, ',', ' ') }} €
                         </td>
                         <td class="px-5 py-4 text-center">
-                            @if($fa->statut === 'payee')
+                            @if($fa->statut === 'archive')
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Archivée</span>
+                            @elseif($fa->statut === 'payee')
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Payée</span>
                             @elseif($fa->estEnRetard())
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">En retard</span>
