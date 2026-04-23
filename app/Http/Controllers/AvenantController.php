@@ -124,8 +124,20 @@ class AvenantController extends Controller
             ->with('success', "Avenant {$avenant->numero} mis à jour.");
     }
 
+    public function archiver(Avenant $avenant)
+    {
+        if (! $avenant->peutEtreArchive()) {
+            return back()->with('error', 'Cet avenant est déjà archivé.');
+        }
+        $avenant->update(['statut' => 'archive']);
+        return redirect()->route('avenants.show', $avenant)->with('success', "Avenant {$avenant->numero} archivé.");
+    }
+
     public function destroy(Avenant $avenant)
     {
+        if (! $avenant->peutEtreSupprime()) {
+            return back()->with('error', 'Cet avenant est archivé et ne peut pas être supprimé.');
+        }
         $bdc = $avenant->bonCommande;
         DB::transaction(function () use ($avenant) {
             $avenant->lignes()->delete();

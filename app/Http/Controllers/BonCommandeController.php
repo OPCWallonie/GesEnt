@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\BonCommandeEnvoye;
 use App\Models\BonCommande;
+use App\States\BonCommande\Archive as BdcArchive;
 use App\Models\Client;
 use App\Models\Devis;
 use App\Models\EmailEnvoi;
@@ -251,10 +252,19 @@ class BonCommandeController extends Controller
         return redirect()->route('bons-commande.show', $bonCommande)->with('success', 'BDC mis à jour.');
     }
 
+    public function archiver(BonCommande $bonCommande)
+    {
+        if (! $bonCommande->peutEtreArchive()) {
+            return back()->with('error', 'Ce BDC est déjà archivé.');
+        }
+        $bonCommande->statut->transitionTo(BdcArchive::class);
+        return redirect()->route('bons-commande.show', $bonCommande)->with('success', "BDC {$bonCommande->numero} archivé.");
+    }
+
     public function destroy(BonCommande $bonCommande)
     {
-        if ($bonCommande->factures->isNotEmpty()) {
-            return back()->with('error', 'Impossible de supprimer un BDC facturé.');
+        if (! $bonCommande->peutEtreSupprime()) {
+            return back()->with('error', 'Impossible de supprimer ce BDC (facturé ou archivé).');
         }
         DB::transaction(function () use ($bonCommande) {
             foreach ($bonCommande->avenants as $avenant) {

@@ -77,6 +77,48 @@ class FactureAchat extends Model
             && $this->statut === 'en_attente';
     }
 
+    public function estManuelle(): bool
+    {
+        return in_array($this->peppol_source, [null, 'manuel', 'ocr']) && !$this->odoo_move_id;
+    }
+
+    public function estPeppol(): bool
+    {
+        return !in_array($this->peppol_source, [null, 'manuel', 'ocr']) && !$this->odoo_move_id;
+    }
+
+    public function estOdoo(): bool
+    {
+        return (bool) $this->odoo_move_id;
+    }
+
+    public function champsEditables(): array
+    {
+        if ($this->estManuelle()) {
+            return [
+                'fournisseur_id', 'chantier_id', 'bon_commande_id', 'reference_fournisseur',
+                'categorie', 'date_document', 'date_echeance', 'montant_ht', 'taux_tva',
+                'statut', 'date_paiement', 'notes',
+            ];
+        }
+        return ['chantier_id', 'bon_commande_id', 'categorie', 'notes', 'date_echeance'];
+    }
+
+    public function peutEtreModifie(): bool
+    {
+        return $this->statut !== 'archive';
+    }
+
+    public function peutEtreSupprime(): bool
+    {
+        return !in_array($this->statut, ['payee', 'archive']);
+    }
+
+    public function peutEtreArchive(): bool
+    {
+        return $this->statut !== 'archive';
+    }
+
     public function getLabelCategorieAttribute(): string
     {
         return self::$categories[$this->categorie] ?? $this->categorie;

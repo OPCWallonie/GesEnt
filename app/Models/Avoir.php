@@ -41,6 +41,26 @@ class Avoir extends Model
         return $this->statut instanceof \App\States\Avoir\Emis;
     }
 
+    public function estArchive(): bool
+    {
+        return $this->statut instanceof \App\States\Avoir\Archive;
+    }
+
+    public function peutEtreModifie(): bool
+    {
+        return false;
+    }
+
+    public function peutEtreSupprime(): bool
+    {
+        return $this->estBrouillon();
+    }
+
+    public function peutEtreArchive(): bool
+    {
+        return $this->estEmis();
+    }
+
     public function facture()
     {
         return $this->belongsTo(Facture::class);

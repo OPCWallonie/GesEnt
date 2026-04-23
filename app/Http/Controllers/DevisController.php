@@ -212,8 +212,20 @@ class DevisController extends Controller
         return redirect()->route('devis.show', $devis)->with('success', 'Devis mis à jour.');
     }
 
+    public function archiver(Devis $devis)
+    {
+        if (! $devis->peutEtreArchive()) {
+            return back()->with('error', 'Ce devis est déjà archivé.');
+        }
+        $devis->statut->transitionTo(DevisArchive::class);
+        return redirect()->route('devis.show', $devis)->with('success', "Devis {$devis->numero} archivé.");
+    }
+
     public function destroy(Devis $devis)
     {
+        if (! $devis->peutEtreSupprime()) {
+            return back()->with('error', 'Ce devis ne peut pas être supprimé (archivé ou rattaché à un BDC).');
+        }
         DB::transaction(function () use ($devis) {
             $devis->lignes()->delete();
             $devis->delete();

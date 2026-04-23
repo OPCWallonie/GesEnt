@@ -80,6 +80,21 @@ class Devis extends Model
             && ! in_array((string) $this->statut, ['valide', 'archive', 'refuse']);
     }
 
+    public function peutEtreModifie(): bool
+    {
+        return (string) $this->statut !== 'archive';
+    }
+
+    public function peutEtreSupprime(): bool
+    {
+        return (string) $this->statut !== 'archive' && $this->bonCommande === null;
+    }
+
+    public function peutEtreArchive(): bool
+    {
+        return (string) $this->statut !== 'archive';
+    }
+
     /**
      * Ventilation TVA : ['21' => ['ht' => 1000.00, 'tva' => 210.00], ...]
      */

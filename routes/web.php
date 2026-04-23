@@ -233,6 +233,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('devis/{devis}/edit', [DevisController::class, 'edit'])->name('devis.edit');
         Route::put('devis/{devis}', [DevisController::class, 'update'])->name('devis.update');
         Route::delete('devis/{devis}', [DevisController::class, 'destroy'])->name('devis.destroy');
+        Route::patch('devis/{devis}/archiver', [DevisController::class, 'archiver'])->name('devis.archiver');
         Route::post('devis/{devis}/envoyer', [DevisController::class, 'envoyer'])->name('devis.envoyer');
         Route::post('devis/{devis}/dupliquer', [DevisController::class, 'dupliquer'])->name('devis.dupliquer');
         Route::post('devis/{devis}/convertir-bdc', [DevisController::class, 'convertirEnBdc'])->name('devis.convertir-bdc');
@@ -249,6 +250,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('bons-commande/{bonCommande}/edit', [BonCommandeController::class, 'edit'])->name('bons-commande.edit');
         Route::put('bons-commande/{bonCommande}', [BonCommandeController::class, 'update'])->name('bons-commande.update');
         Route::delete('bons-commande/{bonCommande}', [BonCommandeController::class, 'destroy'])->name('bons-commande.destroy');
+        Route::patch('bons-commande/{bonCommande}/archiver', [BonCommandeController::class, 'archiver'])->name('bons-commande.archiver');
         Route::post('bons-commande/{bonCommande}/envoyer', [BonCommandeController::class, 'envoyer'])->name('bons-commande.envoyer');
         Route::post('bons-commande/{bonCommande}/facturer', [BonCommandeController::class, 'facturer'])->name('bons-commande.facturer');
 
@@ -257,6 +259,7 @@ Route::middleware(['auth'])->group(function () {
             ->parameters(['bons-commande' => 'bonCommande'])
             ->shallow()
             ->except(['index']);
+        Route::patch('avenants/{avenant}/archiver', [AvenantController::class, 'archiver'])->name('avenants.archiver');
 
         // Factures
         Route::get('factures/create', [FactureController::class, 'create'])->name('factures.create');
@@ -264,6 +267,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('factures/{facture}/edit', [FactureController::class, 'edit'])->name('factures.edit');
         Route::put('factures/{facture}', [FactureController::class, 'update'])->name('factures.update');
         Route::delete('factures/{facture}', [FactureController::class, 'destroy'])->name('factures.destroy');
+        Route::patch('factures/{facture}/archiver', [FactureController::class, 'archiver'])->name('factures.archiver');
         Route::post('factures/{facture}/emettre', [FactureController::class, 'emettre'])->name('factures.emettre');
         Route::post('factures/{facture}/envoyer', [FactureController::class, 'envoyer'])->name('factures.envoyer');
         Route::post('factures/{facture}/envoyer-peppol', [FactureController::class, 'envoyerPeppol'])->name('factures.envoyer-peppol');
@@ -279,6 +283,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('factures/{facture}/avoirs/create', [AvoirController::class, 'create'])->name('avoirs.create');
         Route::post('factures/{facture}/avoirs', [AvoirController::class, 'store'])->name('avoirs.store');
         Route::delete('avoirs/{avoir}', [AvoirController::class, 'destroy'])->name('avoirs.destroy');
+        Route::patch('avoirs/{avoir}/archiver', [AvoirController::class, 'archiver'])->name('avoirs.archiver');
         Route::post('avoirs/{avoir}/emettre', [AvoirController::class, 'emettre'])->name('avoirs.emettre');
         Route::post('avoirs/{avoir}/envoyer-peppol', [AvoirController::class, 'envoyerPeppol'])->name('avoirs.envoyer-peppol');
 
@@ -288,6 +293,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('factures-achat/{factureAchat}/edit', [FactureAchatController::class, 'edit'])->name('factures-achat.edit');
         Route::put('factures-achat/{factureAchat}', [FactureAchatController::class, 'update'])->name('factures-achat.update');
         Route::delete('factures-achat/{factureAchat}', [FactureAchatController::class, 'destroy'])->name('factures-achat.destroy');
+        Route::patch('factures-achat/{factureAchat}/archiver', [FactureAchatController::class, 'archiver'])->name('factures-achat.archiver');
         Route::patch('factures-achat/{factureAchat}/marquer-payee', [FactureAchatController::class, 'marquerPayee'])->name('factures-achat.marquer-payee');
 
         // OCR — rate limit strict (appels API payants)
