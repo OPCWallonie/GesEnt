@@ -264,6 +264,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('factures/{facture}/edit', [FactureController::class, 'edit'])->name('factures.edit');
         Route::put('factures/{facture}', [FactureController::class, 'update'])->name('factures.update');
         Route::delete('factures/{facture}', [FactureController::class, 'destroy'])->name('factures.destroy');
+        Route::post('factures/{facture}/emettre', [FactureController::class, 'emettre'])->name('factures.emettre');
         Route::post('factures/{facture}/envoyer', [FactureController::class, 'envoyer'])->name('factures.envoyer');
         Route::post('factures/{facture}/envoyer-peppol', [FactureController::class, 'envoyerPeppol'])->name('factures.envoyer-peppol');
         Route::post('factures/envoyer-peppol-masse', [FactureController::class, 'envoyerPeppolEnMasse'])->name('factures.envoyer-peppol-masse');
@@ -278,6 +279,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('factures/{facture}/avoirs/create', [AvoirController::class, 'create'])->name('avoirs.create');
         Route::post('factures/{facture}/avoirs', [AvoirController::class, 'store'])->name('avoirs.store');
         Route::delete('avoirs/{avoir}', [AvoirController::class, 'destroy'])->name('avoirs.destroy');
+        Route::post('avoirs/{avoir}/emettre', [AvoirController::class, 'emettre'])->name('avoirs.emettre');
         Route::post('avoirs/{avoir}/envoyer-peppol', [AvoirController::class, 'envoyerPeppol'])->name('avoirs.envoyer-peppol');
 
         // Factures achat

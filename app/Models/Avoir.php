@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\States\Avoir\AvoirStatut;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\ModelStates\HasStates;
 
 class Avoir extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasStates;
 
     protected $fillable = [
         'numero', 'facture_id', 'client_id', 'chantier_id', 'created_by',
-        'date_document', 'motif',
+        'statut', 'date_document', 'motif',
         'montant_ht', 'taux_tva', 'montant_tva', 'montant_ttc',
         'notes',
         'peppol_reference', 'peppol_envoye_at',
@@ -19,6 +21,7 @@ class Avoir extends Model
     ];
 
     protected $casts = [
+        'statut'         => AvoirStatut::class,
         'date_document'  => 'date',
         'montant_ht'     => 'decimal:4',
         'taux_tva'       => 'decimal:2',
@@ -27,6 +30,16 @@ class Avoir extends Model
         'peppol_envoye_at' => 'datetime',
         'odoo_synced_at'   => 'datetime',
     ];
+
+    public function estBrouillon(): bool
+    {
+        return $this->statut instanceof \App\States\Avoir\Brouillon;
+    }
+
+    public function estEmis(): bool
+    {
+        return $this->statut instanceof \App\States\Avoir\Emis;
+    }
 
     public function facture()
     {

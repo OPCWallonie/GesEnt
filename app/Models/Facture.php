@@ -170,6 +170,16 @@ class Facture extends Model
             ->get($this->nb_relances); // index = nb already sent
     }
 
+    public function estBrouillon(): bool
+    {
+        return $this->statut instanceof \App\States\Facture\Brouillon;
+    }
+
+    public function peutEtreEmise(): bool
+    {
+        return $this->estBrouillon();
+    }
+
     public function totalAvoirs(): float
     {
         return (float) $this->avoirs()->sum('montant_ttc');
