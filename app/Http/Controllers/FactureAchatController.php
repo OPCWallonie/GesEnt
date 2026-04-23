@@ -95,6 +95,11 @@ class FactureAchatController extends Controller
 
     public function edit(FactureAchat $factureAchat)
     {
+        if (! $factureAchat->peutEtreModifie()) {
+            return redirect()->route('factures-achat.show', $factureAchat)
+                ->with('error', 'Cette facture est archivée et ne peut pas être modifiée.');
+        }
+
         $facture      = $factureAchat;
         $fournisseurs = Fournisseur::actif()->orderBy('nom')->get();
         $chantiers    = Chantier::with('client')->orderByDesc('id')->get();
@@ -105,7 +110,14 @@ class FactureAchatController extends Controller
 
     public function update(Request $request, FactureAchat $factureAchat)
     {
-        $data = $request->validate([
+        if (! $factureAchat->peutEtreModifie()) {
+            return redirect()->route('factures-achat.show', $factureAchat)
+                ->with('error', 'Cette facture est archivée et ne peut pas être modifiée.');
+        }
+
+        $champsEditables = $factureAchat->champsEditables();
+
+        $rules = [
             'fournisseur_id'         => 'required|exists:fournisseurs,id',
             'chantier_id'            => 'nullable|exists:chantiers,id',
             'bon_commande_id'        => 'nullable|exists:bons_commande,id',
@@ -118,7 +130,23 @@ class FactureAchatController extends Controller
             'statut'                 => 'required|in:en_attente,payee',
             'date_paiement'          => 'nullable|date',
             'notes'                  => 'nullable|string',
-        ]);
+        ];
+
+        // For non-manual invoices only validate editable fields
+        if (! $factureAchat->estManuelle()) {
+            $rules = array_intersect_key($rules, array_flip($champsEditables));
+        }
+
+        $data = $request->validate($rules);
+
+        // For non-manual invoices, merge existing values for non-editable fields
+        if (! $factureAchat->estManuelle()) {
+            $ht  = (float) $factureAchat->montant_ht;
+            $tva = (float) $factureAchat->montant_tva;
+            $factureAchat->update($data);
+            return redirect()->route('factures-achat.show', $factureAchat)
+                ->with('success', 'Facture achat mise à jour.');
+        }
 
         $ht  = (float) $data['montant_ht'];
         $tva = $ht * ($data['taux_tva'] / 100);
@@ -145,8 +173,20 @@ class FactureAchatController extends Controller
             ->with('success', 'Facture achat mise à jour.');
     }
 
+    public function archiver(FactureAchat $factureAchat)
+    {
+        if (! $factureAchat->peutEtreArchive()) {
+            return back()->with('error', 'Cette facture est déjà archivée.');
+        }
+        $factureAchat->update(['statut' => 'archive']);
+        return redirect()->route('factures-achat.show', $factureAchat)->with('success', 'Facture achat archivée.');
+    }
+
     public function destroy(FactureAchat $factureAchat)
     {
+        if (! $factureAchat->peutEtreSupprime()) {
+            return back()->with('error', 'Cette facture ne peut pas être supprimée (payée ou archivée).');
+        }
         $factureAchat->delete();
         return redirect()->route('factures-achat.index')->with('success', 'Facture achat supprimée.');
     }

@@ -126,6 +126,21 @@ class BonCommande extends Model
         return max(0, $totaux['ttc'] - $this->montantFacture());
     }
 
+    public function peutEtreModifie(): bool
+    {
+        return $this->factures->isEmpty() && (string) $this->statut !== 'archive';
+    }
+
+    public function peutEtreSupprime(): bool
+    {
+        return $this->factures->isEmpty() && (string) $this->statut !== 'archive';
+    }
+
+    public function peutEtreArchive(): bool
+    {
+        return (string) $this->statut !== 'archive';
+    }
+
     public function peutEtreFacture(): bool
     {
         if (!in_array((string) $this->statut, ['valide', 'en_cours'])) {

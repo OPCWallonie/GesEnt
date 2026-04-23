@@ -92,7 +92,17 @@
                         {{ $avoir->facture->numero }}
                     @endif
                 </a>
-                @if($avoir->estBrouillon())
+                @if($avoir->peutEtreArchive())
+                    <form method="POST" action="{{ route('avoirs.archiver', $avoir) }}"
+                          onsubmit="return confirm('Archiver cet avoir ?')">
+                        @csrf @method('PATCH')
+                        <button type="submit"
+                                class="w-full border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                            Archiver
+                        </button>
+                    </form>
+                @endif
+                @if($avoir->peutEtreSupprime())
                     <form method="POST" action="{{ route('avoirs.destroy', $avoir) }}"
                           onsubmit="return confirm('Supprimer ce brouillon d\'avoir ? Cette action est irréversible.')">
                         @csrf @method('DELETE')

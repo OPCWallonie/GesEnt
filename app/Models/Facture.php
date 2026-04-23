@@ -175,9 +175,29 @@ class Facture extends Model
         return $this->statut instanceof \App\States\Facture\Brouillon;
     }
 
+    public function estArchive(): bool
+    {
+        return $this->statut instanceof \App\States\Facture\Archive;
+    }
+
     public function peutEtreEmise(): bool
     {
         return $this->estBrouillon();
+    }
+
+    public function peutEtreModifie(): bool
+    {
+        return $this->estBrouillon();
+    }
+
+    public function peutEtreSupprime(): bool
+    {
+        return $this->estBrouillon();
+    }
+
+    public function peutEtreArchive(): bool
+    {
+        return !$this->estBrouillon() && !$this->estArchive();
     }
 
     public function totalAvoirs(): float

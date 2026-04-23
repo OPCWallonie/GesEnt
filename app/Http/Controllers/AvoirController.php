@@ -8,6 +8,7 @@ use App\Models\ParametresEntreprise;
 use App\Services\NumerotationService;
 use App\Services\OdooSyncService;
 use App\Services\PeppolService;
+use App\States\Avoir\Archive as AvoirArchive;
 use App\States\Avoir\Emis as AvoirEmis;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -92,9 +93,18 @@ class AvoirController extends Controller
         return view('avoirs.show', compact('avoir', 'parametres'));
     }
 
+    public function archiver(Avoir $avoir)
+    {
+        if (! $avoir->peutEtreArchive()) {
+            return back()->with('error', "Seuls les avoirs émis peuvent être archivés.");
+        }
+        $avoir->statut->transitionTo(AvoirArchive::class);
+        return redirect()->route('avoirs.show', $avoir)->with('success', "Avoir {$avoir->numero} archivé.");
+    }
+
     public function destroy(Avoir $avoir)
     {
-        if (!$avoir->estBrouillon()) {
+        if (! $avoir->peutEtreSupprime()) {
             return back()->with('error', "Seuls les brouillons peuvent être supprimés.");
         }
 
