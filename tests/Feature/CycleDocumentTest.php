@@ -140,6 +140,13 @@ class CycleDocumentTest extends TestCase
         $facture1 = Facture::latest()->first();
         $this->assertEquals(1, $facture1->numero_situation);
         $this->assertEquals(40, $facture1->pourcentage_avancement);
+        $this->assertEquals('brouillon', (string) $facture1->statut);
+
+        // 4b. Émettre la facture (Conf-01 : brouillon → en_attente avec numéro officiel)
+        $this->post(route('factures.emettre', $facture1))->assertRedirect();
+        $facture1->refresh();
+        $this->assertEquals('en_attente', (string) $facture1->statut);
+        $this->assertNotNull($facture1->numero);
 
         // BDC : il reste encore à facturer
         $bdc->refresh()->load('factures');
