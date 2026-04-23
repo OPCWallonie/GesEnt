@@ -11,7 +11,7 @@
     <x-slot name="actions">
         <x-barre-actions>
             <x-slot name="primaires">
-                @if($facture->statut !== 'payee')
+                @if($facture->peutEtreModifie())
                     <a href="{{ route('factures-achat.edit', $facture) }}"
                        class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
                         Modifier
@@ -20,11 +20,21 @@
             </x-slot>
 
             <x-slot name="secondaires">
-                @if($facture->statut !== 'payee')
+                @if($facture->statut !== 'payee' && $facture->statut !== 'archive')
                     <button x-data @click="$dispatch('open-modal', 'marquer-payee')"
                             class="w-full inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
                         ✓ Marquer payée
                     </button>
+                @endif
+                @if($facture->peutEtreArchive())
+                    <form method="POST" action="{{ route('factures-achat.archiver', $facture) }}"
+                          onsubmit="return confirm('Archiver cette facture ?')">
+                        @csrf @method('PATCH')
+                        <button type="submit"
+                                class="w-full border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                            Archiver
+                        </button>
+                    </form>
                 @endif
             </x-slot>
         </x-barre-actions>
@@ -135,7 +145,7 @@
                 </dl>
             </div>
 
-            @if($facture->statut !== 'payee')
+            @if($facture->peutEtreSupprime())
                 <form method="POST" action="{{ route('factures-achat.destroy', $facture) }}"
                       onsubmit="return confirm('Supprimer cette facture ?')">
                     @csrf @method('DELETE')

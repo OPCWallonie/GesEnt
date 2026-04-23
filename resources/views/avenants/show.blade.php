@@ -1,10 +1,28 @@
 <x-app-layout>
     <x-slot name="header">{{ $avenant->numero }} <x-badge :statut="$avenant->statut"/></x-slot>
     <x-slot name="actions">
-        <a href="{{ route('avenants.edit', $avenant) }}"
-           class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
-            Modifier
-        </a>
+        <x-barre-actions>
+            <x-slot name="primaires">
+                @if($avenant->peutEtreModifie())
+                    <a href="{{ route('avenants.edit', $avenant) }}"
+                       class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                        Modifier
+                    </a>
+                @endif
+            </x-slot>
+            <x-slot name="secondaires">
+                @if($avenant->peutEtreArchive())
+                    <form method="POST" action="{{ route('avenants.archiver', $avenant) }}"
+                          onsubmit="return confirm('Archiver cet avenant ?')">
+                        @csrf @method('PATCH')
+                        <button type="submit"
+                                class="w-full border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                            Archiver
+                        </button>
+                    </form>
+                @endif
+            </x-slot>
+        </x-barre-actions>
     </x-slot>
 
     <div class="grid grid-cols-3 gap-6">
@@ -44,13 +62,15 @@
                 </dl>
             </div>
 
-            <form method="POST" action="{{ route('avenants.destroy', $avenant) }}"
-                  onsubmit="return confirm('Supprimer cet avenant ?')">
-                @csrf @method('DELETE')
-                <button type="submit" class="w-full px-4 py-2 text-sm text-red-500 hover:text-red-700 border border-red-200 rounded-lg hover:bg-red-50">
-                    Supprimer
-                </button>
-            </form>
+            @if($avenant->peutEtreSupprime())
+                <form method="POST" action="{{ route('avenants.destroy', $avenant) }}"
+                      onsubmit="return confirm('Supprimer cet avenant ?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="w-full px-4 py-2 text-sm text-red-500 hover:text-red-700 border border-red-200 rounded-lg hover:bg-red-50">
+                        Supprimer
+                    </button>
+                </form>
+            @endif
         </div>
 
         <div class="col-span-3 lg:col-span-2 space-y-4">

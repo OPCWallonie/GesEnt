@@ -39,4 +39,19 @@ class Avenant extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
+
+    public function peutEtreModifie(): bool
+    {
+        return $this->statut !== 'archive';
+    }
+
+    public function peutEtreSupprime(): bool
+    {
+        return $this->statut !== 'archive';
+    }
+
+    public function peutEtreArchive(): bool
+    {
+        return $this->statut !== 'archive';
+    }
 }

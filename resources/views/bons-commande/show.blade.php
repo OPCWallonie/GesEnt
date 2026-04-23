@@ -8,7 +8,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                     PDF
                 </a>
-                @if($bdc->factures->isEmpty())
+                @if($bdc->peutEtreModifie())
                     <a href="{{ route('bons-commande.edit', $bdc) }}"
                        class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
                         Modifier
@@ -126,7 +126,16 @@
                 </dl>
             </div>
 
-            @if($bdc->factures->isEmpty())
+            @if($bdc->peutEtreArchive())
+                <form method="POST" action="{{ route('bons-commande.archiver', $bdc) }}"
+                      onsubmit="return confirm('Archiver ce BDC ? Il ne sera plus modifiable.')">
+                    @csrf @method('PATCH')
+                    <button type="submit" class="w-full px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        Archiver
+                    </button>
+                </form>
+            @endif
+            @if($bdc->peutEtreSupprime())
                 <form method="POST" action="{{ route('bons-commande.destroy', $bdc) }}"
                       onsubmit="return confirm('Supprimer ce BDC et tous ses avenants ?')">
                     @csrf @method('DELETE')

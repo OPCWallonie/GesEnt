@@ -202,6 +202,16 @@
                             ✓ {{ $facture->paiements->isNotEmpty() ? 'Ajouter un paiement' : 'Marquer payée' }}
                         </button>
                     @endif
+                    @if($facture->peutEtreArchive())
+                        <form method="POST" action="{{ route('factures.archiver', $facture) }}"
+                              onsubmit="return confirm('Archiver cette facture ?')">
+                            @csrf @method('PATCH')
+                            <button type="submit"
+                                    class="w-full border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                                Archiver
+                            </button>
+                        </form>
+                    @endif
                 @endif
             </x-slot>
         </x-barre-actions>

@@ -197,8 +197,8 @@ class FactureController extends Controller
 
     public function edit(Facture $facture)
     {
-        if ($facture->statut instanceof Payee) {
-            return redirect()->route('factures.show', $facture)->with('error', 'Une facture payée ne peut plus être modifiée.');
+        if (! $facture->peutEtreModifie()) {
+            return redirect()->route('factures.show', $facture)->with('error', 'Seuls les brouillons peuvent être modifiés. Une facture émise doit être corrigée par un avoir.');
         }
 
         $facture->load('lignes');
@@ -235,6 +235,10 @@ class FactureController extends Controller
             'lignes.*.taux_tva'      => 'nullable|numeric',
             'lignes.*.est_section'   => 'nullable',
         ]);
+
+        if (! $facture->peutEtreModifie()) {
+            return back()->with('error', 'Seuls les brouillons peuvent être modifiés. Une facture émise doit être corrigée par un avoir.');
+        }
 
         $nouveauStatut = $data['statut'];
         $ancienStatut  = (string) $facture->statut;
@@ -288,9 +292,22 @@ class FactureController extends Controller
         return redirect()->route('factures.show', $facture)->with('success', 'Facture mise à jour.');
     }
 
+    public function archiver(Facture $facture)
+    {
+        if (! $facture->peutEtreArchive()) {
+            return back()->with('error', 'Cette facture ne peut pas être archivée (brouillon ou déjà archivée).');
+        }
+        try {
+            $facture->statut->transitionTo(FactureArchive::class);
+        } catch (TransitionNotFound $e) {
+            return back()->with('error', "Impossible d'archiver cette facture depuis le statut actuel.");
+        }
+        return redirect()->route('factures.show', $facture)->with('success', "Facture {$facture->numero} archivée.");
+    }
+
     public function destroy(Facture $facture)
     {
-        if (!$facture->estBrouillon()) {
+        if (! $facture->peutEtreSupprime()) {
             return back()->with('error', 'Seuls les brouillons peuvent être supprimés. Une facture émise doit être corrigée par un avoir.');
         }
         DB::transaction(function () use ($facture) {
