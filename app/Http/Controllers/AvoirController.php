@@ -8,8 +8,11 @@ use App\Models\ParametresEntreprise;
 use App\Services\NumerotationService;
 use App\Services\OdooSyncService;
 use App\Services\PeppolService;
+use App\States\Avoir\Emis as AvoirEmis;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AvoirController extends Controller
 {
@@ -37,7 +40,6 @@ class AvoirController extends Controller
         $tva = $data['montant_ht'] * ($data['taux_tva'] / 100);
 
         $avoir = Avoir::create([
-            'numero'        => $this->numerotation->suivant('avoir'),
             'facture_id'    => $facture->id,
             'client_id'     => $facture->client_id,
             'chantier_id'   => $facture->chantier_id,
@@ -51,12 +53,36 @@ class AvoirController extends Controller
             'notes'         => $data['notes'] ?? null,
         ]);
 
-        if (ParametresEntreprise::instance()->odooActif()) {
-            $this->odooSync->syncAvoir($avoir);
+        return redirect()->route('avoirs.show', $avoir)
+            ->with('success', "Brouillon d'avoir créé. Cliquez sur \"Valider et émettre\" pour allouer un numéro officiel.");
+    }
+
+    public function emettre(Avoir $avoir)
+    {
+        if (!$avoir->estBrouillon()) {
+            return back()->with('error', "Cet avoir a déjà été émis.");
         }
 
-        return redirect()->route('avoirs.show', $avoir)
-            ->with('success', "Avoir {$avoir->numero} créé.");
+        try {
+            DB::transaction(function () use ($avoir) {
+                $numero = $this->numerotation->suivant('avoir');
+                $avoir->update(['numero' => $numero]);
+                $avoir->statut->transitionTo(AvoirEmis::class);
+            });
+
+            if (ParametresEntreprise::instance()->odooActif()) {
+                $this->odooSync->syncAvoir($avoir->refresh());
+            }
+
+            return redirect()->route('avoirs.show', $avoir)
+                ->with('success', "Avoir émis sous le numéro {$avoir->numero}.");
+        } catch (\Throwable $e) {
+            Log::error('Erreur émission avoir', [
+                'avoir_id' => $avoir->id,
+                'message'  => $e->getMessage(),
+            ]);
+            return back()->with('error', "Impossible d'émettre l'avoir : " . $e->getMessage());
+        }
     }
 
     public function show(Avoir $avoir)
@@ -68,9 +94,14 @@ class AvoirController extends Controller
 
     public function destroy(Avoir $avoir)
     {
+        if (!$avoir->estBrouillon()) {
+            return back()->with('error', "Seuls les brouillons peuvent être supprimés.");
+        }
+
+        $factureId = $avoir->facture_id;
         $avoir->delete();
-        return redirect()->route('factures.show', $avoir->facture_id)
-            ->with('success', "Avoir {$avoir->numero} supprimé.");
+        return redirect()->route('factures.show', $factureId)
+            ->with('success', "Brouillon d'avoir supprimé.");
     }
 
     public function envoyerPeppol(Avoir $avoir, PeppolService $peppol)

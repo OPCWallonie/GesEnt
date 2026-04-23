@@ -10,7 +10,8 @@ abstract class FactureStatut extends State
     public static function config(): StateConfig
     {
         return parent::config()
-            ->default(EnAttente::class)
+            ->default(Brouillon::class)
+            ->allowTransition(Brouillon::class, EnAttente::class)
             ->allowTransition(EnAttente::class, Envoyee::class)
             ->allowTransition(EnAttente::class, Payee::class)
             ->allowTransition(Envoyee::class, EnRetard::class)

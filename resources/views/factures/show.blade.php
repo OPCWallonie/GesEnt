@@ -1,136 +1,207 @@
 <x-app-layout>
-    <x-slot name="header">{{ $facture->numero }} <x-badge :statut="$facture->statut"/></x-slot>
+    <x-slot name="header">
+        @if($facture->estBrouillon())
+            <span class="text-gray-500">[Brouillon #{{ $facture->id }}]</span>
+        @else
+            {{ $facture->numero }}
+        @endif
+        <x-badge :statut="$facture->statut"/>
+    </x-slot>
     <x-slot name="actions">
         <x-barre-actions>
             <x-slot name="primaires">
-                <a href="{{ route('factures.pdf', $facture) }}" target="_blank"
-                   class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                    PDF
-                </a>
-                @if((string) $facture->statut !== 'payee')
+                @if($facture->estBrouillon())
+                    <div x-data="{ confirmOpen: false }">
+                        <button @click="confirmOpen = true"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Valider et émettre
+                        </button>
+
+                        <div x-show="confirmOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                            <div @click.outside="confirmOpen = false" class="bg-white rounded-xl shadow-xl p-6 w-[480px] space-y-4">
+                                <h3 class="font-semibold text-gray-800 text-lg">Émettre cette facture ?</h3>
+                                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm space-y-2">
+                                    <p class="font-medium text-amber-800">Cette action est irréversible.</p>
+                                    <ul class="text-amber-700 list-disc list-inside text-xs space-y-1">
+                                        <li>Un numéro officiel FAC/{{ now()->year }}/XXXX sera alloué</li>
+                                        <li>Le document passera en statut "En attente"</li>
+                                        <li>Il ne pourra plus être modifié ni supprimé</li>
+                                        <li>Seul un avoir permettra une correction ultérieure</li>
+                                    </ul>
+                                </div>
+                                <form method="POST" action="{{ route('factures.emettre', $facture) }}" class="flex gap-3 pt-1">
+                                    @csrf
+                                    <button type="button" @click="confirmOpen = false"
+                                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                                        Annuler
+                                    </button>
+                                    <button type="submit"
+                                            class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                                        Émettre
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <span class="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-400 text-sm rounded-lg cursor-not-allowed"
+                          title="PDF disponible après émission">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        PDF
+                    </span>
+
                     <a href="{{ route('factures.edit', $facture) }}"
                        class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
                         Modifier
                     </a>
+                @else
+                    <a href="{{ route('factures.pdf', $facture) }}" target="_blank"
+                       class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        PDF
+                    </a>
+                    @if((string) $facture->statut !== 'payee')
+                        <a href="{{ route('factures.edit', $facture) }}"
+                           class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                            Modifier
+                        </a>
+                    @endif
                 @endif
             </x-slot>
 
             <x-slot name="secondaires">
-                {{-- Envoyer par email --}}
-                <div x-data="{ open: false }">
-                    <button @click="open = true"
-                            class="w-full inline-flex items-center gap-2 px-3 py-2 border border-indigo-300 text-indigo-600 text-sm rounded-lg hover:bg-indigo-50">
+                @if($facture->estBrouillon())
+                    {{-- Brouillon : actions grisées, pas encore disponibles --}}
+                    <span class="w-full inline-flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-400 text-sm rounded-lg cursor-not-allowed"
+                          title="Disponible après émission">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                         Envoyer
-                    </button>
-                    <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                        <div @click.outside="open = false" class="bg-white rounded-xl shadow-xl p-6 w-[480px] space-y-4">
-                            <h3 class="font-semibold text-gray-800">Envoyer la facture par email</h3>
-                            @if(($peppolMode ?? 'desactive') === 'desactive')
-                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                                <p class="text-xs text-amber-800 font-semibold">Attention — copie de courtoisie uniquement</p>
-                                <p class="text-xs text-amber-700 mt-1">
-                                    Ce PDF est envoyé à titre informatif. Pour être conforme à la loi belge,
-                                    cette facture doit aussi être transmise via Peppol (directement ou via votre logiciel comptable).
-                                </p>
-                            </div>
-                            @endif
-                            <form method="POST" action="{{ route('factures.envoyer', $facture) }}" class="space-y-3">
-                                @csrf
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Destinataire *</label>
-                                    <input type="email" name="email" required
-                                           value="{{ $facture->client->email ?? '' }}"
-                                           class="w-full rounded-lg border-gray-300 text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Message (optionnel)</label>
-                                    <textarea name="message" rows="5" class="w-full rounded-lg border-gray-300 text-sm">{{ $messageEmailDefaut ?? '' }}</textarea>
-                                </div>
-                                <p class="text-xs text-gray-400">Le PDF de la facture sera joint automatiquement.</p>
-                                <div class="flex gap-3 pt-1">
-                                    <button type="button" @click="open = false"
-                                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">Annuler</button>
-                                    <button type="submit"
-                                            class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
-                                        @if(($peppolMode ?? 'desactive') === 'desactive')
-                                            Envoyer copie PDF (courtoisie)
-                                        @elseif(($peppolMode ?? '') === 'envoi')
-                                            Envoyer via Peppol + copie PDF
-                                        @else
-                                            Envoyer PDF
-                                        @endif
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                {{-- Peppol --}}
-                @if(($peppolMode ?? 'desactive') !== 'desactive' && \App\Models\ParametresEntreprise::instance()->peppolActif())
-                    @if(!$facture->peppol_envoye_at)
-                        <form method="POST" action="{{ route('factures.envoyer-peppol', $facture) }}"
-                              onsubmit="return confirm('Envoyer cette facture via Peppol à {{ addslashes($facture->client->nom) }} ?')">
-                            @csrf
-                            <button type="submit"
-                                    class="w-full inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                Envoyer via Peppol
-                            </button>
-                        </form>
-                    @else
-                        <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Peppol {{ $facture->peppol_envoye_at->format('d/m/Y H:i') }}
-                            @if($facture->peppol_reference)
-                                <span class="text-xs text-green-500">({{ $facture->peppol_reference }})</span>
-                            @endif
-                        </span>
-                    @endif
-                @endif
-                {{-- Odoo --}}
-                @if(\App\Models\ParametresEntreprise::instance()->odooActif())
-                    @if($facture->odoo_move_id)
-                        <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-50 border border-purple-200 text-purple-700 text-xs rounded-lg">
-                            <span class="w-2 h-2 bg-purple-500 rounded-full"></span>
-                            Odoo #{{ $facture->odoo_move_id }}
-                            <span class="text-purple-400">{{ $facture->odoo_synced_at?->diffForHumans() }}</span>
-                        </span>
-                    @else
-                        <form method="POST" action="{{ route('factures.sync-odoo', $facture) }}">
-                            @csrf
-                            <button type="submit" class="w-full inline-flex items-center gap-2 px-3 py-2 border border-purple-300 text-purple-700 text-sm rounded-lg hover:bg-purple-50">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                Synchroniser vers Odoo
-                            </button>
-                        </form>
-                    @endif
-                @endif
-                {{-- Avoir --}}
-                @if((string) $facture->statut !== 'archive')
-                    <a href="{{ route('avoirs.create', $facture) }}"
-                       class="w-full inline-flex items-center gap-2 px-3 py-2 border border-red-300 text-red-600 text-sm rounded-lg hover:bg-red-50">
+                    </span>
+                    <span class="w-full inline-flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-400 text-sm rounded-lg cursor-not-allowed"
+                          title="Disponible après émission">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                         Avoir
-                    </a>
-                @endif
-                @if(!in_array((string) $facture->statut, ['payee', 'archive']))
-                    @if($facture->estEnRetard() || in_array((string) $facture->statut, ['en_attente', 'envoyee']))
-                        <form method="POST" action="{{ route('factures.relancer', $facture) }}">
-                            @csrf @method('PATCH')
-                            <button type="submit"
-                                    class="w-full inline-flex items-center gap-2 px-3 py-2 border border-amber-300 text-amber-700 text-sm rounded-lg hover:bg-amber-50"
-                                    title="{{ $facture->nb_relances > 0 ? 'Relance n°'.($facture->nb_relances+1).' — dernière le '.$facture->derniere_relance_at?->format('d/m/Y') : 'Enregistrer une relance' }}">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                                Relancer @if($facture->nb_relances > 0)<span class="font-bold">({{ $facture->nb_relances }})</span>@endif
-                            </button>
-                        </form>
+                    </span>
+                @else
+                    {{-- Facture émise : toutes les actions disponibles --}}
+                    {{-- Envoyer par email --}}
+                    <div x-data="{ open: false }">
+                        <button @click="open = true"
+                                class="w-full inline-flex items-center gap-2 px-3 py-2 border border-indigo-300 text-indigo-600 text-sm rounded-lg hover:bg-indigo-50">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            Envoyer
+                        </button>
+                        <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                            <div @click.outside="open = false" class="bg-white rounded-xl shadow-xl p-6 w-[480px] space-y-4">
+                                <h3 class="font-semibold text-gray-800">Envoyer la facture par email</h3>
+                                @if(($peppolMode ?? 'desactive') === 'desactive')
+                                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                    <p class="text-xs text-amber-800 font-semibold">Attention — copie de courtoisie uniquement</p>
+                                    <p class="text-xs text-amber-700 mt-1">
+                                        Ce PDF est envoyé à titre informatif. Pour être conforme à la loi belge,
+                                        cette facture doit aussi être transmise via Peppol (directement ou via votre logiciel comptable).
+                                    </p>
+                                </div>
+                                @endif
+                                <form method="POST" action="{{ route('factures.envoyer', $facture) }}" class="space-y-3">
+                                    @csrf
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Destinataire *</label>
+                                        <input type="email" name="email" required
+                                               value="{{ $facture->client->email ?? '' }}"
+                                               class="w-full rounded-lg border-gray-300 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Message (optionnel)</label>
+                                        <textarea name="message" rows="5" class="w-full rounded-lg border-gray-300 text-sm">{{ $messageEmailDefaut ?? '' }}</textarea>
+                                    </div>
+                                    <p class="text-xs text-gray-400">Le PDF de la facture sera joint automatiquement.</p>
+                                    <div class="flex gap-3 pt-1">
+                                        <button type="button" @click="open = false"
+                                                class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">Annuler</button>
+                                        <button type="submit"
+                                                class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                                            @if(($peppolMode ?? 'desactive') === 'desactive')
+                                                Envoyer copie PDF (courtoisie)
+                                            @elseif(($peppolMode ?? '') === 'envoi')
+                                                Envoyer via Peppol + copie PDF
+                                            @else
+                                                Envoyer PDF
+                                            @endif
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {{-- Peppol --}}
+                    @if(($peppolMode ?? 'desactive') !== 'desactive' && \App\Models\ParametresEntreprise::instance()->peppolActif())
+                        @if(!$facture->peppol_envoye_at)
+                            <form method="POST" action="{{ route('factures.envoyer-peppol', $facture) }}"
+                                  onsubmit="return confirm('Envoyer cette facture via Peppol à {{ addslashes($facture->client->nom) }} ?')">
+                                @csrf
+                                <button type="submit"
+                                        class="w-full inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    Envoyer via Peppol
+                                </button>
+                            </form>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Peppol {{ $facture->peppol_envoye_at->format('d/m/Y H:i') }}
+                                @if($facture->peppol_reference)
+                                    <span class="text-xs text-green-500">({{ $facture->peppol_reference }})</span>
+                                @endif
+                            </span>
+                        @endif
                     @endif
-                    <button x-data @click="$dispatch('open-modal', 'marquer-payee')"
-                            class="w-full inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
-                        ✓ {{ $facture->paiements->isNotEmpty() ? 'Ajouter un paiement' : 'Marquer payée' }}
-                    </button>
+                    {{-- Odoo --}}
+                    @if(\App\Models\ParametresEntreprise::instance()->odooActif())
+                        @if($facture->odoo_move_id)
+                            <span class="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-50 border border-purple-200 text-purple-700 text-xs rounded-lg">
+                                <span class="w-2 h-2 bg-purple-500 rounded-full"></span>
+                                Odoo #{{ $facture->odoo_move_id }}
+                                <span class="text-purple-400">{{ $facture->odoo_synced_at?->diffForHumans() }}</span>
+                            </span>
+                        @else
+                            <form method="POST" action="{{ route('factures.sync-odoo', $facture) }}">
+                                @csrf
+                                <button type="submit" class="w-full inline-flex items-center gap-2 px-3 py-2 border border-purple-300 text-purple-700 text-sm rounded-lg hover:bg-purple-50">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    Synchroniser vers Odoo
+                                </button>
+                            </form>
+                        @endif
+                    @endif
+                    {{-- Avoir --}}
+                    @if((string) $facture->statut !== 'archive')
+                        <a href="{{ route('avoirs.create', $facture) }}"
+                           class="w-full inline-flex items-center gap-2 px-3 py-2 border border-red-300 text-red-600 text-sm rounded-lg hover:bg-red-50">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                            Avoir
+                        </a>
+                    @endif
+                    @if(!in_array((string) $facture->statut, ['payee', 'archive']))
+                        @if($facture->estEnRetard() || in_array((string) $facture->statut, ['en_attente', 'envoyee']))
+                            <form method="POST" action="{{ route('factures.relancer', $facture) }}">
+                                @csrf @method('PATCH')
+                                <button type="submit"
+                                        class="w-full inline-flex items-center gap-2 px-3 py-2 border border-amber-300 text-amber-700 text-sm rounded-lg hover:bg-amber-50"
+                                        title="{{ $facture->nb_relances > 0 ? 'Relance n°'.($facture->nb_relances+1).' — dernière le '.$facture->derniere_relance_at?->format('d/m/Y') : 'Enregistrer une relance' }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                    Relancer @if($facture->nb_relances > 0)<span class="font-bold">({{ $facture->nb_relances }})</span>@endif
+                                </button>
+                            </form>
+                        @endif
+                        <button x-data @click="$dispatch('open-modal', 'marquer-payee')"
+                                class="w-full inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">
+                            ✓ {{ $facture->paiements->isNotEmpty() ? 'Ajouter un paiement' : 'Marquer payée' }}
+                        </button>
+                    @endif
                 @endif
             </x-slot>
         </x-barre-actions>
@@ -194,7 +265,16 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                 <h3 class="font-semibold text-gray-700 mb-3 text-sm">Informations</h3>
                 <dl class="space-y-2 text-sm">
-                    <div class="flex justify-between"><dt class="text-gray-400">Numéro</dt><dd class="font-mono font-medium">{{ $facture->numero }}</dd></div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-400">Numéro</dt>
+                        <dd class="font-mono font-medium">
+                            @if($facture->estBrouillon())
+                                <span class="text-gray-500 italic">[Brouillon #{{ $facture->id }}]</span>
+                            @else
+                                {{ $facture->numero }}
+                            @endif
+                        </dd>
+                    </div>
                     <div class="flex justify-between"><dt class="text-gray-400">Date</dt><dd>{{ $facture->date_document->format('d/m/Y') }}</dd></div>
                     @if($facture->date_echeance)
                         <div class="flex justify-between">
@@ -368,12 +448,12 @@
             </div>
             @endif
 
-            @if((string) $facture->statut !== 'payee')
+            @if($facture->estBrouillon())
                 <form method="POST" action="{{ route('factures.destroy', $facture) }}"
-                      onsubmit="return confirm('Supprimer cette facture ?')">
+                      onsubmit="return confirm('Supprimer ce brouillon ? Cette action est irréversible.')">
                     @csrf @method('DELETE')
                     <button type="submit" class="w-full px-4 py-2 text-sm text-red-500 hover:text-red-700 border border-red-200 rounded-lg hover:bg-red-50">
-                        Supprimer
+                        Supprimer le brouillon
                     </button>
                 </form>
             @endif

@@ -20,10 +20,12 @@ use App\Services\OdooSyncService;
 use App\Services\PeppolService;
 use App\Services\ProduitUsageService;
 use App\States\Facture\Archive as FactureArchive;
+use App\States\Facture\Brouillon as FactureBrouillon;
 use App\States\Facture\EnAttente;
 use App\States\Facture\EnRetard;
 use App\States\Facture\Envoyee;
 use App\States\Facture\Payee;
+use Illuminate\Support\Facades\Log;
 use Spatie\ModelStates\Exceptions\TransitionNotFound;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -88,7 +90,6 @@ class FactureController extends Controller
         $data = $request->validate([
             'bon_commande_id'        => 'nullable|exists:bons_commande,id',
             'mode_paiement_id'       => 'nullable|exists:modes_paiement,id',
-            'statut'                 => 'required|in:en_attente,envoyee',
             'date_document'          => 'required|date',
             'date_echeance'          => 'nullable|date',
             'frais_port'             => 'nullable|numeric|min:0',
@@ -113,16 +114,14 @@ class FactureController extends Controller
         ]);
 
         $facture = DB::transaction(function () use ($data) {
-            $bdc = $data['bon_commande_id'] ? BonCommande::find($data['bon_commande_id']) : null;
+            $bdc = !empty($data['bon_commande_id']) ? BonCommande::find($data['bon_commande_id']) : null;
 
             $facture = Facture::create([
-                'numero'            => $this->numerotation->suivant('facture'),
-                'bon_commande_id'   => $bdc?->id,
-                'client_id'         => $bdc?->client_id ?? request('client_id'),
-                'chantier_id'       => $bdc?->chantier_id,
-                'mode_paiement_id'  => $data['mode_paiement_id'] ?? $bdc?->mode_paiement_id,
-                'created_by'        => auth()->id(),
-                'statut'               => $data['statut'],
+                'bon_commande_id'      => $bdc?->id,
+                'client_id'            => $bdc?->client_id ?? request('client_id'),
+                'chantier_id'          => $bdc?->chantier_id,
+                'mode_paiement_id'     => $data['mode_paiement_id'] ?? $bdc?->mode_paiement_id,
+                'created_by'           => auth()->id(),
                 'date_document'        => $data['date_document'],
                 'date_echeance'        => $data['date_echeance'] ?? null,
                 'frais_port'           => $data['frais_port'] ?? 0,
@@ -137,7 +136,6 @@ class FactureController extends Controller
             $this->documentService->recalculerMontants($facture);
             $this->usageService->enregistrerUtilisation($facture);
 
-            // Champs de situation (facturation partielle)
             if (!empty($data['numero_situation'])) {
                 $facture->update([
                     'numero_situation'       => $data['numero_situation'],
@@ -150,14 +148,38 @@ class FactureController extends Controller
             return $facture;
         });
 
-        if (ParametresEntreprise::instance()->odooActif()) {
-            $this->odooSync->syncFacture($facture);
-        }
-
         DocumentDraft::pourUser(auth()->id())->where('document_type', 'facture')->whereNull('document_id')->delete();
 
         return redirect()->route('factures.show', $facture)
-            ->with('success', "Facture {$facture->numero} créée.");
+            ->with('success', 'Brouillon de facture créé. Cliquez sur "Valider et émettre" pour allouer un numéro officiel.');
+    }
+
+    public function emettre(Facture $facture)
+    {
+        if (!$facture->peutEtreEmise()) {
+            return back()->with('error', "Cette facture a déjà été émise ou son statut ne le permet pas.");
+        }
+
+        try {
+            DB::transaction(function () use ($facture) {
+                $numero = $this->numerotation->suivant('facture');
+                $facture->update(['numero' => $numero]);
+                $facture->statut->transitionTo(EnAttente::class);
+            });
+
+            if (ParametresEntreprise::instance()->odooActif()) {
+                $this->odooSync->syncFacture($facture->refresh());
+            }
+
+            return redirect()->route('factures.show', $facture)
+                ->with('success', "Facture émise sous le numéro {$facture->numero}.");
+        } catch (\Throwable $e) {
+            Log::error('Erreur émission facture', [
+                'facture_id' => $facture->id,
+                'message'    => $e->getMessage(),
+            ]);
+            return back()->with('error', "Impossible d'émettre la facture : " . $e->getMessage());
+        }
     }
 
     public function show(Facture $facture)
@@ -191,7 +213,7 @@ class FactureController extends Controller
     {
         $data = $request->validate([
             'mode_paiement_id'     => 'nullable|exists:modes_paiement,id',
-            'statut'               => 'required|in:en_attente,envoyee,payee,en_retard,archive',
+            'statut'               => 'required|in:brouillon,en_attente,envoyee,payee,en_retard,archive',
             'date_document'        => 'required|date',
             'date_echeance'        => 'nullable|date',
             'frais_port'           => 'nullable|numeric|min:0',
@@ -217,6 +239,10 @@ class FactureController extends Controller
         $nouveauStatut = $data['statut'];
         $ancienStatut  = (string) $facture->statut;
 
+        if ($facture->estBrouillon() && $nouveauStatut !== 'brouillon') {
+            return back()->with('error', 'Pour émettre une facture, utilisez le bouton "Valider et émettre".');
+        }
+
         try {
             DB::transaction(function () use ($facture, $data, $nouveauStatut, $ancienStatut) {
                 $facture->update([
@@ -239,6 +265,7 @@ class FactureController extends Controller
 
                 if ($nouveauStatut !== $ancienStatut) {
                     $stateClass = match ($nouveauStatut) {
+                        'brouillon'  => FactureBrouillon::class,
                         'en_attente' => EnAttente::class,
                         'envoyee'    => Envoyee::class,
                         'en_retard'  => EnRetard::class,
@@ -263,14 +290,14 @@ class FactureController extends Controller
 
     public function destroy(Facture $facture)
     {
-        if ($facture->statut instanceof Payee) {
-            return back()->with('error', 'Impossible de supprimer une facture payée.');
+        if (!$facture->estBrouillon()) {
+            return back()->with('error', 'Seuls les brouillons peuvent être supprimés. Une facture émise doit être corrigée par un avoir.');
         }
         DB::transaction(function () use ($facture) {
             $facture->lignes()->delete();
             $facture->delete();
         });
-        return redirect()->route('factures.index')->with('success', "Facture {$facture->numero} supprimée.");
+        return redirect()->route('factures.index')->with('success', "Brouillon supprimé.");
     }
 
     public function marquerPayee(Request $request, Facture $facture)

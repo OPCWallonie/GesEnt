@@ -47,7 +47,7 @@
                class="flex-1 rounded-lg border-gray-300 shadow-sm text-sm">
         <select name="statut" class="rounded-lg border-gray-300 shadow-sm text-sm">
             <option value="">Tous les statuts</option>
-            @foreach(['en_attente' => 'En attente', 'envoyee' => 'Envoyée', 'payee' => 'Payée', 'en_retard' => 'En retard', 'archive' => 'Archivée'] as $val => $label)
+            @foreach(['brouillon' => 'Brouillons', 'en_attente' => 'En attente', 'envoyee' => 'Envoyée', 'payee' => 'Payée', 'en_retard' => 'En retard', 'archive' => 'Archivée'] as $val => $label)
                 <option value="{{ $val }}" @selected(request('statut') === $val)>{{ $label }}</option>
             @endforeach
         </select>
@@ -73,10 +73,16 @@
             <tbody class="bg-white divide-y divide-gray-100">
                 @forelse($factures as $facture)
                     <tr class="hover:bg-gray-50 {{ $facture->estEnRetard() ? 'bg-red-50' : '' }}">
-                        <td class="px-5 py-4">
-                            <a href="{{ route('factures.show', $facture) }}" class="font-mono font-medium text-gray-900 hover:text-blue-600">
-                                {{ $facture->numero }}
-                            </a>
+                        <td class="px-5 py-4 font-mono text-sm">
+                            @if($facture->estBrouillon())
+                                <a href="{{ route('factures.show', $facture) }}" class="text-gray-500 italic hover:text-blue-600">
+                                    [Brouillon #{{ $facture->id }}]
+                                </a>
+                            @else
+                                <a href="{{ route('factures.show', $facture) }}" class="font-medium text-gray-900 hover:text-blue-600">
+                                    {{ $facture->numero }}
+                                </a>
+                            @endif
                         </td>
                         <td class="px-5 py-4">
                             <a href="{{ route('clients.show', $facture->client) }}" class="text-gray-700 hover:text-blue-600">{{ $facture->client->nom }}</a>
