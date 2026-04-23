@@ -56,9 +56,16 @@ class Avoir extends Model
         return $this->estBrouillon();
     }
 
+    public function estPeppolEnvoye(): bool
+    {
+        return $this->peppol_envoye_at !== null;
+    }
+
     public function peutEtreArchive(): bool
     {
-        return $this->estEmis();
+        if (!$this->estEmis()) return false;
+        if ($this->estPeppolEnvoye()) return false;
+        return true;
     }
 
     public function facture()

@@ -195,9 +195,17 @@ class Facture extends Model
         return $this->estBrouillon();
     }
 
+    public function estPeppolEnvoyee(): bool
+    {
+        return $this->peppol_envoye_at !== null;
+    }
+
     public function peutEtreArchive(): bool
     {
-        return !$this->estBrouillon() && !$this->estArchive();
+        if ($this->estBrouillon()) return false;
+        if ($this->estArchive()) return false;
+        if ($this->estPeppolEnvoyee()) return false;
+        return true;
     }
 
     public function totalAvoirs(): float

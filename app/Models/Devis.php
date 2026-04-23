@@ -82,7 +82,7 @@ class Devis extends Model
 
     public function peutEtreModifie(): bool
     {
-        return (string) $this->statut !== 'archive';
+        return in_array((string) $this->statut, ['brouillon', 'en_attente'], true);
     }
 
     public function peutEtreSupprime(): bool

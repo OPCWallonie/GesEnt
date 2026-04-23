@@ -145,8 +145,8 @@ class DevisController extends Controller
 
     public function edit(Devis $devis)
     {
-        if ($devis->statut instanceof DevisArchive) {
-            return redirect()->route('devis.show', $devis)->with('error', 'Ce devis est archivé.');
+        if (!$devis->peutEtreModifie()) {
+            return redirect()->route('devis.show', $devis)->with('error', 'Ce devis ne peut plus être modifié dans son état actuel.');
         }
 
         $devis->load('lignes', 'client');
@@ -163,6 +163,10 @@ class DevisController extends Controller
 
     public function update(Request $request, Devis $devis)
     {
+        if (!$devis->peutEtreModifie()) {
+            return redirect()->route('devis.show', $devis)->with('error', 'Ce devis ne peut plus être modifié dans son état actuel.');
+        }
+
         $data = $request->validate([
             'client_id'              => 'required|exists:clients,id',
             'chantier_id'            => 'nullable|exists:chantiers,id',

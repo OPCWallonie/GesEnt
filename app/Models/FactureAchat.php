@@ -111,7 +111,8 @@ class FactureAchat extends Model
 
     public function peutEtreSupprime(): bool
     {
-        return !in_array($this->statut, ['payee', 'archive']);
+        if (!$this->estManuelle()) return false;
+        return in_array($this->statut, ['brouillon', 'en_attente'], true);
     }
 
     public function peutEtreArchive(): bool

@@ -138,7 +138,13 @@ class BonCommande extends Model
 
     public function peutEtreArchive(): bool
     {
-        return (string) $this->statut !== 'archive';
+        $statut = (string) $this->statut;
+
+        if ($statut === 'archive') return false;
+
+        if ($statut === 'termine') return true;
+
+        return !$this->factures()->exists();
     }
 
     public function peutEtreFacture(): bool

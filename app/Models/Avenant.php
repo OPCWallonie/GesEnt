@@ -42,16 +42,20 @@ class Avenant extends Model
 
     public function peutEtreModifie(): bool
     {
-        return $this->statut !== 'archive';
+        return in_array($this->statut, ['brouillon', 'en_attente'], true);
     }
 
     public function peutEtreSupprime(): bool
     {
-        return $this->statut !== 'archive';
+        return in_array($this->statut, ['brouillon', 'en_attente'], true);
     }
 
     public function peutEtreArchive(): bool
     {
-        return $this->statut !== 'archive';
+        if ($this->statut === 'archive') return false;
+        if ($this->bonCommande && $this->bonCommande->factures()->exists()) {
+            return false;
+        }
+        return true;
     }
 }
