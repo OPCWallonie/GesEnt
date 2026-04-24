@@ -43,16 +43,24 @@ class FactureController extends Controller
 
     public function index(Request $request)
     {
-        $factures = Facture::with('client', 'chantier', 'bonCommande')
+        $filtreArchives = $request->get('archives', 'exclude');
+
+        $query = Facture::with('client', 'chantier', 'bonCommande')
             ->when($request->q, fn($q, $s) => $q->where('numero', 'like', '%' . like_escape($s) . '%')
                 ->orWhereHas('client', fn($q) => $q->where('nom', 'like', '%' . like_escape($s) . '%')))
             ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
-            ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c))
-            ->orderByDesc('date_document')
-            ->paginate(20)
-            ->withQueryString();
+            ->when($request->client_id, fn($q, $c) => $q->where('client_id', $c));
 
-        return view('factures.index', compact('factures'));
+        $query = match ($filtreArchives) {
+            'only'    => $query->uniquementArchives(),
+            'include' => $query,
+            default   => $query->sansArchives(),
+        };
+
+        $factures   = $query->orderByDesc('date_document')->paginate(20)->withQueryString();
+        $nbArchives = Facture::uniquementArchives()->count();
+
+        return view('factures.index', compact('factures', 'filtreArchives', 'nbArchives'));
     }
 
     public function create(Request $request)

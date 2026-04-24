@@ -80,6 +80,16 @@ class Devis extends Model
             && ! in_array((string) $this->statut, ['valide', 'archive', 'refuse']);
     }
 
+    public function scopeSansArchives($query)
+    {
+        return $query->where('statut', '!=', 'archive');
+    }
+
+    public function scopeUniquementArchives($query)
+    {
+        return $query->where('statut', 'archive');
+    }
+
     public function peutEtreModifie(): bool
     {
         return (string) $this->statut !== 'archive';

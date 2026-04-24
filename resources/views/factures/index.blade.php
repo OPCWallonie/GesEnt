@@ -42,20 +42,32 @@
     </div>
     @endif
 
-    <form method="GET" class="mb-4 flex gap-3">
+    <form method="GET" class="mb-4 flex flex-wrap gap-3">
         <input type="text" name="q" value="{{ request('q') }}" placeholder="Numéro ou client…"
-               class="flex-1 rounded-lg border-gray-300 shadow-sm text-sm">
+               class="flex-1 min-w-40 rounded-lg border-gray-300 shadow-sm text-sm">
         <select name="statut" class="rounded-lg border-gray-300 shadow-sm text-sm">
             <option value="">Tous les statuts</option>
-            @foreach(['brouillon' => 'Brouillons', 'en_attente' => 'En attente', 'envoyee' => 'Envoyée', 'payee' => 'Payée', 'en_retard' => 'En retard', 'archive' => 'Archivée'] as $val => $label)
+            @foreach(['brouillon' => 'Brouillons', 'en_attente' => 'En attente', 'envoyee' => 'Envoyée', 'payee' => 'Payée', 'en_retard' => 'En retard'] as $val => $label)
                 <option value="{{ $val }}" @selected(request('statut') === $val)>{{ $label }}</option>
             @endforeach
         </select>
+        <select name="archives" class="rounded-lg border-gray-300 shadow-sm text-sm">
+            <option value="exclude" {{ $filtreArchives === 'exclude' ? 'selected' : '' }}>Archivées : masquer</option>
+            <option value="include" {{ $filtreArchives === 'include' ? 'selected' : '' }}>Archivées : inclure</option>
+            <option value="only" {{ $filtreArchives === 'only' ? 'selected' : '' }}>Archivées uniquement ({{ $nbArchives }})</option>
+        </select>
         <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">Filtrer</button>
-        @if(request('q') || request('statut'))
+        @if(request('q') || request('statut') || $filtreArchives !== 'exclude')
             <a href="{{ route('factures.index') }}" class="px-4 py-2 text-gray-500 text-sm hover:text-gray-700">Effacer</a>
         @endif
     </form>
+
+    @if($filtreArchives === 'only')
+        <div class="mb-4 p-3 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-600 flex items-center gap-2">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1.343 9.142A2 2 0 008.334 19h7.332a2 2 0 001.991-1.858L19 8M10 12h4"/></svg>
+            Affichage des factures archivées uniquement — documents en lecture seule conservés à des fins légales.
+        </div>
+    @endif
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -72,7 +84,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-100">
                 @forelse($factures as $facture)
-                    <tr class="hover:bg-gray-50 {{ $facture->estEnRetard() ? 'bg-red-50' : '' }}">
+                    <tr class="hover:bg-gray-50 {{ $facture->estArchive() ? 'opacity-60' : ($facture->estEnRetard() ? 'bg-red-50' : '') }}">
                         <td class="px-5 py-4 font-mono text-sm">
                             @if($facture->estBrouillon())
                                 <a href="{{ route('factures.show', $facture) }}" class="text-gray-500 italic hover:text-blue-600">

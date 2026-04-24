@@ -34,7 +34,15 @@
                 <option value="valide" {{ request('statut') === 'valide' ? 'selected' : '' }}>Validé</option>
                 <option value="refuse" {{ request('statut') === 'refuse' ? 'selected' : '' }}>Refusé</option>
                 <option value="expire" {{ request('statut') === 'expire' ? 'selected' : '' }}>Expiré</option>
-                <option value="archive" {{ request('statut') === 'archive' ? 'selected' : '' }}>Archivé</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Archivés</label>
+            <select name="archives"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="exclude" {{ $filtreArchives === 'exclude' ? 'selected' : '' }}>Masquer</option>
+                <option value="include" {{ $filtreArchives === 'include' ? 'selected' : '' }}>Inclure</option>
+                <option value="only" {{ $filtreArchives === 'only' ? 'selected' : '' }}>Uniquement ({{ $nbArchives }})</option>
             </select>
         </div>
         <div class="flex gap-2">
@@ -42,7 +50,7 @@
                     class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium">
                 Filtrer
             </button>
-            @if(request('q') || request('statut'))
+            @if(request('q') || request('statut') || $filtreArchives !== 'exclude')
                 <a href="{{ route('devis.index') }}"
                    class="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium">
                     Réinitialiser
@@ -50,6 +58,13 @@
             @endif
         </div>
     </form>
+
+    @if($filtreArchives === 'only')
+        <div class="mb-4 p-3 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-600 flex items-center gap-2">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1.343 9.142A2 2 0 008.334 19h7.332a2 2 0 001.991-1.858L19 8M10 12h4"/></svg>
+            Affichage des devis archivés uniquement — documents en lecture seule conservés à des fins légales.
+        </div>
+    @endif
 
     {{-- Tableau --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -68,7 +83,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($devis as $d)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 {{ (string) $d->statut === 'archive' ? 'opacity-60' : '' }}">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <a href="{{ route('devis.show', $d) }}"
                                class="text-blue-600 hover:text-blue-800 font-medium text-sm">

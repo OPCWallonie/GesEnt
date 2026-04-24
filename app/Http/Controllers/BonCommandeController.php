@@ -33,16 +33,23 @@ class BonCommandeController extends Controller
 
     public function index(Request $request)
     {
-        $bons = BonCommande::with('client', 'chantier', 'devis')
+        $filtreArchives = $request->get('archives', 'exclude');
+
+        $query = BonCommande::with('client', 'chantier', 'devis')
             ->when($request->q, fn($q, $s) => $q->where('numero', 'like', '%' . like_escape($s) . '%')
                 ->orWhereHas('client', fn($q) => $q->where('nom', 'like', '%' . like_escape($s) . '%')))
-            ->when($request->statut, fn($q, $s) => $q->where('statut', $s))
-            ->orderByDesc('date_document')
-            ->paginate(20)
-            ->withQueryString();
+            ->when($request->statut, fn($q, $s) => $q->where('statut', $s));
 
-        $bonsCommande = $bons;
-        return view('bons-commande.index', compact('bonsCommande'));
+        $query = match ($filtreArchives) {
+            'only'    => $query->uniquementArchives(),
+            'include' => $query,
+            default   => $query->sansArchives(),
+        };
+
+        $bonsCommande = $query->orderByDesc('date_document')->paginate(20)->withQueryString();
+        $nbArchives   = BonCommande::uniquementArchives()->count();
+
+        return view('bons-commande.index', compact('bonsCommande', 'filtreArchives', 'nbArchives'));
     }
 
     public function create(Request $request)
